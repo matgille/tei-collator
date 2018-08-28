@@ -1,0 +1,1 @@
+Ce dépôt git rassemble l'ensemble des fichiers de l'édition digitale du *Regimiento de los prínçipes* que je construis pour ma thèse. 
