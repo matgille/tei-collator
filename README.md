@@ -6,4 +6,4 @@ Ce dépôt rassemble l'ensemble des fichiers qui constituent mon travail de thè
 
 ### Fichiers importants
 
-+ La documentation de mon travail est rassemblée dans une ODD accessible [ici](http://mgl.zapto.org/Mattlev/these_pseudojeriz/blob/ca5ed43732e4a2f894bb75430634cefc4a3a15d1/Dedans/XML/schemas/pseudojerizB_ODD.xml).
+ La documentation de mon travail est rassemblée dans une ODD accessible [ici](/Dedans/XML/schemas/pseudojerizB_ODD.xml).
