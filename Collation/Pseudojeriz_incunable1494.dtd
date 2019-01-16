@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--Document composé à l'aide de la DTD d'Ariane PINCHE-->
+<!--J'utilise comme base les caractères MUFI compatibles UNICODE dans la mesure du possible.-->
+<!--Fonctionnement des dénominations: graphème originel-régularisation/expansion_accentuation(a)|rien(ø) -->
+<!ENTITY apostrophe  '<choice><abbr>&apos;</abbr><expan>ier</expan></choice>'>
+<!ENTITY atilde-an '<choice><abbr><g ref="#atilde_Inc"/></abbr><expan>a<ex>n</ex></expan></choice>'>
+<!ENTITY atilde-an_a '<choice><abbr><g ref="#atilde_Inc"/></abbr><expan><orig>a<ex>n</ex></orig><reg>á<ex>n</ex></reg></expan></choice>'>
+<!ENTITY atilde-a '<choice><orig>a&#771;</orig><reg>a</reg></choice>'>
+<!ENTITY abarre-a '<choice><abbr>a&#772;</abbr><expan>a</expan></choice>'><!ENTITY c-ced  '<choice><orig>c</orig><reg>ç</reg></choice>'>
+<!ENTITY dpoint-de '<choice><abbr><g ref="#dpoint_Inc"/></abbr><expan>de</expan></choice>'>
+<!ENTITY enl-enel '<choice><abbr>eñl</abbr><expan>en <ex>el</ex></expan></choice>'>
+<!ENTITY etilde-en '<choice><abbr><g ref="#etilde_Inc"/></abbr><expan>e<ex>n</ex></expan></choice>'>
+<!ENTITY etilde-en_a '<choice><abbr><g ref="#etilde_Inc"/></abbr><expan><orig>e<ex>n</ex></orig><reg>é<ex>n</ex></reg></expan></choice>'>
+<!ENTITY ilong-i '<choice><orig>&#567;</orig><reg>i</reg></choice>'><!--Le -i- long n'est pas un caractère unicode-->
+<!ENTITY ilong-i_a '<choice><orig>&#567;</orig><reg>í</reg></choice>'><!--Le -i- long n'est pas un caractère unicode-->
+<!ENTITY itilde-in '<choice><abbr>i&#771;</abbr><expan>i<ex>n</ex></expan></choice>'><!--REFAIRE L ENTITÉ-->
+<!ENTITY itilde-in_a '<choice><abbr>i&#771;</abbr><expan><orig>i<ex>n</ex></orig><reg>í<ex>n</ex></reg></expan></choice>'><!--REFAIRE L ENTITÉ-->
+<!ENTITY itul '<choice><abbr>ᐤ</abbr><expan>ítulo</expan></choice>' >
+<!ENTITY pitul '<choice><abbr>ᐤ</abbr><expan>pítulo</expan></choice>' >
+<!ENTITY jento '<choice><abbr>j&#778;</abbr><expan><orig>j<ex>ento</ex></orig><reg>i<ex>ento</ex></reg></expan></choice>'>
+<!ENTITY iento '<choice><abbr>i/comb.tilde/</abbr><expan>i<ex>ento</ex></expan></choice>'>
+<!ENTITY iul '<choice><abbr>ᐤ</abbr><expan><ex>í</ex>t<ex>ulo</ex></expan></choice>' >
+<!ENTITY grra '<choice><abbr>grr&#771;a</abbr><expan>g<ex>ue</ex>rra</expan></choice>'>
+<!ENTITY gli '<choice><abbr>gli&#777;</abbr><expan>gl<ex>esi</ex></expan></choice>'>
+<!ENTITY mbarre-mm '<choice><abbr>m&#772;</abbr><expan>m<ex>m</ex></expan></choice>' >
+<!ENTITY mtilde-mm '<choice><abbr>m&#771;</abbr><expan>m<ex>m</ex></expan></choice>' >
+<!ENTITY ntilde-in '<choice><abbr>ñ</abbr><expan><ex>i</ex>n</expan></choice>' >
+<!ENTITY ntilde-rin_a '<choice><abbr>ñ</abbr><expan><ex>í</ex>n</expan></choice>' >
+<!ENTITY ntilde-ner '<choice><abbr>ñ</abbr><expan>n<ex>er</ex></expan></choice>' >
+<!ENTITY otilde-on '<choice><abbr><g ref="#otilde_Inc"/></abbr><expan>o<ex>n</ex></expan></choice>'>
+<!ENTITY otilde-on_a '<choice><abbr><g ref="#otilde_Inc"/></abbr><expan><orig>o<ex>n</ex></orig><reg>ó<ex>n</ex></reg></expan></choice>'>
+<!ENTITY pbarre-par '<choice><abbr><g ref="#pbarre_Inc"/></abbr><expan>p<ex>ar</ex></expan></choice>'>
+<!ENTITY pbarre-per '<choice><abbr><g ref="#pbarre_Inc"/></abbr><expan>p<ex>er</ex></expan></choice>'>
+<!ENTITY pcrochet-pri '<choice><abbr><g ref="#pcrochet_Inc"/></abbr><expan>p<ex>ri</ex></expan></choice>'>
+<!ENTITY pcrochet-pri_a '<choice><abbr><g ref="#pcrochet_Inc"/></abbr><expan>p<ex>rí</ex></expan></choice>'>
+<!ENTITY pflour-pro '<choice><abbr>&#42835;</abbr><expan>p<ex>ro</ex></expan></choice>'>
+<!ENTITY ptilde-pri '<choice><abbr>p&#771;</abbr><expan>p<ex>ri</ex></expan></choice>'>
+<!ENTITY ptilde-pre '<choice><abbr>p&#771;</abbr><expan>p<ex>re</ex></expan></choice>'>
+<!ENTITY prmr '<choice><abbr>p&#771;m</abbr><expan>p<ex>ri</ex>m<ex>er</ex></expan></choice>' > 
+<!ENTITY prond-pro '<choice><abbr>pᐤ</abbr><expan>p<ex>ro</ex></expan></choice>'>
+<!--Prim o primer?-->
+<!ENTITY qcrochet-qui '<choice><abbr><g ref="#qcrochet_Inc"/></abbr><expan>q<ex>ui</ex></expan></choice>'>
+<!ENTITY qcrochet-qui_a '<choice><abbr><g ref="#qcrochet_Inc"/></abbr><expan><orig>q<ex>ui</ex></orig><reg>q<ex>uí</ex></reg></expan></choice>'>
+<!ENTITY qcrochet-qua '<choice><abbr>q&#777;</abbr><expan>q<ex>ua</ex></expan></choice>'>
+<!ENTITY qbizarre-qua '<choice><abbr><g ref="#qbizarre-qua_Inc"/></abbr><expan>q<ex>ua</ex></expan></choice>' >
+<!ENTITY qtilde-quae '<choice><abbr><g ref="#qtilde_Inc"/></abbr><expan>q<ex>uae</ex></expan></choice>' >
+<!ENTITY qtilde-que '<choice><abbr><g ref="#qtilde_Inc"/></abbr><expan>q<ex>ue</ex></expan></choice>'>
+<!ENTITY qtilde-qui_a '<choice><abbr>q&#771;</abbr><expan>q<ex>uí</ex></expan></choice>'>
+<!ENTITY qbarre-que '<choice><abbr>q&#773;</abbr><expan>q<ex>ue</ex></expan></choice>'>
+<!ENTITY qbarre-que_a '<choice><abbr>q&#773;</abbr><expan><orig>q<ex>ue</ex></orig><reg>q<ex>ué</ex></reg></expan></choice>'>
+<!ENTITY qtilde-que_a '<choice><abbr>q&#771;</abbr><expan><orig>q<ex>ue</ex></orig><reg>q<ex>ué</ex></reg></expan></choice>'>
+<!ENTITY ro '<choice><abbr>ᐤ</abbr><expan><ex>ro</ex></expan></choice>'>
+<!ENTITY rlong-r '<choice><orig>&#636;</orig><reg>r</reg></choice>' >
+<!ENTITY r_rotunda-r '<choice><orig>ꝛ</orig><reg>r</reg></choice>' >
+<!ENTITY rrlong-r '<choice><orig>&#636;&#636;</orig><reg>r</reg></choice>' >
+<!ENTITY rr-r '<choice><orig>rr</orig><reg>r</reg></choice>' >
+<!ENTITY slong-s '<choice><orig><g ref="#slong_Inc"/></orig><reg>s</reg></choice>' >
+<!ENTITY sslong-ss '<choice><orig><g ref="#slong_Inc"/><g ref="#slong_Inc"/></orig><reg>ss</reg></choice>' >
+<!ENTITY tpo '<choice><abbr>tp&#773;o</abbr><expan>t<ex>iem</ex>po</expan></choice>' >
+<!ENTITY trond-tro '<choice><abbr>tᐤ</abbr><expan>t<ex>ro</ex></expan></choice>'>
+<!ENTITY trond-tro_a '<choice><abbr>tᐤ</abbr><expan>p<ex>ró</ex></expan></choice>'>
+<!ENTITY uatilde_ll-aller '<choice><abbr>u&#864;all</abbr><expan>uall<ex>er</ex></expan></choice>'>
+<!ENTITY utilde-un '<choice><abbr><g ref="#utilde_Inc"/></abbr><expan>u<ex>n</ex></expan></choice>'>
+<!ENTITY utilde-un_a '<choice><abbr><g ref="#utilde_Inc"/></abbr><expan><orig>u<ex>n</ex></orig><reg>ú<ex>n</ex></reg></expan></choice>'>
+<!ENTITY urond-uno '<choice><abbr>uᐤ</abbr><expan>u<ex>no</ex></expan></choice>'>
+<!ENTITY vdiag-vir '<choice><abbr>&#42847;</abbr><expan>vir</expan></choice>'>
+<!ENTITY vcrochet-ver '<choice><abbr>v̉</abbr><expan>ver</expan></choice>'>
+<!ENTITY vrs '<choice><abbr>v&#636;&#61451;</abbr><expan>vuest&#636;</expan></choice>'>
+
+<!--Renommer les entités pour homogénéiser-->
+
+<!--Ponctuation-->
+
+<!ENTITY et '<choice><abbr><g ref="#et_Inc"/></abbr><expan>e</expan></choice>'>
+<!ENTITY espace '&#160;'>
+<!ENTITY esp-rien '<choice><orig>&espace;</orig><reg/></choice>'>
+<!ENTITY rien-esp '<choice><orig/><reg>&espace;</reg></choice>'>
+<!ENTITY ET '<choice><abbr>&amp;</abbr><expan>et</expan></choice>' >
+<!ENTITY ET_maj '<choice><abbr>&amp;</abbr><expan>Et</expan></choice>' >
+<!ENTITY point-virg '<choice><orig>.</orig><reg>,</reg></choice>' >
+<!ENTITY virg-point '<choice><orig>,</orig><reg>.</reg></choice>' >
+<!ENTITY rien-virg '<choice><orig/><reg>,</reg></choice>' >
+<!ENTITY rien-point '<choice><orig/><reg>.</reg></choice>' >
+<!ENTITY rien-deuxpoints '<choice><orig/><reg>:</reg></choice>' >
+<!ENTITY rien-pvirg '<choice><orig/><reg>;</reg></choice>' >
+<!ENTITY deuxpoints-virgule '<choice><orig>:</orig><reg>,</reg></choice>' >
+<!ENTITY deuxpoints-pvirg '<choice><orig>:</orig><reg>;</reg></choice>' >
+<!--de: A.Pinche-->
+<!ENTITY deuxpoints_sub-rien '<choice><orig>:</orig><reg/></choice>'>
+<!ENTITY deuxpoints_sub-virg '<choice><orig>:</orig><reg>,</reg></choice>'><!--comment rendre la subordonnée ?-->
+<!ENTITY deuxpoints-rien '<choice><orig>:</orig><reg/></choice>' >
+<!ENTITY dtiretoblique '<choice><orig><g ref="dtiretoblique_Inc"/></orig><reg/></choice>' >
+<!ENTITY point-dpoints '<choice><orig>.</orig><reg>:</reg></choice>' >
+<!ENTITY point-guill_o '<choice><orig>.</orig><reg>"</reg></choice>' >
+<!--problèmes ici pour LaTeX, si on utilise les guillemets qu'il faut. passer par un <g> ?-->
+<!ENTITY point-guill_f '<choice><orig>.</orig><reg>".</reg></choice>' >
+<!ENTITY point-rien '<choice><orig>.</orig><reg/></choice>' >
+<!ENTITY point-int '<choice><orig>.</orig><reg>?</reg></choice>' >
+<!ENTITY pied_mouche '<choice><orig><g ref="pied-mouche_Inc"/></orig><reg/></choice>'>
+<!ENTITY rien-intouvr '<choice><orig/><reg>¿</reg></choice>' >
+<!ENTITY rien-intferm '<choice><orig/><reg>?</reg></choice>' >
+<!--Accentuation. Pour les abbrèviations avec nécessité de régularisation d'accent voir plus haut-->
+
+<!ENTITY aaccent '<choice><orig>a</orig><reg>á</reg></choice>' >
+<!ENTITY eaccent '<choice><orig>e</orig><reg>é</reg></choice>' >
+<!ENTITY iaccent '<choice><orig>i</orig><reg>í</reg></choice>' >
+<!ENTITY oaccent '<choice><orig>o</orig><reg>ó</reg></choice>' >
+<!ENTITY uaccent '<choice><orig>u</orig><reg>ú</reg></choice>' >
+
+
+<!--Majuscules-->
+<!ENTITY amaj-min '<choice><orig>A</orig><reg>a</reg></choice>' >
+
+<!ENTITY amin-maj '<choice><orig>a</orig><reg>A</reg></choice>' >
+<!ENTITY cmin-maj '<choice><orig>c</orig><reg>C</reg></choice>' >
+<!ENTITY dmin-maj '<choice><orig>d</orig><reg>D</reg></choice>' >
+<!ENTITY emin-maj '<choice><orig>e</orig><reg>E</reg></choice>' >
+<!ENTITY gmin-maj '<choice><orig>g</orig><reg>G</reg></choice>' >
+<!ENTITY imin-maj '<choice><orig>i</orig><reg>I</reg></choice>' >
+<!ENTITY omin-maj '<choice><orig>o</orig><reg>O</reg></choice>' >
+<!ENTITY umin-maj '<choice><orig>u</orig><reg>U</reg></choice>' >
+<!ENTITY vmin-maj '<choice><orig>v</orig><reg>V</reg></choice>' >
+
+
+
+
+
+<!--Semi-voyelles-->
+
+<!ENTITY u-v '<choice><orig>u</orig><reg>v</reg></choice>' >
+<!--transformation: ([aeiou])(u)([aeiou])  $1&u-v;$2 -->
+<!ENTITY v-u '<choice><orig>v</orig><reg>u</reg></choice>' >
+<!--transformation: ([^aeiou])(v)([^aeiou])  $1&v-u;$2 -->
+
+<!ENTITY i-j '<choice><orig>i</orig><reg>j</reg></choice>' >
+<!--transformation: ([aeiou])(i)([aeiou])  $1j$2 -->
+<!ENTITY j-i '<choice><orig>j</orig><reg>i</reg></choice>' >
+<!--transformation: ([^aeiou])(j)([^aeiou])  $1i$2 -->
+<!---->
+
