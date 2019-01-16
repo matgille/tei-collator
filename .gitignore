@@ -3,3 +3,4 @@
 .log
 Outils_correction/out/correction.*
 saxon9ee.jar
+.bak
