@@ -1,1 +1,31 @@
-{"witnesses":["w1","w2"],"table":[[["⁋Capítulo ","primero.en ","que ","de "],["Capítulo "," ","primero "]],[[" "],[" "]],[["muestra ","que ","qual ","se ","quier ","obra "],["E ","contie "," ","ne ","xxiii ","capítulos "]],[[" "],[" "]],[["de ","batalla:se ","contiene ","so ","la ","arte "," ","de ","la ","cavalleria. "],[]],[["D "],["D "]],[["e ","spues "],["espués "]],[["que "],["que "]],[["mo "],["mos "]],[[" "],[" "]],[["stro ","en ","la ","prime "],["tró ","en la ","primera "]],[[" "],[" "]],[["ra ","parte: como "],[" ","parte ","cómo "]],[["fa "," ","blaron ","los ","phi "," "],["fa "," ","blaron ","los ","phi "," "]],[["losophos ","anti "," ","guos "],["lósofos ","antiguos "]],[["del "],["del "]],[["gover "],["gouer "]],[[" ","namiento ","del "],[" ","namiento ","del "]],[["rey "," ","no ","⁊ "],["regno ","e "]],[["de la "],["de la "]],[["cibdad "],["çib "," ","dat, "]],[[" ","E ","en la "],[" ","E ","en la "]],[[],[" "]],[["segunda ","parte "],["segunda ","parte "]],[["mostro:en ","como "],[" "," ","mostró ","en ","cómo "]],[["se ","ha "],["se ","ha "]],[[],["de ","go "," ","uernar ","la ","çibdat ","e ","el ","regno "]],[[" "],[" "]],[["ḋ ","governar ","la ","cibdad ","⁊ ","el ","reyno ","en ","tien "," ","po "],[" ","en ","tiempo ","de ","paz, ","segun ","la ","opi "," ","nión "]],[["de "],["de "]],[["paz ","segund ","la ","opinionḋ ","aristotiles "],["aristótiles, "," "]],[["Aquí "],["aquí "]],[[],[" "," "]],[["ya "],["ya "]],[["enesta ","tercera "],["en esta "," ","iiirond "]],[["parte ","muestra "],["parte ","muestra "]],[[],[" "," "]],[["en "],["en "]],[[" ","como "],["commo "]],[["se ","han ","de "],["se ","han ","de "]],[["governar "],["gouerna ","r "," "]],[["en "],["en "]],[["tienpo "],["tiempo "]],[["de "],["de "]],[["gue "," ","rra. "],["guerra. "," "]],[["E "],["E "]],[["assi "],["assy "," "," "]],[["en "],["en "]],[["todo "],["toda "]],[["esta ","parte "],["esta ","parte "]],[["no "],["non "]],[["fabla "],["fabla "]],[[],[" "]],[[" ","de ","otra "],[" ","de ","otra "]],[["cosa:sino "],["cosa ","sinon "]],[["de ","batalla "],["de ","batalla "]],[["⁊ "],[" "," ","e "]],[["de "],["de "]],[["guer "," ","ra: ","como ","deven "],["guerra, ","commo ","deuen "]],[["los "],["los "]],[[],[" "," "]],[["reyes ","tomar ","la ","o "],["reyes ","tomar ","la ","o "]],[["re "," ","scebir "],["reçebir "," "]],[["la. "],["la. "]],[[],[" "]]]}
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<cx:apparatus xmlns:cx="http://interedition.eu/collatex/ns/1.0" xmlns="http://www.tei-c.org/ns/1.0">
+    <app><rdg wit="w1">⁋Capítulo primero.en que de</rdg><rdg wit="w2">Capítulo primero</rdg></app>
+    <app><rdg wit="w1">muestra que qual se quier obra</rdg><rdg wit="w2">E contie ne xxiii capítulos</rdg></app>
+    <app><rdg wit="w1">de batalla:se contiene so la arte de la cavalleria.</rdg><rdg wit="w2"/></app>D
+    <app><rdg wit="w1">e spues</rdg><rdg wit="w2">espués</rdg></app>que
+    <app><rdg wit="w1">mo</rdg><rdg wit="w2">mos</rdg></app>
+    <app><rdg wit="w1">stro en la prime</rdg><rdg wit="w2">tró en la primera</rdg></app>
+    <app><rdg wit="w1">ra parte: como</rdg><rdg wit="w2">parte cómo</rdg></app>fa blaron los phi
+    <app><rdg wit="w1">losophos anti guos</rdg><rdg wit="w2">lósofos antiguos</rdg></app>del
+    <app><rdg wit="w1">gover</rdg><rdg wit="w2">gouer</rdg></app>namiento del
+    <app><rdg wit="w1">rey no ⁊</rdg><rdg wit="w2">regno e</rdg></app>de la
+    <app><rdg wit="w1">cibdad</rdg><rdg wit="w2">çib dat,</rdg></app>E en lasegunda parte
+    <app><rdg wit="w1">mostro:en como</rdg><rdg wit="w2">mostró en cómo</rdg></app>se ha
+    <app><rdg wit="w1"/><rdg wit="w2">de go uernar la çibdat e el regno</rdg></app>
+    <app><rdg wit="w1">ḋ governar la cibdad ⁊ el reyno en tien po</rdg><rdg wit="w2">en tiempo de paz, segun la opi
+    nión</rdg></app>de
+    <app><rdg wit="w1">paz segund la opinionḋ aristotiles</rdg><rdg wit="w2">aristótiles,</rdg></app>
+    <app><rdg wit="w1">Aquí</rdg><rdg wit="w2">aquí</rdg></app>ya
+    <app><rdg wit="w1">enesta tercera</rdg><rdg wit="w2">en esta iiirond</rdg></app>parte muestraen
+    <app><rdg wit="w1">como</rdg><rdg wit="w2">commo</rdg></app>se han de
+    <app><rdg wit="w1">governar</rdg><rdg wit="w2">gouerna r</rdg></app>en
+    <app><rdg wit="w1">tienpo</rdg><rdg wit="w2">tiempo</rdg></app>de
+    <app><rdg wit="w1">gue rra.</rdg><rdg wit="w2">guerra.</rdg></app>E
+    <app><rdg wit="w1">assi</rdg><rdg wit="w2">assy</rdg></app>en
+    <app><rdg wit="w1">todo</rdg><rdg wit="w2">toda</rdg></app>esta parte
+    <app><rdg wit="w1">no</rdg><rdg wit="w2">non</rdg></app>fablade otra
+    <app><rdg wit="w1">cosa:sino</rdg><rdg wit="w2">cosa sinon</rdg></app>de batalla
+    <app><rdg wit="w1">⁊</rdg><rdg wit="w2">e</rdg></app>de
+    <app><rdg wit="w1">guer ra: como deven</rdg><rdg wit="w2">guerra, commo deuen</rdg></app>losreyes tomar la o
+    <app><rdg wit="w1">re scebir</rdg><rdg wit="w2">reçebir</rdg></app>la.</cx:apparatus>

@@ -36,7 +36,7 @@ Problème: comment faire quand on a utilisé les entités pour marquer les phén
 	
 	[= collation grâce à collatex][donner la commande de collation avec collatex] et enfin au résultat final: 
 	``java -jar ~/Bureau/Programme/collatex-tools-1.7.1.jar -f tei -xml -xp "//w" insev.xml msj.xml -o collation.xml 
-	- f tei``
+	``
 	-f tei > au format de sortie TEI
 	-xml > format d'entrée xml
 	-xp "//w" > expression xpath qui va chercher le texte contenu dans //w
