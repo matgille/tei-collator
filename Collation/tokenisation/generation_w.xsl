@@ -22,7 +22,7 @@
     <xsl:template match="comment()">
         <xsl:comment><xsl:value-of select="."/></xsl:comment>
     </xsl:template>-->
-
+<!--problème de tokénisation: les virgules-->
     <xsl:template match="tei:text//text()[not(parent::tei:note)][ancestor::tei:div[@type = 'chapitre']]">
         <xsl:for-each select="tokenize(., '\s+')">
             <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">

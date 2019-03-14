@@ -60,3 +60,12 @@ Problème: comment faire quand on a utilisé les entités pour marquer les phén
 - visualisation des fichiers .dot en les transformant en .pdf
 
 - export de la collation en fichiers .xml tei. 
+
+
+----------------------------------------------
+12 mars 2019. Qu'est ce que je veux ? 
+
+
+
+
+
