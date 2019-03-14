@@ -1,0 +1,37 @@
+
+Liste des éléments dans Sal_J
+
+L'élément ABBR apparaît 1213 fois.
+L'élément ADD apparaît 19 fois.
+L'élément ANCHOR apparaît 18 fois.
+L'élément CB apparaît 98 fois.
+L'élément CORR apparaît 12 fois.
+L'élément DAMAGE apparaît 6 fois.
+L'élément DEL apparaît 13 fois.
+L'élément EX apparaît 1036 fois.
+L'élément EXPAN apparaît 1214 fois.
+L'élément FW apparaît 4 fois.
+L'élément G apparaît 1177 fois.
+L'élément HI apparaît 31 fois.
+L'élément LB apparaît 800 fois.
+L'élément MILESTONE apparaît 3 fois.
+L'élément MOD apparaît 6 fois.
+L'élément PB apparaît 99 fois.
+L'élément SEG apparaît 18 fois.
+L'élément SIC apparaît 21 fois.
+L'élément UNCLEAR apparaît 59 fois.
+
+
+Liste des éléments dans Esc_Q
+
+L'élément SPACE apparaît 14 fois.
+
+
+Liste des éléments dans Sev_R
+
+
+
+Liste des éléments dans Phil_U
+
+
+Il y a 18606 éléments en tout.
