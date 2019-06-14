@@ -6,6 +6,5 @@ saxon9ee.jar
 .bak
 *.tif*
 .*lock*
-db/
 Dedans/XML/corpus/revision_desc.xml
 revision_desc.xml
