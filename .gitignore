@@ -7,3 +7,5 @@ saxon9ee.jar
 *.tif*
 .*lock*
 db/
+Dedans/XML/corpus/revision_desc.xml
+
