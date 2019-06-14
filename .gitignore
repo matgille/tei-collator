@@ -1,5 +1,6 @@
 .rng
 .aux
+.eps
 .log
 Outils_correction/out/correction.*
 saxon9ee.jar
