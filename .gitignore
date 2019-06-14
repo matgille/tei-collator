@@ -6,3 +6,4 @@ saxon9ee.jar
 .bak
 *.tif*
 .*lock*
+db/
