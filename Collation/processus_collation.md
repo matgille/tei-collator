@@ -1,3 +1,18 @@
+màj le 17 juin
+
+http://collatex.obdurodon.org/xml-json-conversion.xhtml 
+
+http://collatex.obdurodon.org/ Pour un tutoriel sur collatex pour python. On va réussir !
+
+pour le passage entre xml et json. 
+progrès: j'ai réussi à transformer en un json valide; à faire une première collation et un export vers la TEI. comme prévu, on perd les xml:id. 
+Un premier problème s'est posé dans la tokenisation: on perd aussi la ponctuation, trouver un moyen d'y remédier. 
+
+Un autre problème apparaît et semble plus important: la collation n'est pas terrible. Écrire à Elisa pour voir ce qu'elle en pense. n
+
+Un troisième problème: retrouver le contexte marche quand on a une collation mot à mot (un item d'apparat = un mot), mais quand c'est plusieurs mots, comment faire ?  
+
+
 créé le 15 janvier 2019. 
 
 # Le processus de collation 
