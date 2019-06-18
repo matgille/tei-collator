@@ -8,7 +8,10 @@ pour le passage entre xml et json.
 progrès: j'ai réussi à transformer en un json valide; à faire une première collation et un export vers la TEI. comme prévu, on perd les xml:id. 
 Un premier problème s'est posé dans la tokenisation: on perd aussi la ponctuation, trouver un moyen d'y remédier. 
 
-Un autre problème apparaît et semble plus important: la collation n'est pas terrible. Écrire à Elisa pour voir ce qu'elle en pense. n
+Un autre problème apparaît et semble plus important: la collation n'est pas terrible. Écrire à Elisa pour voir ce qu'elle en pense. Ce problème semble réglé avec la version python, plus à jour, qui propose un algorithme qui semble vraiment bon. 
+
+À faire: compléter le script pour comprendre comment ça marche, transformer en JSON pour conserver les xml:id, voir un script pour transformer les JSON en xml d'apparat. En attendant, les fichiers XML produits permettent assez facilement de corriger les erreurs de transcription !
+
 
 Un troisième problème: retrouver le contexte marche quand on a une collation mot à mot (un item d'apparat = un mot), mais quand c'est plusieurs mots, comment faire ?  
 
