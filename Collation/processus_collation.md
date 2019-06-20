@@ -6,6 +6,9 @@ http://collatex.obdurodon.org/ Pour un tutoriel sur collatex pour python. On va 
 
 pour le passage entre xml et json. 
 progrès: j'ai réussi à transformer en un json valide; à faire une première collation et un export vers la TEI. comme prévu, on perd les xml:id. 
+
+Il faut écrire à Marjorie pour voir si cela marche. D'abord, faire les modifications qu'elle a suggérées dans notre rdv. 
+
 Un premier problème s'est posé dans la tokenisation: on perd aussi la ponctuation, trouver un moyen d'y remédier. 
 
 Un autre problème apparaît et semble plus important: la collation n'est pas terrible. Écrire à Elisa pour voir ce qu'elle en pense. Ce problème semble réglé avec la version python, plus à jour, qui propose un algorithme qui semble vraiment bon. 
@@ -13,7 +16,13 @@ Un autre problème apparaît et semble plus important: la collation n'est pas te
 À faire: compléter le script pour comprendre comment ça marche, transformer en JSON pour conserver les xml:id, voir un script pour transformer les JSON en xml d'apparat. En attendant, les fichiers XML produits permettent assez facilement de corriger les erreurs de transcription !
 
 
-Un troisième problème: retrouver le contexte marche quand on a une collation mot à mot (un item d'apparat = un mot), mais quand c'est plusieurs mots, comment faire ?  
+Un troisième problème: retrouver le contexte marche quand on a une collation mot à mot (un item d'apparat = un mot), mais quand c'est plusieurs mots, comment faire ?   En général, la collation prend maximum 2 mots dans un apparat. 
+
+
+**Mise à jour du 20 juin**: j'ai créé des scripts qui permettent de passer automatiquement du corpus xml à un apparat simple en xml, avec perte des xml:id pour l'instant. 
+J'ai utilisé dictxml pour voir comment transformer du json en xml. Ça marche, mais c'est moche. Il faudra probablement passer par un script python maison. 
+ 
+ **Reste à faire**: ajouter plus de témoins pour voir si collatex gère aussi bien. 
 
 
 créé le 15 janvier 2019. 
