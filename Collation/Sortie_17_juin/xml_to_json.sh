@@ -19,14 +19,14 @@ java -jar $oxygen -o:tmp/tmp.tmp temoins/groupe.xml ~/Bureau/These/Edition/Editi
 echo "collation automatique"
 for i in chapitres/chapitre*/collation.xml; do
 chemin=$(dirname "${i}")
-echo "transformation de $chemin/$i"
+echo "transformation en json"
 java -jar $oxygen -o:$chemin/collation.json $i ~/Bureau/These/Edition/Edition_Pseudojeriz/Collation/Sortie_17_juin/xsl/transformation_json.xsl
-echo "java -jar ~/bin/saxon9pe.jar -o:$chemin/collation.json $i ~/Bureau/These/Edition/Edition_Pseudojeriz/Collation/Sortie_17_juin/xsl/transformation_json.xsl"
+
+echo "collation du chapitre $chemin"
 cd $chemin
-echo "cd $chemin"
 echo "python3 ../../collation_python.py collation.json"
 python3 ../../collation_python.py collation.json
-cd ../..
-echo "collation !"; done
-# Création des fichiers d'apparat
+cd ../..; 
+done
+ Création des fichiers d'apparat
 
