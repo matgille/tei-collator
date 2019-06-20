@@ -21,3 +21,6 @@ resultat_json= collate(json.loads(entree_json1), output="json")
 sortie_json = open("apparat_collatex.json", "w")
 sortie_json.write(resultat_json)
 sortie_json.close()
+
+
+
