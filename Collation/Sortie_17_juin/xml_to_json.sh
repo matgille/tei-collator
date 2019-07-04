@@ -9,7 +9,13 @@ oxygen="/home/gille-levenson/bin/saxon9ee.jar"
 #java -jar "$oxygen" -o:temoins/groupe.xml $fichier_origine ~/Bureau/These/Edition/Edition_Pseudojeriz/Collation/Sortie_17_juin/xsl/tokenisation.xsl
 ## Nettoyage et tokénisation du corpus parallélisé
 
+# Message d'avertissement: il faut faire la tokénisation manuellement
 
+echo -n "Il n'est pas possible d'automatiser la tokénisation: il faut le faire depuis oxygen. Voulez-vous continuer ? [o/n]\n"
+read reponse
+
+if [ $reponse = "o" ]
+then
 # Scission du corpus en dossiers de chapitres
 echo "Création de dossiers par chapitre"
 java -jar $oxygen -o:tmp/tmp.tmp temoins/groupe.xml ~/Bureau/These/Edition/Edition_Pseudojeriz/Collation/Sortie_17_juin/xsl/scission_chapitres.xsl
@@ -28,5 +34,10 @@ echo "python3 ../../collation_python.py collation.json"
 python3 ../../collation_python.py collation.json
 cd ../..; 
 done
- Création des fichiers d'apparat
+#Création des fichiers d'apparat
 
+
+else
+        exit 0
+
+fi
