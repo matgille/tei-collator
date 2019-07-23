@@ -1,6 +1,6 @@
 #!bin/sh
 
-oxygen="/home/gille-levenson/bin/saxon9ee.jar"
+oxygen="/home/mgl/Desktop/these/hyperregimiento-de-los-principes/Collation/Sortie_17_juin/Saxon-HE-9.8.0-14.jar"
 
 # Nettoyage et tokénisation du corpus parallélisé
 ## !! Ne marche pas, la fonction de création d'identifiants uniques (java:java.util.UUID) suppose d'utiliser la GUI d'oxygen

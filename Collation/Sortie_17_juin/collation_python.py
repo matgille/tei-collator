@@ -1,3 +1,6 @@
+#!/usr/bin/env python 
+# -*- coding: utf-8 -*-
+
 import sys
 from collatex import *
 import json
@@ -13,7 +16,7 @@ entree_json0.close()
 # Export au format TEI (plus lisible)
 print("Collation au format TEI")
 resultat_tei= collate(json.loads(entree_json1), output="tei")
-sortie_tei = open("apparat_collatex.xml", "w")
+sortie_tei = open("apparat_collatex_tei.xml", "w")
 sortie_tei.write(resultat_tei)
 sortie_tei.close()
 
@@ -30,6 +33,21 @@ resultat_json= collate(json.loads(entree_json1), output="json")
 sortie_json = open("apparat_collatex.json", "w")
 sortie_json.write(resultat_json)
 sortie_json.close()
+# Le résultat de cette dernière transformation est une liste qui comprend elle-même une liste avec l'alignement. 
+# Les résultats de la collation ne sont pas directement visible: on a la liste A puis la liste B: il faut transformer le tout pour avoir un réel alignement. Voir http://collatex.obdurodon.org/xml-json-conversion.xhtml pour la structure du résultat. 
 
+# Étape suivante: transformer le JSON en xml. Pour cela on peut utiliser dict2xml. 
+print("Transformation du JSON en xml")
+sortie_xml=open("apparat_final.xml", "w+")
+fichier_json_a_xmliser=open('apparat_collatex.json').read()
+obj=json.loads(fichier_json_a_xmliser)
+# Transformation du JSON en XML
+vers_xml=dicttoxml.dicttoxml(obj)
+# Conversion de l'objet créé en chaîne de caractère (str)
+vers_xml=vers_xml.decode("utf-8") 
+sortie_xml.write(vers_xml)
+sortie_xml.close()
+
+# Dernière étape: retour à l'alignement. XSLT à construire. 
 
 
