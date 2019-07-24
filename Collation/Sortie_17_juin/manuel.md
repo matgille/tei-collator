@@ -28,8 +28,13 @@ sortie:collation.json
 
 ## Quatrième étape
 
-Collation avec du python
+Collation avec collatex. création de table d'alignement.
 
+
+
+## Cinquième étape
+
+Création des apparats avec du xslt. En cours. 
 
 
 

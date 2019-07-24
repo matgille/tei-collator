@@ -1,4 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!--étape 2: scission en chapitres.-->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs tei" version="2.0"
     xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xf="http://www.w3.org/2002/xforms"
@@ -16,7 +18,7 @@
         <xsl:for-each select="//tei:TEI[1]//tei:div[@type = 'chapitre'][not(@subtype)]">
             <xsl:variable name="numero_chapitre" select="@n"/>
             <xsl:result-document
-                href="file:/home/gille-levenson/Bureau/These/Edition/Edition_Pseudojeriz/Collation/Sortie_17_juin/chapitres/chapitre{@n}/collation.xml">
+                href="file:/../../Sortie_17_juin/chapitres/chapitre{@n}/collation.xml">
                 <xsl:element name="groupe">
                     <xsl:element name="temoin">
                         <xsl:attribute name="n">

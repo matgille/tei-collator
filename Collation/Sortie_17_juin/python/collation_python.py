@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import subprocess
 from collatex import *
 import json
 import dicttoxml
@@ -41,13 +42,11 @@ print("Transformation du JSON en xml")
 sortie_xml=open("apparat_final.xml", "w+")
 fichier_json_a_xmliser=open('apparat_collatex.json').read()
 obj=json.loads(fichier_json_a_xmliser)
+
 # Transformation du JSON en XML
 vers_xml=dicttoxml.dicttoxml(obj)
 # Conversion de l'objet créé en chaîne de caractère (str)
 vers_xml=vers_xml.decode("utf-8") 
 sortie_xml.write(vers_xml)
 sortie_xml.close()
-
-# Dernière étape: retour à l'alignement. XSLT à construire. 
-
 

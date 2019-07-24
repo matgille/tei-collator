@@ -1,3 +1,4 @@
+# Inutile
 import sys
 from collatex import *
 import json
