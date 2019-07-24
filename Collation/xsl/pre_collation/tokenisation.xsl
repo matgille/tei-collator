@@ -2,6 +2,8 @@
 
 <!--étape 1: tokeniser. Manque juste à extraire la ponctuation et à la conserver.-->
 <!--Feuille XSL qui permet d'ajouter des id à tous les mots après les avoir tokenisés.-->
+<!--à faire, URGENT: 1) nettoyer la feuille et 2) créer une sécurité pour ne pas perdre tout le travail en re-tokenisant
+avec de nouveaux xml:id-->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs tei" version="2.0"
     xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xf="http://www.w3.org/2002/xforms"
@@ -68,9 +70,10 @@
     <xsl:template match="text()[not(ancestor::tei:note)][not(ancestor::tei:teiHeader)]">
         <xsl:for-each select="tokenize(., '([.,!?;:]*)?\s+')">
             <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-                <xsl:attribute name="xml:id"> <xsl:variable name="uuid"
-                    select="substring-before(uuid:randomUUID(), '-')"/> a<xsl:value-of
-                    select="$uuid"/> </xsl:attribute>
+                <xsl:attribute name="xml:id">
+                    <xsl:variable name="uuid" select="substring-before(uuid:randomUUID(), '-')"/>
+                        a<xsl:value-of select="$uuid"/>
+                </xsl:attribute>
                 <xsl:value-of select="."/>
             </xsl:element>
         </xsl:for-each>

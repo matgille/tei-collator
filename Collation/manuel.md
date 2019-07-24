@@ -15,6 +15,8 @@ Peut-être pas en fait. Problème, toujours, d'homogénéité du corpus.
 
 Problèmes rencontrés: la ponctuation. 
 Je n'arrive pas à l'extraire correctement.
+La feuille tokenisation.xsl est pas propre du tout, à reprendre correctement pour avoir
+à la fin une copie de corpus.xml avec des token et des id.
 
 - xsl: tokenisation.xsl
 

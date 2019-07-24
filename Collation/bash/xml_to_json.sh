@@ -1,6 +1,6 @@
 #!bin/sh
 
-oxygen="../Saxon-HE-9.8.0-14.jar"
+oxygen="Saxon-HE-9.8.0-14.jar"
 
 # Nettoyage et tokénisation du corpus parallélisé
 ## !! Ne marche pas, la fonction de création d'identifiants uniques (java:java.util.UUID) suppose d'utiliser la GUI d'oxygen, ou il faut acheter une licence de saxon
@@ -19,21 +19,25 @@ if [ $reponse = "o" ]
 then
 # Scission du corpus en dossiers de chapitres
 echo "0 - Scission du corpus, création de dossiers et de fichiers par chapitre"
-java -jar $oxygen -o:../tmp/tmp.tmp ../temoins/groupe.xml ../xsl/pre_collation/scission_chapitres.xsl
-# Scission du corpus en dossiers de chapitres
+java -jar ../$oxygen -o:../tmp/tmp.tmp ../temoins/groupe.xml ../xsl/pre_collation/scission_chapitres.xsl
+ Scission du corpus en dossiers de chapitres
 
 # Création des fichiers d'apparat
 echo "I - collation automatique"
-for i in ../chapitres/chapitre*/juxtaposition.xml; do
+cd ..
+for i in chapitres/chapitre*/juxtaposition.xml; do
 chemin=$(dirname "${i}")
-echo "I.1 transformation en json"
-java -jar $oxygen -o:$chemin/juxtaposition.json $i ../xsl/pre_collation/transformation_json.xsl
+echo "\n\nI.1 transformation en json"
+java -jar $oxygen -o:$chemin/juxtaposition.json $i xsl/pre_collation/transformation_json.xsl
 
-echo "I.2 collation du chapitre $chemin"
+echo "\n\nI.2 collation du chapitre $chemin"
 cd $chemin
 echo "python3 ../../python/collation_python.py juxtaposition.json"
-python3 ../../python/collation_python.py juxtaposition.json
-cd ../..; 
+python3 ../../python/collation_python.py juxtaposition.json;
+echo "Nettoyage du dossier\n\n\n"
+rm juxtaposition.json
+rm alignement_collatex.json
+cd ../../; 
 
 
 done

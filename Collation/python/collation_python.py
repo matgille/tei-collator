@@ -52,9 +52,9 @@ sortie_xml.close()
 
 # Passage de la table d'alignement à l'apparat
 print("Création des apparats")
-subprocess.run(["java","-jar", "Saxon-HE-9.8.0-14.jar", "-o:apparat_final0.xml", "alignement_collatex.xml", "xsl/post_collation/apparat0.xsl"])
+subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final0.xml", "alignement_collatex.xml", "../../xsl/post_collation/apparat0.xsl"])
 
 
 #AF Suppression de la redondance
-# subprocess.run(["java","-jar", "Saxon-HE-9.8.0-14.jar", "-o:apparat_final.xml", "apparat_final0.xml", "xsl/post_collation/apparat.xsl"])
+# subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final.xml", "apparat_final0.xml", "../../xsl/post_collation/apparat.xsl"])
 
