@@ -2,39 +2,55 @@
 
 Le script xml_to_json fait tout ça automatiquement (sauf la première étape)
 Voir ce script pour plus de détails. 
-## Première étape
 
-Tokénisation du corpus
-xsl: tokenisation.xsl
-xml: corpus.xml
-sortie:groupe.xml
+## Étape 0
 
-## Deuxième étape
-
-Création des fichiers de chapitre
-xsl:scission_chapitres.xsl
-xml: groupe.xml
-sortie: collation.xml
+Travail de régularisation des textes. Pas encore trop fait. 
+Question: sur quoi comparer ? Des tokens régularisés ou pas ?
+Peut-être pas en fait. Problème, toujours, d'homogénéité du corpus.
 
 
-## Troisième étape
+## Première étape. Tokénisation du corpus
 
-Pour l'instant il faut le faire chapitre par chapitre. 
 
-Transformation en JSON
-xsl:transformation_json.xsl
-xml:collation.xml
-sortie:juxtaposition.json
+Problèmes rencontrés: la ponctuation. 
+Je n'arrive pas à l'extraire correctement.
 
-## Quatrième étape
+- xsl: tokenisation.xsl
 
-Collation avec collatex. création de table d'alignement.
+- xml: corpus.xml
+
+- sortie:groupe.xml
+
+## Deuxième étape. Création des fichiers de chapitre
 
 
 
-## Cinquième étape
+- xsl:scission_chapitres.xsl
 
-Création des apparats avec du xslt. En cours. 
+- xml: groupe.xml
+
+- sortie: collation.xml
+
+
+## Troisième étape. Transformation en JSON
+
+
+- xsl:transformation_json.xsl
+
+- xml:collation.xml
+
+- sortie:juxtaposition.json
+
+## Quatrième étape. Collation avec collatex.
+
+ Crée une table d'alignement.
+
+
+
+## Cinquième étape. Création des apparats
+
+ Avec du xslt. En cours. 
 
 
 
