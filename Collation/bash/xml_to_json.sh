@@ -24,23 +24,17 @@ java -jar $oxygen -o:../tmp/tmp.tmp ../temoins/groupe.xml ../xsl/pre_collation/s
 
 # Création des fichiers d'apparat
 echo "I - collation automatique"
-for i in ../chapitres/chapitre*/collation.xml; do
+for i in ../chapitres/chapitre*/juxtaposition.xml; do
 chemin=$(dirname "${i}")
 echo "I.1 transformation en json"
-java -jar $oxygen -o:$chemin/collation.json $i ../xsl/pre_collation/transformation_json.xsl
+java -jar $oxygen -o:$chemin/juxtaposition.json $i ../xsl/pre_collation/transformation_json.xsl
 
 echo "I.2 collation du chapitre $chemin"
 cd $chemin
-echo "python3 ../../python/collation_python.py collation.json"
-python3 ../../python/collation_python.py collation.json
+echo "python3 ../../python/collation_python.py juxtaposition.json"
+python3 ../../python/collation_python.py juxtaposition.json
 cd ../..; 
 
-echo "II - production de l'apparat"
-echo "II.1 Premier alignement"  
-java -jar $oxygen -o:$chemin/apparat_final1.xml $chemin/apparat_final.xml ../xsl/post_collation/apparat0.xsl
-
-#AF echo "II.2 Suppression de la redondance"
-#AF java -jar $oxygen -o:$chemin/apparat_final.xml $chemin/apparat_final1.xml ../xsl/post_collation/apparat1.xsl
 
 done
 

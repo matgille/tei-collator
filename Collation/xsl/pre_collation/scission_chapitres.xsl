@@ -18,7 +18,7 @@
         <xsl:for-each select="//tei:TEI[1]//tei:div[@type = 'chapitre'][not(@subtype)]">
             <xsl:variable name="numero_chapitre" select="@n"/>
             <xsl:result-document
-                href="file:/../../Sortie_17_juin/chapitres/chapitre{@n}/collation.xml">
+                href="file:/../../Sortie_17_juin/chapitres/chapitre{@n}/juxtaposition.xml">
                 <xsl:element name="groupe">
                     <xsl:element name="temoin">
                         <xsl:attribute name="n">

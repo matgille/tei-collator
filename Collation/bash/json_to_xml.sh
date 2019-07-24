@@ -6,7 +6,7 @@
 echo "Transformation des fichiers json en fichiers xml"
 
 # Appel du script transformation_xml_json.py
-for i in chapitres/chapitre*/apparat_collatex.json; do
+for i in chapitres/chapitre*/alignement_collatex.json; do
 chemin=$(dirname "${i}")
 nom_fichier=$(basename -- "$i")
 echo "transformation de $chemin/$i"

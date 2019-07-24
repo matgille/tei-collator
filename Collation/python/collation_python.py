@@ -15,32 +15,32 @@ entree_json1 = entree_json0.read()
 entree_json0.close()
 
 # Export au format TEI (plus lisible)
-print("Collation au format TEI")
-resultat_tei= collate(json.loads(entree_json1), output="tei")
-sortie_tei = open("apparat_collatex_tei.xml", "w")
-sortie_tei.write(resultat_tei)
-sortie_tei.close()
+#print("Collation au format TEI")
+#resultat_tei= collate(json.loads(entree_json1), output="tei")
+#sortie_tei = open("apparat_collatex_tei.xml", "w")
+#sortie_tei.write(resultat_tei)
+#sortie_tei.close()
 
-# Export au format HTML2 (voir les résultats) [ne marche pas]
+#Export au format HTML2 (voir les résultats) [ne marche pas]
 #print("Collation au format HTML")
 #resultat_html= collate(json.loads(entree_json1), output="html")
-#sortie_html = open("apparat_collatex.html", "w")
+#sortie_html = open("alignement_collatex.html", "w")
 #sortie_html.write(resultat_html)
 #sortie_html.close()
 
 # Export au format JSON (permet de conserver les xml:id)
 print("Collation au format JSON")
 resultat_json= collate(json.loads(entree_json1), output="json")
-sortie_json = open("apparat_collatex.json", "w")
+sortie_json = open("alignement_collatex.json", "w")
 sortie_json.write(resultat_json)
 sortie_json.close()
-# Le résultat de cette dernière transformation est une liste qui comprend elle-même une liste avec l'alignement. 
 # Les résultats de la collation ne sont pas directement visible: on a la liste A puis la liste B: il faut transformer le tout pour avoir un réel alignement. Voir http://collatex.obdurodon.org/xml-json-conversion.xhtml pour la structure du résultat. 
+# Le résultat de cette dernière transformation est une liste qui comprend elle-même une liste avec l'alignement. 
 
 # Étape suivante: transformer le JSON en xml. Pour cela on peut utiliser dict2xml. 
 print("Transformation du JSON en xml")
-sortie_xml=open("apparat_final.xml", "w+")
-fichier_json_a_xmliser=open('apparat_collatex.json').read()
+sortie_xml=open("alignement_collatex.xml", "w+")
+fichier_json_a_xmliser=open('alignement_collatex.json').read()
 obj=json.loads(fichier_json_a_xmliser)
 
 # Transformation du JSON en XML
@@ -49,4 +49,12 @@ vers_xml=dicttoxml.dicttoxml(obj)
 vers_xml=vers_xml.decode("utf-8") 
 sortie_xml.write(vers_xml)
 sortie_xml.close()
+
+# Passage de la table d'alignement à l'apparat
+print("Création des apparats")
+subprocess.run(["java","-jar", "Saxon-HE-9.8.0-14.jar", "-o:apparat_final0.xml", "alignement_collatex.xml", "xsl/post_collation/apparat0.xsl"])
+
+
+#AF Suppression de la redondance
+# subprocess.run(["java","-jar", "Saxon-HE-9.8.0-14.jar", "-o:apparat_final.xml", "apparat_final0.xml", "xsl/post_collation/apparat.xsl"])
 

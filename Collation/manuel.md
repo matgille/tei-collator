@@ -24,7 +24,7 @@ Pour l'instant il faut le faire chapitre par chapitre.
 Transformation en JSON
 xsl:transformation_json.xsl
 xml:collation.xml
-sortie:collation.json
+sortie:juxtaposition.json
 
 ## Quatrième étape
 
