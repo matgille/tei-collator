@@ -1,7 +1,7 @@
 # Collation semi-automatisée: manuel
 
 Le script xml_to_json fait tout ça automatiquement (sauf la première étape)
-
+Voir ce script pour plus de détails. 
 ## Première étape
 
 Tokénisation du corpus
