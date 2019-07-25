@@ -65,7 +65,7 @@
     <xsl:template match="texte/app[1]/rdg">
         <xsl:variable name="position" select="count(preceding-sibling::rdg) + 1"/>
         <tr>
-            <th>
+            <th style="position:fixed;">
                 <xsl:value-of select="@wit"/>
             </th>
             <td class="fitwidth">
