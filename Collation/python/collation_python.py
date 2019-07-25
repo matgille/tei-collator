@@ -21,12 +21,6 @@ entree_json0.close()
 #sortie_tei.write(resultat_tei)
 #sortie_tei.close()
 
-#Export au format HTML2 (voir les résultats) [ne marche pas]
-#print("Collation au format HTML")
-#resultat_html= collate(json.loads(entree_json1), output="html")
-#sortie_html = open("alignement_collatex.html", "w")
-#sortie_html.write(resultat_html)
-#sortie_html.close()
 
 # Export au format JSON (permet de conserver les xml:id)
 print("Collation au format JSON")
@@ -50,11 +44,16 @@ vers_xml=vers_xml.decode("utf-8")
 sortie_xml.write(vers_xml)
 sortie_xml.close()
 
+# Création du tableau d'alignement
+print("Création du tableau d'alignement")
+subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:tableau_alignement.html", "apparat_final0.xml", "../../xsl/post_alignement/tableau_alignement.xsl"])
+
+
 # Passage de la table d'alignement à l'apparat
 print("Création des apparats")
-subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final0.xml", "alignement_collatex.xml", "../../xsl/post_collation/apparat0.xsl"])
+subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final0.xml", "alignement_collatex.xml", "../../xsl/post_alignement/apparat0.xsl"])
 
 
 #AF Suppression de la redondance
-# subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final.xml", "apparat_final0.xml", "../../xsl/post_collation/apparat.xsl"])
+# subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final.xml", "apparat_final0.xml", "../../xsl/post_alignement/apparat.xsl"])
 

@@ -1,6 +1,9 @@
 # Collation semi-automatisée: manuel
 
-Le script xml_to_json fait tout ça automatiquement (sauf la première étape)
+Ce document présente le fonctionnement du répertoire Collation qui permet une collation 
+semi-automatisée des transcriptions individuelles du Regimiento. 
+
+Le script xml_to_json.sh permet d'automatiser le processus complet (sauf la première étape)
 Voir ce script pour plus de détails. 
 
 ## Étape 0
@@ -17,6 +20,7 @@ Problèmes rencontrés: la ponctuation.
 Je n'arrive pas à l'extraire correctement.
 La feuille tokenisation.xsl est pas propre du tout, à reprendre correctement pour avoir
 à la fin une copie de corpus.xml avec des token et des id.
+## 
 
 - xsl: tokenisation.xsl
 
