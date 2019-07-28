@@ -13,7 +13,7 @@ avec de nouveaux xml:id-->
 
 
     <xsl:template match="/">
-        <xsl:result-document href="../Sortie_17_juin/temoins/groupe.xml">
+        <xsl:result-document href="../temoins/groupe.xml">
             <xsl:element name="group">
                 <xsl:apply-templates xpath-default-namespace="tei"/>
             </xsl:element>

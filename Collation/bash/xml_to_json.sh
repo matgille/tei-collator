@@ -1,5 +1,5 @@
 #!bin/sh
-
+# Script à lancer depuis le répertoire bash. 
 oxygen="Saxon-HE-9.8.0-14.jar"
 
 # Nettoyage et tokénisation du corpus parallélisé
@@ -18,8 +18,8 @@ read reponse
 if [ $reponse = "o" ]
 then
 # Scission du corpus en dossiers de chapitres
-echo "0 - Scission du corpus, création de dossiers et de fichiers par chapitre"
-java -jar ../$oxygen -o:../tmp/tmp.tmp ../temoins/groupe.xml ../xsl/pre_alignement/scission_chapitres.xsl
+#echo "0 - Scission du corpus, création de dossiers et de fichiers par chapitre"
+#java -jar ../$oxygen -o:../tmp/tmp.tmp ../temoins/groupe.xml ../xsl/pre_alignement/scission_chapitres.xsl
 
 
 # Création des fichiers d'apparat

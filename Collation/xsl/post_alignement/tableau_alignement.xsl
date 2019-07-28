@@ -5,7 +5,7 @@
     <!--Je suis parti pour gagner du temps d'une base de David Birnbaum 
         ici: http://collatex.obdurodon.org/xml-json-conversion.xhtml-->
 
-    <xsl:output method="xml" indent="yes" doctype-system="about:legacy-compat"/>
+    <xsl:output method="html" indent="yes" doctype-system="about:legacy-compat"/>
     <xsl:strip-space elements="*"/>
     <xsl:template match="/">
         <html>
@@ -13,7 +13,7 @@
                 <title>Tableau d'alignement</title>
 
 
-                <style type="text/css">
+                <style>
                     /* https://www.textfixer.com/tutorials/css-table-color-columns.php */
                     table {
                         width: 100%;
@@ -71,7 +71,7 @@
             <td class="fitwidth">
                 <xsl:value-of select="rdg/w"/>
                 <xsl:if test="rdg/om">
-                    <i>ommisit</i>
+                    <i>omisit</i>
                 </xsl:if>
             </td>
         </tr>
@@ -80,7 +80,7 @@
                 <td class="fitwidth">
                     <xsl:value-of select="w"/>
                     <xsl:if test="om">
-                        <i>ommisit</i>
+                        <i>omisit</i>
                     </xsl:if>
                 </td>
             </xsl:for-each>

@@ -53,7 +53,7 @@ subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:tableau_aligne
 print("Création des apparats")
 subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final0.xml", "alignement_collatex.xml", "../../xsl/post_alignement/apparat0.xsl"])
 
+#Suppression de la redondance
+subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final.json", "apparat_final0.xml", "../../xsl/post_alignement/creation_apparat.xsl"])
 
-#AF Suppression de la redondance
-# subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final.xml", "apparat_final0.xml", "../../xsl/post_alignement/apparat.xsl"])
-
+subprocess.run(["python3", "../../python/apparat.py", "apparat_final.json"])
