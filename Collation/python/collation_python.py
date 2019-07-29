@@ -23,7 +23,7 @@ entree_json0.close()
 
 
 # Export au format JSON (permet de conserver les xml:id)
-print("Collation au format JSON")
+print("Alignement au format JSON")
 resultat_json= collate(json.loads(entree_json1), output="json")
 sortie_json = open("alignement_collatex.json", "w")
 sortie_json.write(resultat_json)
