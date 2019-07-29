@@ -7,7 +7,7 @@ from collatex import *
 import json
 import dicttoxml
 collation=Collation()
-
+# Le fichier doit être au format JSON
 fichier_a_collationer=sys.argv[1]
 
 entree_json0 = open(fichier_a_collationer, "r") # ouvrir le fichier en mode lecture et le mettre dans une variable
@@ -44,16 +44,22 @@ vers_xml=vers_xml.decode("utf-8")
 sortie_xml.write(vers_xml)
 sortie_xml.close()
 
-# Création du tableau d'alignement
-print("Création du tableau d'alignement")
-subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:tableau_alignement.html", "apparat_final0.xml", "../../xsl/post_alignement/tableau_alignement.xsl"])
 
-
-# Passage de la table d'alignement à l'apparat
+# Regroupement des lieux variants (témoin A puis témoin B puis témoin C 
+# > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
 print("Création des apparats")
-subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final0.xml", "alignement_collatex.xml", "../../xsl/post_alignement/apparat0.xsl"])
+subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:aligne_regroupe.xml", "alignement_collatex.xml", "../../xsl/post_alignement/regroupement.xsl"])
 
-#Suppression de la redondance
-subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final.json", "apparat_final0.xml", "../../xsl/post_alignement/creation_apparat.xsl"])
+# Création du tableau d'alignement pour visualisation
+# print("Création du tableau d'alignement")
+#subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:tableau_alignement.html", "aligne_regroupe.xml", "../../xsl/post_alignement/tableau_alignement.xsl"])
 
+
+# C'est à ce niveau que l'étape de correction devrait avoir lieu. Y réfléchir.
+
+# Création de l'apparat: transformation de aligne_regroupe.xml en JSON
+subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:apparat_final.json", "aligne_regroupe.xml", "../../xsl/post_alignement/creation_apparat.xsl"])
+
+# Création de l'apparat: suppression de la redondance, identification des lieux variants, 
+# regroupement des lemmes
 subprocess.run(["python3", "../../python/apparat.py", "apparat_final.json"])

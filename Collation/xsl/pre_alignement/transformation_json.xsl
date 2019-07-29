@@ -27,7 +27,7 @@
             <xsl:text>{"t": "</xsl:text>
             <xsl:value-of select="."/>
             <xsl:text> " ,</xsl:text>
-            <xsl:text>"xmlid" : "</xsl:text>
+            <xsl:text>"xml:id" : "</xsl:text>
             <xsl:value-of select="@xml:id"/>
             <xsl:text>"}</xsl:text>
             <xsl:variable name="nom_temoin" select="ancestor::temoin/@n"/>

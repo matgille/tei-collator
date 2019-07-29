@@ -56,7 +56,7 @@
                         <xsl:for-each select="item">
                             <xsl:element name="w">
                                 <xsl:attribute name="xml:id">
-                                    <xsl:value-of select="descendant::xmlid"/>
+                                    <xsl:value-of select="descendant::xml:id"/>
                                 </xsl:attribute>
                                 <xsl:value-of select="descendant::t"/>
                             </xsl:element>
@@ -96,7 +96,7 @@
                             <xsl:for-each select="item">
                                 <xsl:element name="w">
                                     <xsl:attribute name="xml:id">
-                                        <xsl:value-of select="descendant::xmlid"/>
+                                        <xsl:value-of select="descendant::xml:id"/>
                                     </xsl:attribute>
                                     <xsl:value-of select="descendant::t"/>
                                 </xsl:element>
