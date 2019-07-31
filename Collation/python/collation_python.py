@@ -153,7 +153,7 @@ def main(fichier_a_collationer):
 
     # Export au format TEI (plus lisible)
     def collation_tei():
-        with Halo(text = 'Collation au format TEI', spinner='dots'):
+        with Halo(text = 'Collation au format TEI - CollateX', spinner='dots'):
             resultat_tei = collate(json.loads(entree_json1), output="tei")
             sortie_tei = open("apparat_collatex_tei.xml", "w")
             sortie_tei.write(resultat_tei)
@@ -162,12 +162,12 @@ def main(fichier_a_collationer):
 
     # Export au format JSON (permet de conserver les xml:id)
     def alignement_json():
-        with Halo(text = 'Alignement au format JSON', spinner='dots'):
+        with Halo(text = 'Alignement CollateX', spinner='dots'):
             resultat_json = collate(json.loads(entree_json1), output="json")
             sortie_json = open("alignement_collatex.json", "w")
             sortie_json.write(resultat_json)
             sortie_json.close()
-
+        print("Alignement CollateX ✓")
     alignement_json()
     # Les résultats de la collation ne sont pas directement visibles: on a la liste A puis la liste B: il faut transformer le tout pour avoir un réel alignement. Voir http://collatex.obdurodon.org/xml-json-conversion.xhtml pour la structure du résultat. 
     # Le résultat de cette dernière transformation est une liste qui comprend elle-même une liste avec l'alignement. 
@@ -193,14 +193,15 @@ def main(fichier_a_collationer):
     
         apparat("apparat_final.json")
         #subprocess.run(["python3", "../../python/apparat.py", "apparat_final.json"])
-
+    print("Création des apparats ✓")
 
 
     # Réinjection des apparats. Ne marche pas pour l'instant.
     with Halo(text = 'Injection des apparats dans chaque transcription individuelle', spinner='dots'):
         subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:sortie_finale.xml", "juxtaposition.xml", "../../xsl/post_alignement/injection_apparats.xsl", "chapitre=3"])
-
+    print("Injection des apparats dans chaque transcription individuelle ✓")
 
     # Création du tableau d'alignement pour visualisation
     with Halo(text = 'Création du tableau d\'alignement', spinner='dots'):
         subprocess.run(["java","-jar", "../../Saxon-HE-9.8.0-14.jar", "-o:tableau_alignement.html", "aligne_regroupe.xml", "../../xsl/post_alignement/tableau_alignement.xsl"])
+    print("Création du tableau d\'alignement ✓")
