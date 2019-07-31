@@ -10,25 +10,25 @@ oxygen="Saxon-HE-9.8.0-14.jar"
 
 
 # Scission du corpus en dossiers de chapitres
-echo "0 - Scission du corpus, création de dossiers et de fichiers par chapitre"
+echo "Scission du corpus, création de dossiers et de fichiers par chapitre"
 java -jar ../$oxygen -o:../tmp/tmp.tmp ../temoins/groupe.xml ../xsl/pre_alignement/scission_chapitres.xsl
 
 
 # Création des fichiers d'apparat
-echo "I - alignement automatique"
+echo "Alignement automatique par chapitre"
 cd ..
-for i in {2..23}; do 
+for i in {3..3}; do 
 
 
 chemin=$(dirname "chapitres/chapitre${i}/juxtaposition.xml")
-echo "I.1 transformation en json"
+echo "Transformation en json"
 java -jar $oxygen -o:$chemin/juxtaposition.json $chemin/juxtaposition.xml xsl/pre_alignement/transformation_json.xsl
 
-echo "I.2 collation du chapitre $chemin"
+echo "Collation du chapitre $chemin"
 cd $chemin
 echo "python3 ../../python/collation_python.py juxtaposition.json"
 python3 ../../python/collation_python.py juxtaposition.json;
-echo "Nettoyage du dossier\n\n"
+echo "Nettoyage du dossier"
 rm juxtaposition.json
 rm alignement_collatex.json
 cd ../../; 
