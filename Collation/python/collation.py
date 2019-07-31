@@ -46,7 +46,7 @@ for i in range(3,5):
     
     with Halo(text = "Nettoyage du dossier", spinner='dots'):
         os.remove("juxtaposition.json")
-        os.remove("alignement_collatex.json")
+        os.remove("alignement_collatex.json")   
         os.chdir("../../")
     print("Fait!")
 
