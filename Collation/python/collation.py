@@ -12,7 +12,7 @@ import dicttoxml
 
 
 # S'il y a un argument, un fichier à traiter, passer directement à l'alignement
-if len(sys.argv) > 1:
+if type(sys.argv[1]) is str:
     argument = sys.argv[1]
     if argument.endswith('.json'):
         saxon = input("Veuillez indiquer l'emplacement absolu de votre moteur de transformation saxon.\n")
@@ -26,9 +26,16 @@ if len(sys.argv) > 1:
         collation_python.tableau_alignement(saxon,chemin_xsl)        
         collation_python.nettoyage()
         
+        
+     
 
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.      
-else:
+if len(sys.argv[1]) < 1 or type(int(sys.argv[1])) is int:
+    if type(int(sys.argv[1])) is int:#Vérifier si c'est convertible en entier
+        arg_plus_1 = int(argument) + 1
+        portee = range(int(argument), arg_plus_1)
+    if len(sys.argv[1]) < 1:
+        portee = range(3,24)
     saxon = "/Users/squatteur/Desktop/These/hyperregimiento-de-los-principes/Collation/Saxon-HE-9.8.0-14.jar"
     chemin_xsl = "../../"
     # Nettoyage et tokénisation du corpus parallélisé.
@@ -46,7 +53,7 @@ else:
     # Création des fichiers d'apparat
     #with Halo(text='Alignement automatique par chapitre', spinner='dots'):
     os.chdir("..")
-    for i in range(3,24):
+    for i in portee:
         chemin = "chapitres/chapitre" + str(i)
         print("Traitement du chapitre " + str(i))
         output_fichier_json = "-o:"+ chemin + "/juxtaposition.json"

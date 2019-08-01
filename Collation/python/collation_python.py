@@ -138,7 +138,7 @@ def apparat_final(fichier_entree):
                             i.tail=lecon_depart
                 
             # C'est ici que l'on pourrait faire intervenir le lemmatiseur 
-            # et le POS, pour créer des apparats de diverses sortes 
+            # et le POS, pour créer typer les apparats voire en créer de diverses sortes 
             # (linguistiques, etc). 
                         
                 else:# Si les leçons sont différentes: étape 2
