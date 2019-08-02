@@ -6,8 +6,11 @@
     de manière à pouvoir créer des éditions ayant pour base chacun des manuscrits-->
     <!--ÀF: s'occuper du namespace (feuilles de transformation précédentes)-->
     <!--ÀF: trouver une façon de gérer les omissions du témoin base-->
-    <!--Les chemins ne marchent pas. Revoir le tout...-->
-    <xsl:param name="chapitre" select="3"/>
+    <!--Question importate sur l'injection: pour un sic par exemple dans un lieu variant, 
+    vaut-il mieux créer un apparat enfant du <sic> ou re-créer des <sic> dans les <rdg> ? La seconde
+    option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir-->
+   
+    <xsl:param name="chapitre"/>
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="no">
             <xsl:apply-templates select="@* | node()"/>
@@ -30,27 +33,22 @@
     <xsl:template match="*:w">
         <xsl:variable name="ms" select="ancestor::*:temoin/@n"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
-        <xsl:variable name="guillemets">'</xsl:variable>
-        <xsl:variable name="chapitre_courant"
-            select="concat('.?select=file:/Users/Desktop/These/hyperregimiento-de-los-principes/Collation/chapitres/chapitre', $chapitre, '/apparat_collatex.*')"/>
-        <xsl:if test="not(collection($chapitre_courant))">
-            <xsl:comment> Ça existe pas.<xsl:value-of select="$chapitre_courant"/></xsl:comment>
-        </xsl:if>
+        <xsl:variable name="apparat_chapitre"
+            select="concat('../../chapitres/chapitre',$chapitre, '/apparat_collatex.xml')"/>
         <xsl:if
-            test="collection(concat('.?select=../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml'))//*:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]">
+            test="document($apparat_chapitre)//*:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]">
             <!--Tester si le token est pas déjà dans un apparat qui touche le token précédent: suppression des doublons-->
             <xsl:variable name="token_precedent" select="preceding::*:w[1]/@xml:id"/>
-            <xsl:comment><xsl:value-of select="$token_precedent"/></xsl:comment>
             <xsl:if
-                test="not(contains(collection(concat('.?select=../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml'))//*:rdg[contains(@wit, $ms)][contains(@xml:id, $xml_id)]/@xml:id, $token_precedent))">
+                test="not(contains(document($apparat_chapitre)//*:rdg[contains(@wit, $ms)][contains(@xml:id, $xml_id)]/@xml:id, $token_precedent))">
                 <xsl:copy-of
-                    select="collection(concat('.?select=../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml'))//*:app[child::*:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]]"
+                    select="document($apparat_chapitre)//*:app[child::*:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]]"
                 />
             </xsl:if>
             <!--Tester si le token est pas déjà dans un apparat qui touche le token précédent-->
         </xsl:if>
         <xsl:if
-            test="not(collection(concat('.?select=../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml'))//*:rdg[contains(@wit, $ms)][contains(@xml:id, $xml_id)])">
+            test="not(document($apparat_chapitre)//*:rdg[contains(@wit, $ms)][contains(@xml:id, $xml_id)])">
             <xsl:copy-of select="."/>
         </xsl:if>
     </xsl:template>
