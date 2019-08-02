@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 
-<!--Feuille XSL qui permet d'ajouter des id à tous les mots après les avoir tokenisés.-->
+<!--Feuille XSL qui permet de tokeniser la source.-->
 <!--étape 1: tokeniser.-->
 <!--Reste à gérer la ponctuation (seule est conservée celle qui finit un noeud comme un p), 
     les mots coupés par des balises.-->
@@ -9,7 +9,6 @@ et un niveau où on élimine le bruit (choix des choice, etc). Sinon, on perd de
 <!--à faire, URGENT: 1) nettoyer la feuille et 2) créer une sécurité pour ne pas perdre tout le travail en re-tokenisant
 avec de nouveaux xml:id. Faire une feuille de comparaison: si le token existe, ne pas recréer un identifiant par exemple, 
 simplement actualiser le texte -->
-<!--Remplacer la fonction d'ajout des identifiants uniques par une ligne dans python. -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs tei" version="2.0"
     xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xf="http://www.w3.org/2002/xforms"
@@ -75,11 +74,25 @@ simplement actualiser le texte -->
         </xsl:analyze-string>-->
     </xsl:template>
 
+
+    <!--On procède en deux temps: d'abord, tokeniser avec espace comme séparateur. Puis on analyse la chaîne produite
+    et on en extrait la ponctuation-->
+    <!--Pour l'instant la ponctuation n'est pas prise en compte dans la collation, étant donné qu'hormis l'incunable, elle
+    est de mon fait.-->
     <xsl:template match="text()[not(ancestor::tei:note)][not(ancestor::tei:teiHeader)]">
-        <xsl:for-each select="tokenize(., '([.,!?;:]*)?\s+')">
-            <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-                <xsl:value-of select="."/>
-            </xsl:element>
+        <xsl:for-each select="tokenize(., '\s+')">
+            <xsl:analyze-string select="." regex="([:,;¿?.])">
+                <xsl:matching-substring>
+                    <xsl:element name="pct" namespace="http://www.tei-c.org/ns/1.0">
+                        <xsl:value-of select="regex-group(1)"/>
+                    </xsl:element>
+                </xsl:matching-substring>
+                <xsl:non-matching-substring>
+                    <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
+                        <xsl:value-of select="."/>
+                    </xsl:element>
+                </xsl:non-matching-substring>
+            </xsl:analyze-string>
         </xsl:for-each>
     </xsl:template>
 
