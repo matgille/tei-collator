@@ -8,8 +8,28 @@ from collatex import *
 from halo import Halo
 import json
 import dicttoxml
+import random
+import string
+
+def generateur_lettre_initiale(size=1, chars = string.ascii_lowercase):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+def generateur_id(size=4, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
+    return generateur_lettre_initiale() + ''.join(random.choice(chars) for _ in range(size))
 
 
+def ajout_xmlid(fichier_entree, fichier_sortie):
+    tei = {'tei':'http://www.tei-c.org/ns/1.0'}
+    f = etree.parse(fichier_entree)
+    root = f.getroot()
+    tokens = root.xpath("//tei:w", namespaces=tei)
+    for w in tokens:
+        w.set("{http://www.w3.org/XML/1998/namespace}id", generateur_id())
+    sortie_xml = open(fichier_sortie, "w+")
+    string = etree.tostring(root, pretty_print=True,encoding='utf-8', xml_declaration=True).decode('utf8')
+    sortie_xml.write(str(string))
+    sortie_xml.close()           
+                
 
 def alignement(fichier_a_collationer, saxon, chemin_xsl):
     """
