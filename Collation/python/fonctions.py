@@ -29,7 +29,27 @@ def ajout_xmlid(fichier_entree, fichier_sortie):
     string = etree.tostring(root, pretty_print=True,encoding='utf-8', xml_declaration=True).decode('utf8')
     sortie_xml.write(str(string))
     sortie_xml.close()           
-                
+
+# Attention à l'option -xi:(on|off) de saxon pour activer Xinclude le cas échéant 
+def tokenisation(saxon):
+    with Halo(text = 'Tokénisation du corpus parallélisé.', spinner='dots'):
+        subprocess.run(["java","-jar", saxon, "-xi:on", "../../Dedans/XML/corpus/corpus.xml", "../xsl/pre_alignement/tokenisation.xsl"])
+        ajout_xmlid("../temoins/groupe.xml", "../temoins/groupe-xmlise.xml")
+    print("Tokénisation du corpus ✓")                
+
+def scission_corpus(saxon):
+    with Halo(text = 'Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
+        subprocess.run(["java","-jar", saxon, "-o:../tmp/tmp.tmp", "../temoins/groupe-xmlise.xml", "../xsl/pre_alignement/scission_chapitres.xsl"])
+    print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
+
+
+# Étape avant la collation: transformation en json selon la structure voulue par CollateX.
+# Voir https://collatex.net/doc/#json-input
+def transformation_json(saxon, output_fichier_json, intput_fichier_xml):
+    with Halo(text = 'Transformation en json', spinner='dots'):
+        subprocess.run(["java","-jar", saxon, output_fichier_json, intput_fichier_xml, "xsl/pre_alignement/transformation_json.xsl"])
+    print("Transformation en json pour alignement ✓")  
+
 
 def alignement(fichier_a_collationer, saxon, chemin_xsl):
     """
@@ -69,8 +89,8 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
     # Les résultats de la collation ne sont pas directement visibles: on a la liste A puis la liste B: il faut transformer le tout pour avoir un réel alignement. Voir http://collatex.obdurodon.org/xml-json-conversion.xhtml pour la structure du résultat. 
     # Le résultat de cette dernière transformation est une liste qui comprend elle-même une liste avec l'alignement. 
 
-
-    with Halo(text = 'Création des apparats avant traitement', spinner='dots'):
+    # Création des apparats proprement dite: on compare les lieux variants et on réduit les app.
+    with Halo(text = 'Création des apparats', spinner='dots'):
         # Étape suivante: transformer le JSON en xml. Pour cela on peut utiliser dict2xml. 
         sortie_xml = open("alignement_collatex.xml", "w+")
         fichier_json_a_xmliser=open('alignement_collatex.json').read()
@@ -81,14 +101,14 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
         sortie_xml.close()
         
         chemin_regroupement = chemin_xsl + "xsl/post_alignement/regroupement.xsl"
-        chemin_apparat = chemin_xsl + "xsl/post_alignement/creation_apparat.xsl"
+        chemin_xsl_apparat = chemin_xsl + "xsl/post_alignement/creation_apparat.xsl"
         # Regroupement des lieux variants (témoin A puis témoin B puis témoin C 
         # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
         subprocess.run(["java","-jar", saxon, "-o:aligne_regroupe.xml", "alignement_collatex.xml", chemin_regroupement])
         
         # C'est à ce niveau que l'étape de correction devrait avoir lieu. Y réfléchir.    
         # Création de l'apparat: transformation de aligne_regroupe.xml en JSON
-        subprocess.run(["java","-jar", saxon, "-o:apparat_final.json", "aligne_regroupe.xml", chemin_apparat])
+        subprocess.run(["java","-jar", saxon, "-o:apparat_final.json", "aligne_regroupe.xml", chemin_xsl_apparat])
         # Création de l'apparat: suppression de la redondance, identification des lieux variants, 
         # regroupement des lemmes
   
@@ -136,7 +156,7 @@ def apparat_final(fichier_entree):
                 id_token = dic.get(key)[0]
                 lecon_depart = dic.get(key)[1]
                 temoin = dic.get(key)[2]
-                liste_entree.append(lecon_depart)
+                liste_entree.append(lecon_depart.lower())
     
             result = False;
             if len(liste_entree) > 0 :
@@ -177,9 +197,12 @@ def apparat_final(fichier_entree):
                         # créer un item de dictionnaire
                         if lecon_depart not in liste_entree:
                             dict_sortie[lecon_depart] = [id_token,temoin]
-                            # Ajouter le lieu variant dans la liste
-                            liste_entree.append(lecon_depart)    
-    
+                            
+                            # Ajouter le lieu variant dans la liste. On annule la casse (résultat éditorial) 
+                            # dans la liste , pour ne pas qu'elle soit prise en 
+                            # compte dans la collation 
+                            liste_entree.append(lecon_depart.lower())
+                            
                         # Si le lieu variant a déjà été rencontré
                         else:
                             # Trouver la position de la dernière occurrence de cette  
@@ -193,7 +216,7 @@ def apparat_final(fichier_entree):
                             temoin2 = temoin1 + " " + temoin
                             dict_sortie[lecon_depart] = [token2,temoin2]
                             # Mise à jour la liste
-                            liste_entree.append(lecon_depart)
+                            liste_entree.append(lecon_depart.lower())
 
 
 
@@ -217,12 +240,6 @@ def apparat_final(fichier_entree):
 
 
 
-def transformation_json(saxon, output_fichier_json, intput_fichier_xml):
-    with Halo(text = 'Transformation en json', spinner='dots'):
-        subprocess.run(["java","-jar", saxon, output_fichier_json, intput_fichier_xml, "xsl/pre_alignement/transformation_json.xsl"])
-    print("Transformation en json pour alignement ✓")  
-
-
 def injection(saxon, chemin, chapitre):
     chapitre = "chapitre="+ str(chapitre)
     chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
@@ -231,12 +248,12 @@ def injection(saxon, chemin, chapitre):
     print("Injection des apparats dans chaque transcription individuelle ✓")
         
 def tableau_alignement(saxon, chemin):
-    chemin_apparat = chemin + "xsl/post_alignement/tableau_alignement.xsl"
+    chemin_xsl_apparat = chemin + "xsl/post_alignement/tableau_alignement.xsl"
     with Halo(text =
     
     
      'Création du tableau d\'alignement', spinner='dots'):
-        subprocess.run(["java","-jar", saxon, "-o:tableau_alignement.html", "aligne_regroupe.xml", chemin_apparat])
+        subprocess.run(["java","-jar", saxon, "-o:tableau_alignement.html", "aligne_regroupe.xml", chemin_xsl_apparat])
     print("Création du tableau d\'alignement ✓")
         
 def nettoyage():

@@ -1,15 +1,16 @@
-#!/usr/bin/env python 
 # -*- coding: utf-8 -*-
-
 import sys
 import os
 import time
-import collation_python
+import fonctions
 import subprocess
 from collatex import *
 from halo import Halo
 import json
 import dicttoxml
+
+# Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
+# conseils.
 
 
 # S'il y a un argument qui est une cdc, un fichier à traiter, passer directement à l'alignement
@@ -20,14 +21,14 @@ if len(sys.argv) >= 2:
             saxon = input("Veuillez indiquer l'emplacement absolu de votre moteur de transformation saxon.\n")
             chemin_xsl = ""
             start_time = time.time() 
-            collation_python.alignement(argument, saxon, chemin_xsl)
+            fonctions.alignement(argument, saxon, chemin_xsl)
             print("Alignement CollateX ✓")
-            collation_python.apparat_final("apparat_final.json")
+            fonctions.apparat_final("apparat_final.json")
             print("Création des apparats ✓")# Réinjection des apparats. Ne marche pas pour l'instant.
-            collation_python.injection(saxon,chemin_xsl)        
+            fonctions.injection(saxon,chemin_xsl)        
             # Création du tableau d'alignement pour visualisation
-            collation_python.tableau_alignement(saxon,chemin_xsl)        
-            collation_python.nettoyage()
+            fonctions.tableau_alignement(saxon,chemin_xsl)        
+            fonctions.nettoyage()
             print("Fait en %s secondes. \n" % (time.time() - start_time))
         
      
@@ -35,7 +36,7 @@ if len(sys.argv) >= 2:
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.      
 
 if not len(sys.argv) >= 2:
-    portee = range(3,24)
+    portee = range(3,11) #Chapitres processables pour l'instant
 else:    
     if type(int(sys.argv[1])) is int:#Vérifier si c'est convertible en entier (pas très propre)
         argument = int(argument)
@@ -44,16 +45,10 @@ else:
 saxon = "/Users/squatteur/Desktop/These/hyperregimiento-de-los-principes/Collation/Saxon-HE-9.8.0-14.jar"
 chemin_xsl = "../../"
 
-# Attention à l'option -xi:(on|off) de saxon pour activer Xinclude le cas échéant 
-with Halo(text = 'Nettoyage et tokénisation du corpus parallelisé.', spinner='dots'):
-    subprocess.run(["java","-jar", saxon, "-xi:on", "../../Dedans/XML/corpus/corpus.xml", "../xsl/pre_alignement/tokenisation.xsl"])
-    collation_python.ajout_xmlid("../temoins/groupe.xml", "../temoins/groupe-xmlise.xml")
-print("Nettoyage et tokénisation du corpus ✓")
+fonctions.tokenisation(saxon)
 
+fonctions.scission_corpus(saxon)
 
-with Halo(text = 'Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
-    subprocess.run(["java","-jar", saxon, "-o:../tmp/tmp.tmp", "../temoins/groupe-xmlise.xml", "../xsl/pre_alignement/scission_chapitres.xsl"])
-print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
 
 # Création des fichiers d'apparat
 #with Halo(text='Alignement automatique par chapitre', spinner='dots'):
@@ -65,22 +60,29 @@ for i in portee:
     output_fichier_json = "-o:"+ chemin + "/juxtaposition.json"
     intput_fichier_xml = chemin + "/juxtaposition.xml"
     
-    collation_python.transformation_json(saxon, output_fichier_json, intput_fichier_xml)
+    # Étape avant la collation: transformation en json selon la structure voulue par CollateX
+    fonctions.transformation_json(saxon, output_fichier_json, intput_fichier_xml)
     
+    # On se place dans le répertoire du chapitre à traiter
     os.chdir(chemin)        
-        
-    collation_python.alignement("juxtaposition.json", saxon, chemin_xsl)
     
-    collation_python.apparat_final("apparat_final.json")
+    # Alignement avec CollateX. Il en ressort du JSON, encore    
+    fonctions.alignement("juxtaposition.json", saxon, chemin_xsl)
+    
+    
+    
+    fonctions.apparat_final("apparat_final.json")
     print("Création des apparats ✓")        
     
-    # Réinjection des apparats. Ne marche pas pour l'instant.
-    collation_python.injection(saxon,chemin_xsl, i)
+    # Réinjection des apparats. 
+    fonctions.injection(saxon,chemin_xsl, i)
     
-    # Création du tableau d'alignement pour visualisation
-    collation_python.tableau_alignement(saxon,chemin_xsl)
+    # Création du tableau d'alignement pour visualisation (le rendre optionnel)
+    fonctions.tableau_alignement(saxon,chemin_xsl)
     
-    collation_python.nettoyage()        
+    fonctions.nettoyage()  
+    
+    # On revient á la racine du projet pour finir la boucle      
     os.chdir("../../")
     print("Fait en %s secondes. \n" % (round(time.time() - start_time)))
 
