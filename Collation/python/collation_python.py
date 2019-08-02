@@ -223,15 +223,19 @@ def transformation_json(saxon, output_fichier_json, intput_fichier_xml):
     print("Transformation en json pour alignement ✓")  
 
 
-def injection(saxon, chemin):
+def injection(saxon, chemin, chapitre):
+    chapitre = "chapitre="+ str(chapitre)
     chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
     with Halo(text = 'Injection des apparats dans chaque transcription individuelle', spinner='dots'):
-        subprocess.run(["java","-jar", saxon, "-o:sortie_finale.xml", "juxtaposition.xml", chemin_injection, "chapitre=3"])
+        subprocess.run(["java","-jar", saxon, "-o:sortie_finale.xml", "juxtaposition.xml", chemin_injection, chapitre])
     print("Injection des apparats dans chaque transcription individuelle ✓")
         
 def tableau_alignement(saxon, chemin):
     chemin_apparat = chemin + "xsl/post_alignement/tableau_alignement.xsl"
-    with Halo(text = 'Création du tableau d\'alignement', spinner='dots'):
+    with Halo(text =
+    
+    
+     'Création du tableau d\'alignement', spinner='dots'):
         subprocess.run(["java","-jar", saxon, "-o:tableau_alignement.html", "aligne_regroupe.xml", chemin_apparat])
     print("Création du tableau d\'alignement ✓")
         

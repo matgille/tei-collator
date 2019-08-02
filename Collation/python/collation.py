@@ -48,7 +48,7 @@ chemin_xsl = "../../"
 with Halo(text = 'Nettoyage et tokénisation du corpus parallelisé.', spinner='dots'):
     subprocess.run(["java","-jar", saxon, "-xi:on", "../../Dedans/XML/corpus/corpus.xml", "../xsl/pre_alignement/tokenisation.xsl"])
     collation_python.ajout_xmlid("../temoins/groupe.xml", "../temoins/groupe-xmlise.xml")
-print("Nettoyage et tokénisation du corpus ✓ \n")
+print("Nettoyage et tokénisation du corpus ✓")
 
 
 with Halo(text = 'Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
@@ -75,7 +75,7 @@ for i in portee:
     print("Création des apparats ✓")        
     
     # Réinjection des apparats. Ne marche pas pour l'instant.
-    collation_python.injection(saxon,chemin_xsl)
+    collation_python.injection(saxon,chemin_xsl, i)
     
     # Création du tableau d'alignement pour visualisation
     collation_python.tableau_alignement(saxon,chemin_xsl)
