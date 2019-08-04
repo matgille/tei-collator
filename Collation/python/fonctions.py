@@ -145,7 +145,9 @@ def apparat_final(fichier_entree):
 
     with open(fichier_entree, 'r+') as fichier:
         liste_dict = json.load(fichier)
-        root = etree.Element("root")
+        ns_tei = "http://www.tei-c.org/ns/1.0"
+        nsmap = {'tei': ns_tei,}
+        root = etree.Element("root", nsmap=nsmap)
         for dic in liste_dict: 
             dict_sortie = {}
             liste_entree = []
@@ -156,7 +158,7 @@ def apparat_final(fichier_entree):
                 id_token = dic.get(key)[0]
                 lecon_depart = dic.get(key)[1]
                 temoin = dic.get(key)[2]
-                liste_entree.append(lecon_depart.lower())
+                liste_entree.append(lecon_depart)
     
             result = False;
             if len(liste_entree) > 0 :
@@ -182,7 +184,9 @@ def apparat_final(fichier_entree):
             # (linguistiques, etc). 
                         
                 else:# Si les leçons sont différentes: étape 2
-                    app = etree.SubElement(root, "app")                
+                    # app = etree.SubElement(root, "app", nsmap=nsmap)
+                    app = etree.SubElement(root, "{%s}app" % ns_tei)
+                    #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml               
                         
                     # La liste créée va permettre de vérifier si une leçon identique
                     # a déjà été traitée auparavant. On la réinitialise à nouveau
@@ -200,8 +204,8 @@ def apparat_final(fichier_entree):
                             
                             # Ajouter le lieu variant dans la liste. On annule la casse (résultat éditorial) 
                             # dans la liste , pour ne pas qu'elle soit prise en 
-                            # compte dans la collation 
-                            liste_entree.append(lecon_depart.lower())
+                            # compte dans la collation. Malheureusement ça plante au chapitre 3
+                            liste_entree.append(lecon_depart)
                             
                         # Si le lieu variant a déjà été rencontré
                         else:
@@ -216,7 +220,7 @@ def apparat_final(fichier_entree):
                             temoin2 = temoin1 + " " + temoin
                             dict_sortie[lecon_depart] = [token2,temoin2]
                             # Mise à jour la liste
-                            liste_entree.append(lecon_depart.lower())
+                            liste_entree.append(lecon_depart)
 
 
 
@@ -225,7 +229,8 @@ def apparat_final(fichier_entree):
                 lecon = str(key)
                 xml_id = dict_sortie.get(key)[0]
                 temoin = dict_sortie.get(key)[1]
-                rdg = etree.SubElement(app, "rdg")
+                # rdg = etree.SubElement(app, "rdg", nsmap=nsmap)
+                rdg = etree.SubElement(app, "{%s}rdg" % ns_tei)
                 rdg.set("wit", temoin)
                 rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)
                 rdg.text=lecon
@@ -249,10 +254,7 @@ def injection(saxon, chemin, chapitre):
         
 def tableau_alignement(saxon, chemin):
     chemin_xsl_apparat = chemin + "xsl/post_alignement/tableau_alignement.xsl"
-    with Halo(text =
-    
-    
-     'Création du tableau d\'alignement', spinner='dots'):
+    with Halo(text ='Création du tableau d\'alignement', spinner='dots'):
         subprocess.run(["java","-jar", saxon, "-o:tableau_alignement.html", "aligne_regroupe.xml", chemin_xsl_apparat])
     print("Création du tableau d\'alignement ✓")
         
