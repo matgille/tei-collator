@@ -78,7 +78,7 @@ simplement actualiser le texte -->
     <!--On procède en deux temps: d'abord, tokeniser avec espace comme séparateur. Puis on analyse la chaîne produite
     et on en extrait la ponctuation-->
     <!--Pour l'instant la ponctuation n'est pas prise en compte dans la collation, étant donné qu'hormis l'incunable, elle
-    est de mon fait.-->
+    est du fait de l'éditeur (moi).-->
     <xsl:template match="text()[not(ancestor::tei:note)][not(ancestor::tei:teiHeader)]">
         <xsl:for-each select="tokenize(., '\s+')">
             <xsl:analyze-string select="." regex="([:,;¿?.])">

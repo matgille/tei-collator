@@ -1,38 +1,33 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
-<!--PROBLEMES-->
-<!--REFAIRE LES REGLES D AJOUTS EN MARGE-->
-<!--notable: tout ce qui est notable (renommer le type)-->
-<!--Intégrer les notes dans un apparat de lemmes...-->
-<!--Régulariser les différences dans les add entre above et pas above-->
+<?xml version="1.0" encoding="UTF-8"?>
 
-<!-- IDEE: Gérer les modifications textuelles: Et si je faisais ma transformation en deux temps? D'abord, toutes les grosses transformations EN GARDANT UNE STRUCTURE XML BASIQUE
-    et bien formée (une déclaration d'entité, etc) Sur cette transformation, en faire une seconde qui va supprimer tout ce qui est xml et garder que le texte ET qui 
-pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'adapter les détails à LaTeX, comme les - - qui donne un tiret correct, ou transformer tous les e en &, etc-->
+<!-- IDEE: GÃ©rer les modifications textuelles: Et si je faisais ma transformation en deux temps? D'abord, toutes les grosses transformations EN GARDANT UNE STRUCTURE XML BASIQUE
+    et bien formÃ©e (une dÃ©claration d'entitÃ©, etc) Sur cette transformation, en faire une seconde qui va supprimer tout ce qui est xml et garder que le texte ET qui 
+pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'adapter les dÃ©tails Ã  LaTeX, comme les - - qui donne un tiret correct, ou transformer tous les e en &, etc-->
 
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:tex="placeholder.uri"
     exclude-result-prefixes="tex">
-    <!--RECOMMANDÉ: la feuille xsl est construite pour une utilisation du document .tex comme annexe 
+    <!--RECOMMANDÃ‰: la feuille xsl est construite pour une utilisation du document .tex comme annexe 
         vers laquelle pointe le document principal (utilisant \input{...} par exemple).-->
-    <!--IMPÉRATIF: Le package latex utilisé pour l'apparat est ednotes (https://www.ctan.org/pkg/ednotes). 
-    Il doit impérativement être accompagné du package lineno (https://www.ctan.org/pkg/lineno)
+    <!--IMPÃ‰RATIF: Le package latex utilisÃ© pour l'apparat est ednotes (https://www.ctan.org/pkg/ednotes). 
+    Il doit impÃ©rativement Ãªtre accompagnÃ© du package lineno (https://www.ctan.org/pkg/lineno)
     et du package manyfoot (https://www.ctan.org/pkg/manyfoot) pour 
-    les différents niveaux de notes 
+    les diffÃ©rents niveaux de notes 
     (\DeclareNewFootnote{B}[arabic]
 \usepackage{perpage}
 \MakePerPage{footnote}
-\renewcommand{\thefootnote}{\alph{footnote}} pour adapter le préambule LaTex à la feuille de transformation)
+\renewcommand{\thefootnote}{\alph{footnote}} pour adapter le prÃ©ambule LaTex Ã  la feuille de transformation)
     , ainsi que du package marginpar (https://www.ctan.org/pkg/marginpar)
-    pour permettre l'indication en marge des lacunes et des commencements/fins de témoins-->
-    <!--Je propose mon preambule LaTex à l'adresse: http://perso.ens-lyon.fr/matthias.gille-levenson/preambule.txt. 
-    Si le lien est périmé, me contacter sur mon adresse ens: matthias.gille-levenson[arobase]ens[point]fr -->
-    <!--Cette feuille est adaptée à mon propre document XML-->
-    <!--Merci à Arianne Pinche pour son aide précieuse dans cette feuille-->
-    <!--Merci à Marjorie Burghart de m'avoir envoyé sa feuille de transformation qui m'a bien aidé-->
+    pour permettre l'indication en marge des lacunes et des commencements/fins de tÃ©moins-->
+    <!--Je propose mon preambule LaTex Ã  l'adresse: http://perso.ens-lyon.fr/matthias.gille-levenson/preambule.txt. 
+    Si le lien est pÃ©rimÃ©, me contacter sur mon adresse ens: matthias.gille-levenson[arobase]ens[point]fr -->
+    <!--Cette feuille est adaptÃ©e Ã  mon propre document XML-->
+    <!--Merci Ã  Arianne Pinche pour son aide prÃ©cieuse dans cette feuille-->
+    <!--Merci Ã  Marjorie Burghart de m'avoir envoyÃ© sa feuille de transformation qui m'a bien aidÃ©-->
     <xsl:output method="text" omit-xml-declaration="no" encoding="UTF-8"/>
     <xsl:strip-space elements="*"/>
     <xsl:template match="/">
-        <xsl:text>\textbf{Sigles des témoins}\newline\newline</xsl:text>
+        <!--<xsl:text>\textbf{Sigles des tÃ©moins}\newline\newline</xsl:text>
         <xsl:for-each
             select="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:sourceDesc/tei:listWit/tei:witness">
             <xsl:text>\noindent \textbf{</xsl:text>
@@ -40,16 +35,20 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
             <xsl:text>}: </xsl:text>
             <xsl:value-of select="text()"/>
             <xsl:text>\newline </xsl:text>
-        </xsl:for-each>
-        <xsl:text> 
+        </xsl:for-each>-->
+        <xsl:text>
+            \documentclass[francais,oneside,a4paper, 12pt]{book}
+            \input{../../latex/preambule.tex}
+            \begin{document}
             \setstretch{1,1}
            \begin{linenumbers}[1]
            <!-- changes the default format of the linenumbers-->
            \renewcommand\linenumberfont{\normalfont\mdseries\footnotesize}
            <!-- changes the default format of the linenumbers-->
-        \modulolinenumbers[5]</xsl:text>
+        </xsl:text>
         <xsl:apply-templates/>
-        <xsl:text>\end{linenumbers}</xsl:text>
+        <xsl:text>\end{linenumbers}
+        \end{document}</xsl:text>
 
 
     </xsl:template>
@@ -60,13 +59,55 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:apply-templates/>
         <xsl:text>}</xsl:text>
     </xsl:template>
+    <!--
 
-
-
-
+    <xsl:template match="tei:alt">
+        <xsl:variable name="proba">
+            <xsl:analyze-string select="@weights" regex="([\.][\d])\s([\.][\d])">
+                <xsl:matching-substring>
+                    <xsl:value-of select="concat(number(regex-group(1)) * 100, '%')"/>
+                </xsl:matching-substring>
+            </xsl:analyze-string>
+        </xsl:variable>
+        <!-\-pour l'instant Ã§a ne marche que pour deux alternatives-\->
+        <xsl:variable name="alt1">
+            <xsl:analyze-string select="@target" regex="(#.+)\s(.+)">
+                <xsl:matching-substring>
+                    <xsl:value-of select="translate(regex-group(1), '#', '')"/>
+                </xsl:matching-substring>
+            </xsl:analyze-string>
+        </xsl:variable>
+        <xsl:variable name="alt2">
+            <xsl:analyze-string select="@target" regex="(#.+)\s(.+)">
+                <xsl:matching-substring>
+                    <xsl:value-of select="translate(regex-group(2), '#', '')"/>
+                </xsl:matching-substring>
+            </xsl:analyze-string>
+        </xsl:variable>
+        <xsl:if test="//*[@xml:id = $alt1]">
+            <xsl:if test="//*[@xml:id = $alt1] = tei:mod">
+                <xsl:if test="tei:mod[@xml:id = $alt1]/tei:del/tei:space">
+                    <xsl:text>Le terme </xsl:text>
+                    <xsl:value-of select="tei:mod[@xml:id = $alt1]//tei:add"/>
+                    <xsl:text>a Ã©tÃ© ajoutÃ© sur un blanc.</xsl:text>
+                </xsl:if>
+            </xsl:if>
+            <xsl:text> Il existe une autre possibilitÃ© (</xsl:text>
+            <xsl:value-of select="$proba"/>
+            <xsl:text> de probabilitÃ©):</xsl:text>
+            <xsl:if test="//*[@xml:id = $alt2] = tei:subst">
+                <xsl:if test="//*[@xml:id = $alt2]/tei:del//not(text())">
+                    <xsl:text>Un mot inconnu a Ã©tÃ© remplacÃ© par</xsl:text>
+                    <xsl:value-of select="//*[@xml:id = $alt2]/tei:add"/>
+                </xsl:if>
+            </xsl:if>
+        </xsl:if>
+<xsl:value-of select="concat($alt1,$alt2)"/>
+    </xsl:template>
+    -->
     <!--Notes en bas de page. -->
-    <!--Est ce que je me complique pas la vie à écrire deux fois les mêmes règles?-->
-    <!--Si la note est thématique, second niveau de notes, appel en chiffres arabes-->
+    <!--Est ce que je me complique pas la vie Ã  Ã©crire deux fois les mÃªmes rÃ¨gles?-->
+    <!--Si la note est thÃ©matique, second niveau de notes, appel en chiffres arabes-->
     <xsl:template match="tei:note">
         <xsl:text>\footnote{</xsl:text>
         <xsl:apply-templates/>
@@ -81,8 +122,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
     <xsl:template match="tei:w">
         <xsl:apply-templates/>
-        <!--        <xsl:if test="not(following-sibling::tei:pct[1])">-->
-        <xsl:text> </xsl:text>
+<!--        <xsl:if test="not(following-sibling::tei:pct[1])">-->
+            <xsl:text>~</xsl:text>
         <!--</xsl:if>-->
     </xsl:template>
 
@@ -106,9 +147,9 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
 
     <!--AJOUTS-->
-    <!--ajouts du copiste en exposant (interlinéaire) ou en note (marge): deuxième niveau de 
-        notes ou ajout en exposation. Si appartient à un apparat, simple indication avec le 
-        terme ajouté en italique-->
+    <!--ajouts du copiste en exposant (interlinÃ©aire) ou en note (marge): deuxiÃ¨me niveau de 
+        notes ou ajout en exposation. Si appartient Ã  un apparat, simple indication avec le 
+        terme ajoutÃ© en italique-->
     <xsl:template match="tei:add">
         <xsl:if test="not(@place)">
             <xsl:value-of select="."/>
@@ -130,16 +171,16 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
             <xsl:if test="ancestor::tei:app">
                 <xsl:choose>
                     <!--Si l'apparat n'est pas un apparat principal mais un apparat de point notables (notable)
-                    >> note. On peut accepter la note de bas de page (éviter les notes de bas de page dans un apparat
+                    >> note. On peut accepter la note de bas de page (Ã©viter les notes de bas de page dans un apparat
                     critique...)-->
                     <xsl:when test="(ancestor::tei:app/@type = 'notable')">
-                        <xsl:text>\footnote{Ajouté en marge:\textit{</xsl:text>
+                        <xsl:text>\footnote{AjoutÃ© en marge:\textit{</xsl:text>
                         <xsl:apply-templates select="tei:rdg"/>
                         <xsl:text>}}</xsl:text>
                     </xsl:when>
                     <!--Si l'apparat n'est pas un apparat principal mais un apparat de point notables (notable)-->
                     <xsl:otherwise>
-                        <xsl:text>[ajouté en marge:\textit{</xsl:text>
+                        <xsl:text>[ajoutÃ© en marge:\textit{</xsl:text>
                         <xsl:apply-templates/>
                         <xsl:text>}]</xsl:text>
                     </xsl:otherwise>
@@ -153,7 +194,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                     <xsl:value-of select="translate(@corresp, '#', '')"/>
                     <xsl:text>] </xsl:text>
                 </xsl:if>
-                <xsl:text>Ajouté </xsl:text>
+                <xsl:text>AjoutÃ© </xsl:text>
                 <xsl:text>(marge)</xsl:text>
                 <xsl:text>: ``\textit{</xsl:text>
                 <xsl:value-of select="text()"/>
@@ -191,13 +232,10 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     <!--Les ajouts de ma part sont entre crochets-->
     <!--AJOUTS-->
 
-    <xsl:template match="tei:subst">
-        <xsl:apply-templates/>
-    </xsl:template>
 
     <!--MODIFICATIONS CORRECTIONS-->
     <xsl:template match="//tei:space" name="space">
-        <xsl:text>\indent</xsl:text>
+        <xsl:text>\indent </xsl:text>
         <xsl:apply-templates/>
     </xsl:template>
 
@@ -224,7 +262,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
 
-    <xsl:template match="tei:damage" name="damage">
+    <!--<xsl:template match="tei:damage" name="damage">
         <xsl:choose>
             <xsl:when test="text() = ''">
                 <xsl:text>&#x2020; &#x2020;</xsl:text>
@@ -235,10 +273,10 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                 <xsl:text>}</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
-    </xsl:template>
+    </xsl:template>-->
 
     <xsl:template match="tei:gap">
-        <xsl:text>\indent</xsl:text>
+        <xsl:text>\indent </xsl:text>
         <xsl:apply-templates/>
     </xsl:template>
 
@@ -251,7 +289,26 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     <!-- ignorer le text entre balises <del>-->
 
 
-
+    <xsl:template match="tei:div[not(@subtype)]">
+        <xsl:variable name="temoin_courant">
+            <xsl:analyze-string select="@xml:id" regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
+                <xsl:matching-substring>
+                    <xsl:value-of select="regex-group(1)"/>
+                </xsl:matching-substring>
+            </xsl:analyze-string>
+        </xsl:variable>
+        <xsl:variable name="temoin_courant2" select="substring-after($temoin_courant, '_')"/>
+        <xsl:text>{\LARGE\textbf{Chapitre </xsl:text>
+        <xsl:value-of select="@n"/>
+        <xsl:text> (base </xsl:text>
+        <xsl:value-of select="$temoin_courant2"/>
+        <xsl:text>)}}\newline
+        
+        
+        
+        </xsl:text>
+        <xsl:apply-templates/>
+    </xsl:template>
 
     <!--Foliation en exposant entre crochets -->
     <xsl:template match="tei:pb">
@@ -278,23 +335,36 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
     <xsl:template match="tei:app">
         <xsl:variable name="temoin_courant">
-            <xsl:analyze-string select="ancestor::tei:div[@xml:id]/@xml:id" regex="([.*]_[.*])[.*]">
+            <xsl:analyze-string select="ancestor::tei:div[@xml:id]/@xml:id"
+                regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
                 <xsl:matching-substring>
                     <xsl:value-of select="regex-group(1)"/>
                 </xsl:matching-substring>
             </xsl:analyze-string>
         </xsl:variable>
+        <xsl:variable name="temoin_courant2" select="substring-after($temoin_courant, '_')"/>
         <xsl:text> \Anote{ </xsl:text>
         <!-- test: UNCLEAR entre crochets avec un ?-->
-        <xsl:value-of select="tei:rdg[translate(@wit, '#', '') = $temoin_courant]"/>
+        <xsl:text> </xsl:text>
+        <xsl:apply-templates select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
         <xsl:text>}{</xsl:text>
         <xsl:text>\textit{</xsl:text>
-        <xsl:value-of
-            select="tei:rdg[translate(@wit, '#', '') = $temoin_courant]/translate(@wit, '#_', ' ')"/>
-        <xsl:text>};~</xsl:text>
-        <xsl:for-each select="tei:rdg[translate(@wit, '#', '') != $temoin_courant]">
-            <!--La suite au prochain numéro-->
+        <xsl:value-of select="$temoin_courant2"/>
+        <xsl:text>}~|~</xsl:text>
+        <xsl:for-each select="tei:rdg[not(contains(translate(@wit, '#', ''), $temoin_courant))]">
+            <xsl:variable name="sigle_temoin">
+                <xsl:analyze-string select="@wit" regex="([a-zA-Z]*_)([A-Z])">
+                    <xsl:matching-substring>
+                        <xsl:value-of select="regex-group(2)"/>
+                    </xsl:matching-substring>
+                </xsl:analyze-string>
+            </xsl:variable>
+            <xsl:apply-templates select="."/>
+            <xsl:text>\textit{</xsl:text>
+            <xsl:value-of select="$sigle_temoin"/>
+            <xsl:text>}~</xsl:text>
         </xsl:for-each>
+        <xsl:text>}</xsl:text>
     </xsl:template>
     <!--STRUCTURE DU TEXTE-->
 
@@ -313,7 +383,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     <!--STRUCTURE DU TEXTE-->
 
     <!--MISE EN PAGE-->
-    <!--Marquer les paragraphes par un retour à la ligne-->
+    <!--Marquer les paragraphes par un retour Ã  la ligne-->
     <xsl:template match="tei:p">
         <xsl:apply-templates/>
         <xsl:text>
@@ -322,6 +392,10 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         </xsl:text>
     </xsl:template>
 
+    <xsl:template match="text()">
+        <xsl:variable name="remplacement1" select="replace(., '&amp;', '\\&amp;')"/>
+        <xsl:value-of select="$remplacement1"/>
+    </xsl:template>
 
 
 </xsl:stylesheet>

@@ -24,16 +24,27 @@
     <xsl:template match="*:temoin">
         <xsl:variable name="sigle" select="translate(@n, '#', '')"/>
         <xsl:result-document href="apparat_{$sigle}_{$chapitre}.xml">
-            <div>
+            <xsl:element name="div" namespace="http://www.tei-c.org/ns/1.0">
                 <xsl:attribute name="type">chapitre</xsl:attribute>
                 <xsl:attribute name="n" select="$chapitre"/>
                 <xsl:attribute name="xml:id" select="concat($sigle, '_3_3_', $chapitre)"/>
                 <xsl:apply-templates/>
-            </div>
+            </xsl:element>
         </xsl:result-document>
     </xsl:template>
 
     <xsl:template match="tei:w">
+        <!--Fonctionnement pour l'instant: on va comparer deux fichiers xml. Pour chaque token dans la transcription originale (xml 1), 
+        regarder si l'identifiant apparaît dans un apparat du fichier de collation produit (xml 2). Si tel est le cas, remplacer le 
+        token par l'apparat.-->
+        <!--Limite de ce procédé: on est moins précis quand on marque un token en particulier: le <add>, par exemple, 
+            va se retrouver 
+        parent d'un app et donc d'un rdg d'un autre manuscrit, ce qui n'a aucun sens.-->
+        <!--Solution: Créer une feuilles de tokénisation intermédiaire-->
+        <!--Solution 2: faire de cette feuille un truc un peu plus complexe en copiant de la feuille d'apparat tout sauf 
+            le rdg courant, 
+        et en réintégrant les information de l'xml 1 concernant ce rdg dans l'xml de sortie -->
+        <!--Cela permettra d'éviter un truc du genre: del > app > rdg rdg rdg, pour avoir app > rdg rdg rdg > del -->
         <xsl:variable name="ms" select="ancestor::*:temoin/@n"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="apparat_chapitre"
