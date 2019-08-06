@@ -115,22 +115,23 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
     <xsl:template match="tei:head">
-        <xsl:text>\textit{</xsl:text>
+        <xsl:text>{\large\textit{</xsl:text>
         <xsl:apply-templates/>
-        <xsl:text>}</xsl:text>
+        <xsl:text>}}
+        
+        
+        </xsl:text>
     </xsl:template>
 
     <xsl:template match="tei:w">
+        <xsl:text> </xsl:text>
         <xsl:apply-templates/>
-<!--        <xsl:if test="not(following-sibling::tei:pct[1])">-->
-            <xsl:text>~</xsl:text>
-        <!--</xsl:if>-->
+        <!--<xsl:choose>
+            <xsl:when test="following::tei:pct[1]"/>
+            <xsl:otherwise> </xsl:otherwise>
+        </xsl:choose>-->
     </xsl:template>
 
-    <xsl:template match="tei:pct">
-        <xsl:apply-templates/>
-        <xsl:text> </xsl:text>
-    </xsl:template>
 
     <!--A terme remplace les tei:hi pour de l'istruction de mise en page dans les notes-->
     <xsl:template match="tei:foreign">
@@ -343,9 +344,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
             </xsl:analyze-string>
         </xsl:variable>
         <xsl:variable name="temoin_courant2" select="substring-after($temoin_courant, '_')"/>
-        <xsl:text> \Anote{ </xsl:text>
+        <xsl:text> \Anote{</xsl:text>
         <!-- test: UNCLEAR entre crochets avec un ?-->
-        <xsl:text> </xsl:text>
         <xsl:apply-templates select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
         <xsl:text>}{</xsl:text>
         <xsl:text>\textit{</xsl:text>
@@ -359,7 +359,12 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                     </xsl:matching-substring>
                 </xsl:analyze-string>
             </xsl:variable>
-            <xsl:apply-templates select="."/>
+            <xsl:choose>
+                <xsl:when test="descendant::text()">
+                    <xsl:apply-templates select="."/>
+                </xsl:when>
+                <xsl:otherwise><xsl:text>\textit{om.}~</xsl:text></xsl:otherwise>
+            </xsl:choose>
             <xsl:text>\textit{</xsl:text>
             <xsl:value-of select="$sigle_temoin"/>
             <xsl:text>}~</xsl:text>

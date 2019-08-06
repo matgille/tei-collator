@@ -7,6 +7,7 @@ from collatex import *
 from halo import Halo
 import dicttoxml
 import random
+import unicodedata
 import string
 
 def generateur_lettre_initiale(size=1, chars = string.ascii_lowercase):
@@ -83,7 +84,10 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
             sortie_json.write(resultat_json)
             sortie_json.close()
         print("Alignement CollateX ✓")
-    alignement_json()
+    # alignement_json()
+    
+    
+    
     # Les résultats de la collation ne sont pas directement visibles: on a la liste A puis la liste B: il faut transformer le tout pour avoir un réel alignement. Voir http://collatex.obdurodon.org/xml-json-conversion.xhtml pour la structure du résultat. 
     # Le résultat de cette dernière transformation est une liste qui comprend elle-même une liste avec l'alignement. 
 
@@ -110,8 +114,34 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
         # Création de l'apparat: suppression de la redondance, identification des lieux variants, 
         # regroupement des lemmes
 
-def annulation_phenomenes(lecon_depart):
-    return lecon_depart.replace(' ', '').lower()  
+
+
+# Cette fonction concentre toutes les manipulations à effectuer pour annuler
+# les phénomènes graphiques surtout qui sont le fruit de l'édition et non 
+# pas le reflet du texte. 
+# Pour l'instant: annulation de l'accentuation, de la segmentation, de la casse
+def strip_accents(text):
+# https://stackoverflow.com/a/31607735
+    """
+    Strip accents from input String.
+
+    :param text: The input string.
+    :type text: String.
+
+    :returns: The processed String.
+    :rtype: String.
+    """
+    try:
+        text = unicode(text, 'utf-8')
+    except (TypeError, NameError): # unicode is a default on python 3 
+        pass
+    text = unicodedata.normalize('NFD', text)
+    text = text.encode('ascii', 'ignore')
+    text = text.decode("utf-8")
+    return str(text)
+
+def annulation_phenomenes(chaine_a_transformer):
+    return str(strip_accents(chaine_a_transformer).replace(" ","")).lower()  
 
 def apparat_final(fichier_entree):
     """
@@ -163,7 +193,7 @@ def apparat_final(fichier_entree):
                 # fait de l'éditeur ici, dans la comparaison
                 #lecon_depart_sans_espace = lecon_depart.replace(' áéíóú', 'aeiou').lower()
                 temoin = dic.get(key)[2]
-                liste_entree.append(annulation_phenomenes(lecon_depart))
+                liste_entree.append(lecon_depart)
     
             result = False;
             if len(liste_entree) > 0 :
@@ -200,7 +230,6 @@ def apparat_final(fichier_entree):
                     for key in dic:
                         id_token = dic.get(key)[0]
                         lecon_depart = dic.get(key)[1]
-                        #lecon_depart_sans_espace = lecon_depart.replace(' áéíóú', 'aeiou').lower()
                         temoin = dic.get(key)[2]
    
                         # Si le lieu variant n'existe pas dans la liste, 
@@ -209,22 +238,25 @@ def apparat_final(fichier_entree):
                             dict_sortie[lecon_depart] = [id_token,temoin]
                             
                             # Ajouter le lieu variant dans la liste. 
-                            liste_entree.append(annulation_phenomenes(lecon_depart))
+                            liste_entree.append(lecon_depart)
                             
                         # Si le lieu variant a déjà été rencontré
                         else:
                             # Trouver la position de la dernière occurrence de cette  
                             # leçon (= la première), dans la liste et qui 
                             # correspond à la clé du dictionnaire d'entrée
-                            position = len(liste_entree) - 1 - liste_entree[::-1].index(lecon_depart)
+                            # position = len(liste_entree) - 1 - liste_entree[::-1].index(lecon_depart)
                             # On actualise les valeurs
                             token1 = dict_sortie.get(lecon_depart)[0]
                             temoin1 = dict_sortie.get(lecon_depart)[1]
                             token2 = token1 + "_" + id_token
                             temoin2 = temoin1 + " " + temoin
                             dict_sortie[lecon_depart] = [token2,temoin2]
+                            print(token2)
+                            print(temoin2)
                             # Mise à jour la liste
-                            liste_entree.append(annulation_phenomenes(lecon_depart))
+                            liste_entree.append(lecon_depart)
+                            print(dict_sortie)
 
 
 
@@ -263,11 +295,11 @@ def tableau_alignement(saxon, chemin):
     print("Création du tableau d\'alignement ✓")
         
 def nettoyage():
-    with Halo(text = "Nettoyage du dossier", spinner='dots'):
-        os.remove("alignement_collatex.json") 
-        os.remove("alignement_collatex.xml") 
-        os.remove("apparat_final.json")
-        os.remove("sortie_finale.xml")
+    #with Halo(text = "Nettoyage du dossier", spinner='dots'):
+        #os.remove("alignement_collatex.json") 
+        #os.remove("alignement_collatex.xml") 
+        #os.remove("apparat_final.json")
+        #os.remove("sortie_finale.xml")
     print("Nettoyage du dossier ✓")
     
 def transformation_latex(saxon,fichier_xml, chemin):

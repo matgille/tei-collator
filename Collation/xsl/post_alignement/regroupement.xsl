@@ -52,7 +52,7 @@
                 <xsl:otherwise>
                     <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
                         <xsl:attribute name="wit">
-                            <xsl:value-of select="descendant::_sigil[1]"/>
+                            <xsl:value-of select="concat('#', descendant::_sigil[1])"/>
                         </xsl:attribute>
                         <xsl:for-each select="item">
                             <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
