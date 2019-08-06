@@ -44,9 +44,9 @@ def scission_corpus(saxon):
 
 # Étape avant la collation: transformation en json selon la structure voulue par CollateX.
 # Voir https://collatex.net/doc/#json-input
-def transformation_json(saxon, output_fichier_json, intput_fichier_xml):
+def transformation_json(saxon, output_fichier_json, input_fichier_xml):
     with Halo(text = 'Transformation en json', spinner='dots'):
-        subprocess.run(["java","-jar", saxon, output_fichier_json, intput_fichier_xml, "xsl/pre_alignement/transformation_json.xsl"])
+        subprocess.run(["java","-jar", saxon, output_fichier_json, input_fichier_xml, "xsl/pre_alignement/transformation_json.xsl"])
     print("Transformation en json pour alignement ✓")  
 
 
@@ -84,7 +84,7 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
             sortie_json.write(resultat_json)
             sortie_json.close()
         print("Alignement CollateX ✓")
-    # alignement_json()
+    alignement_json()
     
     
     
@@ -121,7 +121,7 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
 # pas le reflet du texte. 
 # Pour l'instant: annulation de l'accentuation, de la segmentation, de la casse
 def strip_accents(text):
-# https://stackoverflow.com/a/31607735
+    # https://stackoverflow.com/a/31607735
     """
     Strip accents from input String.
 
@@ -141,7 +141,7 @@ def strip_accents(text):
     return str(text)
 
 def annulation_phenomenes(chaine_a_transformer):
-    return str(strip_accents(chaine_a_transformer).replace(" ","")).lower()  
+    return str(chaine_a_transformer).replace("á","a").lower()
 
 def apparat_final(fichier_entree):
     """
@@ -219,6 +219,7 @@ def apparat_final(fichier_entree):
             # (linguistiques, etc). 
                         
                 else:# Si les leçons sont différentes: étape 2
+                    
                     # app = etree.SubElement(root, "app", nsmap=nsmap)
                     app = etree.SubElement(root, "{%s}app" % ns_tei)
                     #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml               
@@ -236,7 +237,6 @@ def apparat_final(fichier_entree):
                         # créer un item de dictionnaire
                         if lecon_depart not in liste_entree:
                             dict_sortie[lecon_depart] = [id_token,temoin]
-                            
                             # Ajouter le lieu variant dans la liste. 
                             liste_entree.append(lecon_depart)
                             
@@ -252,8 +252,6 @@ def apparat_final(fichier_entree):
                             token2 = token1 + "_" + id_token
                             temoin2 = temoin1 + " " + temoin
                             dict_sortie[lecon_depart] = [token2,temoin2]
-                            print(token2)
-                            print(temoin2)
                             # Mise à jour la liste
                             liste_entree.append(lecon_depart)
                             print(dict_sortie)

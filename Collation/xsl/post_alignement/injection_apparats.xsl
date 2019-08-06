@@ -13,7 +13,7 @@
     option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir-->
     <!--La ponctuation dans les app n'est pas rétablie (ce n'est pas un bug, elle n'est pas conservée). Gérer cela.-->
 
-    <xsl:param name="chapitre"/>
+    <xsl:param name="chapitre" select="3"/>
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="no">
             <xsl:apply-templates select="@* | node()"/>

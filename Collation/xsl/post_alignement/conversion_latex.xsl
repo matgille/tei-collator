@@ -349,8 +349,14 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:apply-templates select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
         <xsl:text>}{</xsl:text>
         <xsl:text>\textit{</xsl:text>
-        <xsl:value-of select="$temoin_courant2"/>
+        <!--Pour chaque témoin, ne faire apparaître que la lettre correspondante-->
+        <xsl:for-each
+            select="tokenize(tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]/@wit, '\s')">
+            <xsl:value-of select="substring-after(., '_')"/>
+        </xsl:for-each>
+        <!--Pour chaque témoin, ne faire apparaître que la lettre correspondante-->
         <xsl:text>}~|~</xsl:text>
+        <!--La même chose mais en utilisant une autre méthode-->
         <xsl:for-each select="tei:rdg[not(contains(translate(@wit, '#', ''), $temoin_courant))]">
             <xsl:variable name="sigle_temoin">
                 <xsl:analyze-string select="@wit" regex="([a-zA-Z]*_)([A-Z])">
@@ -363,7 +369,9 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                 <xsl:when test="descendant::text()">
                     <xsl:apply-templates select="."/>
                 </xsl:when>
-                <xsl:otherwise><xsl:text>\textit{om.}~</xsl:text></xsl:otherwise>
+                <xsl:otherwise>
+                    <xsl:text>\textit{om.}~</xsl:text>
+                </xsl:otherwise>
             </xsl:choose>
             <xsl:text>\textit{</xsl:text>
             <xsl:value-of select="$sigle_temoin"/>

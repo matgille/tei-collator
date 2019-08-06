@@ -59,10 +59,10 @@ for i in portee:
     chemin = "chapitres/chapitre" + str(i)
     print("Traitement du chapitre " + str(i))
     output_fichier_json = "-o:"+ chemin + "/juxtaposition.json"
-    intput_fichier_xml = chemin + "/juxtaposition.xml"
+    input_fichier_xml = chemin + "/juxtaposition.xml"
     
     # Étape avant la collation: transformation en json selon la structure voulue par CollateX
-    fonctions.transformation_json(saxon, output_fichier_json, intput_fichier_xml)
+    fonctions.transformation_json(saxon, output_fichier_json, input_fichier_xml)
     
     # On se place dans le répertoire du chapitre à traiter
     os.chdir(chemin)        
