@@ -109,7 +109,9 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
         subprocess.run(["java","-jar", saxon, "-o:apparat_final.json", "aligne_regroupe.xml", chemin_xsl_apparat])
         # Création de l'apparat: suppression de la redondance, identification des lieux variants, 
         # regroupement des lemmes
-  
+
+def annulation_phenomenes(lecon_depart):
+    return lecon_depart.replace(' ', '').lower()  
 
 def apparat_final(fichier_entree):
     """
@@ -157,12 +159,11 @@ def apparat_final(fichier_entree):
                 id_token = dic.get(key)[0]
                 lecon_depart = dic.get(key)[1]
                 
-                # Ne pas intégrer la segmentation ni la casse, fait de l'éditeur ici, dans la comparaison
-                lecon_depart_sans_espace = lecon_depart.replace(' ', '').lower()
-                
+                # Ne pas intégrer l'accentuation, la segmentation ni la casse, 
+                # fait de l'éditeur ici, dans la comparaison
+                #lecon_depart_sans_espace = lecon_depart.replace(' áéíóú', 'aeiou').lower()
                 temoin = dic.get(key)[2]
-                liste_entree.append(lecon_depart_sans_espace)
-                print(lecon_depart_sans_espace)
+                liste_entree.append(annulation_phenomenes(lecon_depart))
     
             result = False;
             if len(liste_entree) > 0 :
@@ -199,7 +200,7 @@ def apparat_final(fichier_entree):
                     for key in dic:
                         id_token = dic.get(key)[0]
                         lecon_depart = dic.get(key)[1]
-                        lecon_depart_sans_espace = lecon_depart.replace(' ', '').lower()
+                        #lecon_depart_sans_espace = lecon_depart.replace(' áéíóú', 'aeiou').lower()
                         temoin = dic.get(key)[2]
    
                         # Si le lieu variant n'existe pas dans la liste, 
@@ -208,7 +209,7 @@ def apparat_final(fichier_entree):
                             dict_sortie[lecon_depart] = [id_token,temoin]
                             
                             # Ajouter le lieu variant dans la liste. 
-                            liste_entree.append(lecon_depart_sans_espace)
+                            liste_entree.append(annulation_phenomenes(lecon_depart))
                             
                         # Si le lieu variant a déjà été rencontré
                         else:
@@ -223,7 +224,7 @@ def apparat_final(fichier_entree):
                             temoin2 = temoin1 + " " + temoin
                             dict_sortie[lecon_depart] = [token2,temoin2]
                             # Mise à jour la liste
-                            liste_entree.append(lecon_depart_sans_espace)
+                            liste_entree.append(annulation_phenomenes(lecon_depart))
 
 
 
@@ -273,7 +274,7 @@ def transformation_latex(saxon,fichier_xml, chemin):
     fichier_tex = fichier_xml.split('.')[0] + ".tex"
     chemin_xsl_apparat = chemin + "xsl/post_alignement/conversion_latex.xsl"
     fichier_tex_sortie = "-o:" + fichier_tex
-    with Halo(text = "Création du pdf", spinner='dots'):
-        subprocess.run(["java","-jar", saxon, fichier_tex_sortie, fichier_xml, chemin_xsl_apparat])
-        subprocess.run(["pdflatex", fichier_tex])
-        subprocess.run(["pdflatex", fichier_tex])
+    print("Création des fichiers pdf")
+    subprocess.run(["java","-jar", saxon, fichier_tex_sortie, fichier_xml, chemin_xsl_apparat])
+    subprocess.run(["pdflatex", fichier_tex])
+    subprocess.run(["pdflatex", fichier_tex])
