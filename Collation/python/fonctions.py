@@ -1,12 +1,10 @@
 import sys
 from lxml import etree
-import sys
 import os
 import json
 import subprocess
 from collatex import *
 from halo import Halo
-import json
 import dicttoxml
 import random
 import string
@@ -151,14 +149,20 @@ def apparat_final(fichier_entree):
         for dic in liste_dict: 
             dict_sortie = {}
             liste_entree = []
+            
 
 
             # Étape 1: déterminer si il y a variation ou pas
             for key in dic:
                 id_token = dic.get(key)[0]
                 lecon_depart = dic.get(key)[1]
+                
+                # Ne pas intégrer la segmentation ni la casse, fait de l'éditeur ici, dans la comparaison
+                lecon_depart_sans_espace = lecon_depart.replace(' ', '').lower()
+                
                 temoin = dic.get(key)[2]
-                liste_entree.append(lecon_depart)
+                liste_entree.append(lecon_depart_sans_espace)
+                print(lecon_depart_sans_espace)
     
             result = False;
             if len(liste_entree) > 0 :
@@ -195,6 +199,7 @@ def apparat_final(fichier_entree):
                     for key in dic:
                         id_token = dic.get(key)[0]
                         lecon_depart = dic.get(key)[1]
+                        lecon_depart_sans_espace = lecon_depart.replace(' ', '').lower()
                         temoin = dic.get(key)[2]
    
                         # Si le lieu variant n'existe pas dans la liste, 
@@ -202,10 +207,8 @@ def apparat_final(fichier_entree):
                         if lecon_depart not in liste_entree:
                             dict_sortie[lecon_depart] = [id_token,temoin]
                             
-                            # Ajouter le lieu variant dans la liste. On annule la casse (résultat éditorial) 
-                            # dans la liste , pour ne pas qu'elle soit prise en 
-                            # compte dans la collation. Malheureusement ça plante au chapitre 3
-                            liste_entree.append(lecon_depart)
+                            # Ajouter le lieu variant dans la liste. 
+                            liste_entree.append(lecon_depart_sans_espace)
                             
                         # Si le lieu variant a déjà été rencontré
                         else:
@@ -220,7 +223,7 @@ def apparat_final(fichier_entree):
                             temoin2 = temoin1 + " " + temoin
                             dict_sortie[lecon_depart] = [token2,temoin2]
                             # Mise à jour la liste
-                            liste_entree.append(lecon_depart)
+                            liste_entree.append(lecon_depart_sans_espace)
 
 
 
@@ -265,3 +268,12 @@ def nettoyage():
         os.remove("apparat_final.json")
         os.remove("sortie_finale.xml")
     print("Nettoyage du dossier ✓")
+    
+def transformation_latex(saxon,fichier_xml, chemin):
+    fichier_tex = fichier_xml.split('.')[0] + ".tex"
+    chemin_xsl_apparat = chemin + "xsl/post_alignement/conversion_latex.xsl"
+    fichier_tex_sortie = "-o:" + fichier_tex
+    with Halo(text = "Création du pdf", spinner='dots'):
+        subprocess.run(["java","-jar", saxon, fichier_tex_sortie, fichier_xml, chemin_xsl_apparat])
+        subprocess.run(["pdflatex", fichier_tex])
+        subprocess.run(["pdflatex", fichier_tex])
