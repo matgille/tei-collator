@@ -120,28 +120,13 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
 # les phénomènes graphiques surtout qui sont le fruit de l'édition et non 
 # pas le reflet du texte. 
 # Pour l'instant: annulation de l'accentuation, de la segmentation, de la casse
-def strip_accents(text):
-    # https://stackoverflow.com/a/31607735
-    """
-    Strip accents from input String.
 
-    :param text: The input string.
-    :type text: String.
 
-    :returns: The processed String.
-    :rtype: String.
-    """
-    try:
-        text = unicode(text, 'utf-8')
-    except (TypeError, NameError): # unicode is a default on python 3 
-        pass
-    text = unicodedata.normalize('NFD', text)
-    text = text.encode('ascii', 'ignore')
-    text = text.decode("utf-8")
-    return str(text)
+def remplacements_en_chaîne(texte):
+    return texte.replace("á","a").replace("é","e").replace("í","i").replace("ó","o").replace("ú","u").replace(" ", "")
 
 def annulation_phenomenes(chaine_a_transformer):
-    return str(chaine_a_transformer).replace("á","a").lower()
+    return remplacements_en_chaîne(chaine_a_transformer).lower()
 
 def apparat_final(fichier_entree):
     """
@@ -149,12 +134,9 @@ def apparat_final(fichier_entree):
         l'apparat proprement dit, avec création d'apparat s'il y a
         variation, et regroupement des leçons identiques. 
         Elle fonctionne avec une lsite de dictionnaires au format JSON, 
-        chaque dictionnaire représentant un lieu variant. La clé de chaque item
-        doit correspondre à sa position:
+        chaque dictionnaire représentant un lieu variant. 
         
-        Pour l'instant, n'est traité que l'xml:id, mais on peut ajouter d'autres fonctions
-        
-            liste_dict = 
+         liste_dict = 
             [{
                 "0" : ["", "", "Phil_J"], 
                 "1" : ["a0a6f5ec2-a98u9ds98yh", "Ca iiii", "Mad_G"],
@@ -171,12 +153,50 @@ def apparat_final(fichier_entree):
                 "1" : ["a0a6f5ec2-a98u9ds98yh", "muestra", "Mad_G"],
                 "2" : ["a0a9f5dsc2-a9sdnjxcznk", "prueua", "Phil_Z"]
             }]
+        
+        Fonctionnement de la fonction: 
+        - ) Le texte aligné est une liste de dictionnaires, pour en garder la linéarité: voir plus haut pour la
+            structure de cette liste.
+        - ) Chaque lieu variant est représenté par un dictionnaire
+        1 ) On va en un premier lieu comparer toutes les chaînes de caractères pour déterminer
+            s'il y a lieu de créer un apparat. Si elles sont distinctes, on est face à des lieux
+            variants, et on enclenche la suite. 
+        2 ) Si il y a des lieux variants, on fonctionne de la manière suivante. On a deux dictionnaires, 
+            un dictionnaire d'entrée (décrit plus haut), et un dictionnaire de sortie qui contiendra les 
+            informations d'apparat. On va créer une liste liste_entree qui va nous permettre de comparer chaque chaîne
+            aux chaînes précédentes. 
+            
+            *Pour chaque item* du dictionnaire d'entrée, on vérifie que la chaîne, en position 1, n'est pas déjà présente
+            dans la liste liste_entree. 
+                - Si elle n'est pas présente, on l'ajoute à la liste, et on crée un item
+                dans le dictionnaire de sortie dict_sortie. Cet item est organisé de la façon suivante:
+                    "lieu_variant1": ["témoin(s)", "id_token(s)"]
+                - Si la chaîne existe déjà dans la liste liste_entree, c'est qu'elle est aussi dans le 
+                dictionnaire de sortie: on va donc modifier la valeur de l'item dont la clé est cette chaîne, 
+                en ajoutant le témoin correspondant ainsi que les identifiants de token.
+        
+            L'idée est aussi de pouvoir neutraliser certains phénomènes qui ne peuvent être comparés, comme
+            l'accentuation, la casse, ou la segmentation, car pour mon projet elles sont de mon fait et ce 
+            ne sont pas des phénomènes propres aux témoins. Mis en pause pour le moment car cela pose des 
+            problèmes assez importants. 
+            
+        3 ) Une fois le dictionnaire créé, on le transforme en xml en suivant la grammaire de la TEI pour les apparat. 
+            Il reste encore quelques points 
+            problématiques (les espaces de noms sont assez mal gérés en particulier), mais 
+            cela marche assez bien.
+        4 ) La dernière étape est la réinitialisation de la liste liste_entree et du dictionnaire dict_sortie,
+            qui est en réalité en début de boucle. 
+            
+            
+        Pour l'instant, n'est traité que l'xml:id, mais on peut ajouter d'autres fonctions
+        
+           
     """
 
     with open(fichier_entree, 'r+') as fichier:
         liste_dict = json.load(fichier)
         ns_tei = "http://www.tei-c.org/ns/1.0"
-        nsmap = {'tei': ns_tei,}
+        nsmap = {'tei': ns_tei}
         root = etree.Element("root", nsmap=nsmap)
         for dic in liste_dict: 
             dict_sortie = {}
@@ -188,11 +208,9 @@ def apparat_final(fichier_entree):
             for key in dic:
                 id_token = dic.get(key)[0]
                 lecon_depart = dic.get(key)[1]
-                
-                # Ne pas intégrer l'accentuation, la segmentation ni la casse, 
-                # fait de l'éditeur ici, dans la comparaison
-                #lecon_depart_sans_espace = lecon_depart.replace(' áéíóú', 'aeiou').lower()
                 temoin = dic.get(key)[2]
+                #lecon_depart_neutralisee = annulation_phenomenes(lecon_depart)
+                #liste_entree.append(lecon_depart_neutralisee)
                 liste_entree.append(lecon_depart)
     
             result = False;
@@ -204,13 +222,13 @@ def apparat_final(fichier_entree):
                 # entre eux,ne pas créer d'apparat mais imprimer 
                 # directement le texte    
                 if result :
-                    myElement = root.find('app')
+                    myElement = root.find('tei:app', nsmap)
                     if myElement is None:
                         root.text=lecon_depart
                     else:
                         # root.xpath va sortir une liste: il faut aller chercher les items 
                         # individuels de cette liste, même si il n'y en n'a qu'un
-                        dernier_app = root.xpath('app[last()]')
+                        dernier_app = root.xpath('tei:app[last()]', namespaces=nsmap)
                         for i in dernier_app:
                             i.tail=lecon_depart
                 
@@ -232,30 +250,32 @@ def apparat_final(fichier_entree):
                         id_token = dic.get(key)[0]
                         lecon_depart = dic.get(key)[1]
                         temoin = dic.get(key)[2]
-   
+                        #lecon_depart_neutralisee = annulation_phenomenes(lecon_depart)
                         # Si le lieu variant n'existe pas dans la liste, 
                         # créer un item de dictionnaire
+                        
                         if lecon_depart not in liste_entree:
+                        #if lecon_depart_neutralisee not in liste_entree:
                             dict_sortie[lecon_depart] = [id_token,temoin]
-                            # Ajouter le lieu variant dans la liste. 
+                            # Ajouter le lieu variant dans la liste.
                             liste_entree.append(lecon_depart)
+                            #liste_entree.append(lecon_depart_neutralisee) 
                             
                         # Si le lieu variant a déjà été rencontré
                         else:
-                            # Trouver la position de la dernière occurrence de cette  
-                            # leçon (= la première), dans la liste et qui 
-                            # correspond à la clé du dictionnaire d'entrée
-                            # position = len(liste_entree) - 1 - liste_entree[::-1].index(lecon_depart)
-                            # On actualise les valeurs
-                            token1 = dict_sortie.get(lecon_depart)[0]
+                            #dict_comparaison = {}
+                            #for item in dict_sortie:
+                            #    dict_comparaison[annulation_phenomenes(item)] = item
+                            #lecon_depart2 = dict_comparaison.get(lecon_depart_neutralisee)
                             temoin1 = dict_sortie.get(lecon_depart)[1]
+                            token1 = dict_sortie.get(lecon_depart)[0]
+                            print("token1" + token1)
                             token2 = token1 + "_" + id_token
                             temoin2 = temoin1 + " " + temoin
                             dict_sortie[lecon_depart] = [token2,temoin2]
                             # Mise à jour la liste
+                            # liste_entree.append(lecon_depart_neutralisee)
                             liste_entree.append(lecon_depart)
-                            print(dict_sortie)
-
 
 
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
