@@ -43,7 +43,8 @@ else:
         argument = int(argument)
         arg_plus_1 = argument + 1
         portee = range(argument, arg_plus_1)
-saxon = "/Users/squatteur/Desktop/These/hyperregimiento-de-los-principes/Collation/Saxon-HE-9.8.0-14.jar"
+saxon = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation/Saxon-HE-9.8.0-14.jar"
+# saxon = "../Collation/Saxon-HE-9.8.0-14.jar"
 chemin_xsl = "../../"
 
 fonctions.tokenisation(saxon)
