@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs" version="2.0">
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="xs" version="2.0">
     <!--Feuille de transformation pour créer une table d'alignement en HTML pour faciliter le commentaire-->
     <!--Je suis parti pour gagner du temps d'une base de David Birnbaum 
         ici: http://collatex.obdurodon.org/xml-json-conversion.xhtml-->
@@ -60,25 +60,25 @@
     <xsl:template match="text()">
         <xsl:value-of select="normalize-space()"/>
     </xsl:template>
-    <xsl:template match="w"/>
+    <xsl:template match="tei:w"/>
 
-    <xsl:template match="texte/app[1]/rdg">
-        <xsl:variable name="position" select="count(preceding-sibling::rdg) + 1"/>
+    <xsl:template match="texte/tei:app[1]/tei:rdg">
+        <xsl:variable name="position" select="count(preceding-sibling::tei:rdg) + 1"/>
         <tr>
             <th style="position:fixed;">
                 <xsl:value-of select="@wit"/>
             </th>
             <td class="fitwidth">
-                <xsl:value-of select="rdg/w"/>
-                <xsl:if test="rdg/om">
+                <xsl:value-of select="tei:rdg/tei:w"/>
+                <xsl:if test="tei:rdg/om">
                     <i>omisit</i>
                 </xsl:if>
             </td>
         </tr>
         <tr>
-            <xsl:for-each select="//rdg[position() = $position]">
+            <xsl:for-each select="//tei:rdg[position() = $position]">
                 <td class="fitwidth">
-                    <xsl:value-of select="w"/>
+                    <xsl:value-of select="tei:w"/>
                     <xsl:if test="om">
                         <i>omisit</i>
                     </xsl:if>
