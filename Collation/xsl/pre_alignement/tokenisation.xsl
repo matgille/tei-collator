@@ -33,6 +33,8 @@ simplement actualiser le texte -->
         </xsl:copy>
     </xsl:template>
 
+    <xsl:template match="tei:fw | tei:desc | tei:graphic"/>
+
     <xsl:template match="tei:choice">
         <xsl:apply-templates select="tei:reg"/>
         <xsl:apply-templates select="tei:expan"/>

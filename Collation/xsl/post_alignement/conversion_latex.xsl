@@ -289,6 +289,15 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
     <!-- ignorer le text entre balises <del>-->
 
+    <xsl:template match="tei:div[@subtype = 'glose']">
+        <xsl:text>\marginpar{\textbf{[Glose]}}</xsl:text>
+        <xsl:apply-templates/>
+    </xsl:template>
+
+    <xsl:template match="tei:div[@subtype = 'traduction']">
+        <xsl:apply-templates/>
+        <xsl:text>~\\</xsl:text>
+    </xsl:template>
 
     <xsl:template match="tei:div[not(@subtype)]">
         <xsl:variable name="temoin_courant">

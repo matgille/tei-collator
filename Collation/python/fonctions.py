@@ -324,7 +324,17 @@ def transformation_latex(saxon,fichier_xml, chemin):
     fichier_tex = fichier_xml.split('.')[0] + ".tex"
     chemin_xsl_apparat = chemin + "xsl/post_alignement/conversion_latex.xsl"
     fichier_tex_sortie = "-o:" + fichier_tex
-    print("Création des fichiers pdf")
+    print("Création des fichiers pdf ✓")
     subprocess.run(["java","-jar", saxon, fichier_tex_sortie, fichier_xml, chemin_xsl_apparat])
     subprocess.run(["pdflatex", fichier_tex])
     subprocess.run(["pdflatex", fichier_tex])
+
+
+def concatenation_pdf():
+	with Halo(text ='Création d\'un fichier unique d\'apparat ✓', spinner='dots'):
+		subprocess.run(["pdftk","chapitres/chapitre*/*.pdf", "output", "III_3_apparat.pdf"])
+	print("Création d'un fichier unique d'apparat ✓")
+
+
+
+

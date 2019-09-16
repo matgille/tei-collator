@@ -87,10 +87,13 @@ for i in portee:
             fonctions.transformation_latex(saxon, file, chemin_xsl)
         
     fonctions.nettoyage()  
-    
     # On revient á la racine du projet pour finir la boucle      
     os.chdir("../../")
+	
     print("Fait en %s secondes. \n" % (round(time.time() - start_time)))
+
+
+fonctions.concatenation_pdf()
 
 
 
