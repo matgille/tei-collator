@@ -234,7 +234,10 @@ def apparat_final(fichier_entree):
                 
             # C'est ici que l'on pourrait faire intervenir le lemmatiseur 
             # et le POS, pour créer typer les apparats voire en créer de diverses sortes 
-            # (linguistiques, etc). 
+            # (linguistiques, etc): 
+			# - si tous les tokens ont le même lemme et le même POS, créer un type (graphique) 
+			# - si les tokens ont un lemme distinct ou le même lemme et un POS distint (= changement de genre / de
+			# nombre de l'objet référent), typer "variante"
                         
                 else:# Si les leçons sont différentes: étape 2
                     
@@ -243,8 +246,9 @@ def apparat_final(fichier_entree):
                     #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml               
                         
                     # La liste créée va permettre de vérifier si une leçon identique
-                    # a déjà été traitée auparavant. On la réinitialise à nouveau
+                    # a déjà été traitée auparavant. On la réinitialise
                     # car on l'a déjà utilisée pour vérifier l'égalité entre leçons
+					# dans le lieu variant précédent
                     liste_entree = []
                     for key in dic:
                         id_token = dic.get(key)[0]

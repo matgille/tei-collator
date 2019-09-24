@@ -93,7 +93,7 @@ for i in portee:
     print("Fait en %s secondes. \n" % (round(time.time() - start_time)))
 
 
-fonctions.concatenation_pdf()
+#fonctions.concatenation_pdf()
 
 
 
