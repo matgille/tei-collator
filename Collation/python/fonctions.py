@@ -273,7 +273,6 @@ def apparat_final(fichier_entree):
                             #lecon_depart2 = dict_comparaison.get(lecon_depart_neutralisee)
                             temoin1 = dict_sortie.get(lecon_depart)[1]
                             token1 = dict_sortie.get(lecon_depart)[0]
-                            print("token1" + token1)
                             token2 = token1 + "_" + id_token
                             temoin2 = temoin1 + " " + temoin
                             dict_sortie[lecon_depart] = [token2,temoin2]
@@ -330,8 +329,8 @@ def transformation_latex(saxon,fichier_xml, chemin):
     fichier_tex_sortie = "-o:" + fichier_tex
     print("Création des fichiers pdf ✓")
     subprocess.run(["java","-jar", saxon, fichier_tex_sortie, fichier_xml, chemin_xsl_apparat])
-    subprocess.run(["pdflatex", fichier_tex])
-    subprocess.run(["pdflatex", fichier_tex])
+    subprocess.run(["xelatex", fichier_tex])
+    subprocess.run(["xelatex", fichier_tex])
 
 
 def concatenation_pdf():

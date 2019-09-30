@@ -15,7 +15,7 @@ import dicttoxml
 
 
 # S'il y a un argument qui est une cdc, un fichier à traiter, passer directement à l'alignement
-if len(sys.argv) >= 2:
+if len(sys.argv) >= 2:# le nom du script est le premier argument
     if type(sys.argv[1]) is str:
         argument = sys.argv[1]
         if argument.endswith('.json'):
@@ -30,16 +30,17 @@ if len(sys.argv) >= 2:
             # Création du tableau d'alignement pour visualisation
             fonctions.tableau_alignement(saxon,chemin_xsl)        
             fonctions.nettoyage()
-            print("Fait en %s secondes. \n" % (time.time() - start_time))
-        
-     
-
+            print("Fait en %s secondes. \n" % (time.time() - start_time))       
+        elif argument == '--bornes':
+            borne_min = int(sys.argv[2])
+            borne_max = int(sys.argv[3])
+            portee = range(borne_min,borne_max)
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.      
 
 if not len(sys.argv) >= 2:
-    portee = range(3,11) #Chapitres processables pour l'instant
-else:    
-    if type(int(sys.argv[1])) is int:#Vérifier si c'est convertible en entier (pas très propre)
+    portee = range(3,23) #Chapitres processables pour l'instant
+elif len(sys.argv) is 2:    
+    if type(int(sys.argv[1])) is int:#Vérifier si c'est convertible en entier (pas très propre), utiliser les exceptions plutôt
         argument = int(argument)
         arg_plus_1 = argument + 1
         portee = range(argument, arg_plus_1)
