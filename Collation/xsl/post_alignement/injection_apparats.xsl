@@ -8,7 +8,7 @@
     <!--FAIT: s'occuper du namespace pour revenir à de la tei. C'est pas très beau mais ça fait le travail, 
     géré au niveau du script python. -->
     <!--ÀF: trouver une façon de gérer les omissions du témoin base-->
-    <!--Question importate sur l'injection: pour un sic par exemple dans un lieu variant, 
+    <!--Question importante sur l'injection: pour un sic par exemple dans un lieu variant, 
     vaut-il mieux créer un apparat enfant du <sic> ou re-créer des <sic> dans les <rdg> ? La seconde
     option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir-->
     <!--La ponctuation dans les app n'est pas rétablie (ce n'est pas un bug, elle n'est pas conservée). Gérer cela.-->
