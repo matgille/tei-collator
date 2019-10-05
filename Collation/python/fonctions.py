@@ -1,14 +1,13 @@
-import sys
-from lxml import etree
-import os
 import json
+import random
+import string
 import subprocess
+
+import dicttoxml
 from collatex import *
 from halo import Halo
-import dicttoxml
-import random
-import unicodedata
-import string
+from lxml import etree
+
 
 def generateur_lettre_initiale(size=1, chars = string.ascii_lowercase):
     return ''.join(random.choice(chars) for _ in range(size))

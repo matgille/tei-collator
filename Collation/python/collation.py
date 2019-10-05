@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
-import sys
 import fnmatch
 import os
+import sys
 import time
-import fonctions
-import subprocess
-from collatex import *
-from halo import Halo
-import json
-import dicttoxml
 
+import fonctions
+
+# TODO: nettoyer le tout / s'occuper de la conservation des xml:id pour ne pas avoir à les régénérer
 # Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
 # conseils.
 
@@ -25,7 +22,7 @@ if len(sys.argv) >= 2:# le nom du script est le premier argument
             fonctions.alignement(argument, saxon, chemin_xsl)
             print("Alignement CollateX ✓")
             fonctions.apparat_final("apparat_final.json")
-            print("Création des apparats ✓")# Réinjection des apparats. Ne marche pas pour l'instant.
+            print("Création des apparats ✓")# Réinjection des apparats.
             fonctions.injection(saxon,chemin_xsl)        
             # Création du tableau d'alignement pour visualisation
             fonctions.tableau_alignement(saxon,chemin_xsl)        
