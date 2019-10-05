@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import string
 import subprocess
@@ -17,6 +18,14 @@ def generateur_id(size=4, chars=string.ascii_uppercase + string.ascii_lowercase 
 
 
 def ajout_xmlid(fichier_entree, fichier_sortie):
+    """Création des xml:id pour chaque token. TODO: trouver un
+    moyen de pouvoir actualiser la transcription sans avoir à
+    re-générer des xml:id. Faire des groupes de n tokens pour retrouver les emplacements ?
+    pour chaque token, récupérer le bi/trigramme suivant et aller le retrouver dans le fichier de sortie
+    Si il est trouvé, copier l'id du token dans la fichier de sortie. Si il n'est pas trouvé, générer un
+    xml:id. Je pense que ça peut marcher pour des modifications de faible volume (un mot); je ne sais pas
+    ce que ça peut donner avec un ajout d'une phrase omise par inadvertance par exemple. Ou alors on peut utiliser
+    collatex aussi. """
     tei = {'tei':'http://www.tei-c.org/ns/1.0'}
     f = etree.parse(fichier_entree)
     root = f.getroot()
@@ -31,13 +40,19 @@ def ajout_xmlid(fichier_entree, fichier_sortie):
 # Attention à l'option -xi:(on|off) de saxon pour activer Xinclude le cas échéant 
 def tokenisation(saxon):
     with Halo(text = 'Tokénisation du corpus parallélisé.', spinner='dots'):
-        subprocess.run(["java","-jar", saxon, "-xi:on", "../../Dedans/XML/corpus/corpus.xml", "../xsl/pre_alignement/tokenisation.xsl"])
-        ajout_xmlid("../temoins/groupe.xml", "../temoins/groupe-xmlise.xml")
-    print("Tokénisation du corpus ✓")                
+        subprocess.run(["java","-jar", saxon, "-xi:on", "../../Dedans/XML/corpus/corpus.xml",
+                        "../xsl/pre_alignement/tokenisation.xsl"])
+        for transcription_individuelle in os.listdir("../temoins_tokenises"):
+            transcription_individuelle = "../temoins_tokenises/" + transcription_individuelle
+            ajout_xmlid(transcription_individuelle, transcription_individuelle)
+        subprocess.run(["java", "-jar", saxon, "../temoins_tokenises/Sal_J.xml",
+                        "../xsl/pre_alignement/regroupement_transcriptions.xsl"])
+    print("Tokénisation du corpus ✓")
 
 def scission_corpus(saxon):
     with Halo(text = 'Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
-        subprocess.run(["java","-jar", saxon, "-o:../tmp/tmp.tmp", "../temoins/groupe-xmlise.xml", "../xsl/pre_alignement/scission_chapitres.xsl"])
+        subprocess.run(["java","-jar", saxon, "../temoins_regroupes/groupe.xml",
+                        "../xsl/pre_alignement/scission_chapitres.xsl"])
     print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
 
 
@@ -46,7 +61,7 @@ def scission_corpus(saxon):
 def transformation_json(saxon, output_fichier_json, input_fichier_xml):
     with Halo(text = 'Transformation en json', spinner='dots'):
         subprocess.run(["java","-jar", saxon, output_fichier_json, input_fichier_xml, "xsl/pre_alignement/transformation_json.xsl"])
-    print("Transformation en json pour alignement ✓")  
+    print("Transformation en json pour alignement ✓")
 
 
 def alignement(fichier_a_collationer, saxon, chemin_xsl):
@@ -97,7 +112,7 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
         fichier_json_a_xmliser=open('alignement_collatex.json').read()
         obj = json.loads(fichier_json_a_xmliser)
         vers_xml = dicttoxml.dicttoxml(obj)
-        vers_xml = vers_xml.decode("utf-8") 
+        vers_xml = vers_xml.decode("utf-8")
         sortie_xml.write(vers_xml)
         sortie_xml.close()
         
@@ -137,18 +152,18 @@ def apparat_final(fichier_entree):
         
          liste_dict = 
             [{
-                "0" : ["", "", "Phil_J"], 
+                "0" : ["", "", "Phil_J"],
                 "1" : ["a0a6f5ec2-a98u9ds98yh", "Ca iiii", "Mad_G"],
                 "2" : ["a0a9f5dsc2-a9sdnjxcznk", "Ca iiii", "Phil_Z"]
                 }, {
-                "0" : ["a4d2587a-a98u98yh", "do", "Phil_J"], 
+                "0" : ["a4d2587a-a98u98yh", "do", "Phil_J"],
                 "1" : ["a0a6f5ec2-a98u9ds98yh", "do", "Mad_G"],
-                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "donde", "Phil_Z"], 
-                "3" : ["prout-cacau98yh", "onde", "Phil_K"], 
-                "4" : ["a4sde2587a-a9fu98yh", "donde", "Phil_Ñ"], 
+                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "donde", "Phil_Z"],
+                "3" : ["prout-cacau98yh", "onde", "Phil_K"],
+                "4" : ["a4sde2587a-a9fu98yh", "donde", "Phil_Ñ"],
                 "5" : ["a4sd88888e2587a-a999999h", "do", "Phil_M"]
                 }, {
-                "0" : ["a4d2587a-a98u98yh", "muesstra", "Phil_J"], 
+                "0" : ["a4d2587a-a98u98yh", "muesstra", "Phil_J"],
                 "1" : ["a0a6f5ec2-a98u9ds98yh", "muestra", "Mad_G"],
                 "2" : ["a0a9f5dsc2-a9sdnjxcznk", "prueua", "Phil_Z"]
             }]
@@ -305,7 +320,7 @@ def injection(saxon, chemin, chapitre):
     chapitre = "chapitre="+ str(chapitre)
     chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
     with Halo(text = 'Injection des apparats dans chaque transcription individuelle', spinner='dots'):
-        subprocess.run(["java","-jar", saxon, "-o:sortie_finale.xml", "juxtaposition.xml", chemin_injection, chapitre])
+        subprocess.run(["java","-jar", saxon, "juxtaposition.xml", chemin_injection, chapitre])
     print("Injection des apparats dans chaque transcription individuelle ✓")
         
 def tableau_alignement(saxon, chemin):
@@ -316,8 +331,8 @@ def tableau_alignement(saxon, chemin):
         
 def nettoyage():
     #with Halo(text = "Nettoyage du dossier", spinner='dots'):
-        #os.remove("alignement_collatex.json") 
-        #os.remove("alignement_collatex.xml") 
+        #os.remove("alignement_collatex.json")
+        #os.remove("alignement_collatex.xml")
         #os.remove("apparat_final.json")
         #os.remove("sortie_finale.xml")
     print("Nettoyage du dossier ✓")

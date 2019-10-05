@@ -20,11 +20,15 @@ simplement actualiser le texte -->
 
 
     <xsl:template match="/">
-        <xsl:result-document href="../temoins/groupe.xml">
-            <xsl:element name="group">
-                <xsl:apply-templates xpath-default-namespace="tei"/>
-            </xsl:element>
-        </xsl:result-document>
+        <xsl:for-each select="//tei:TEI[@type = 'transcription']">
+            <xsl:variable name="nom_fichier" select="@xml:id"/>
+            <xsl:result-document href="../temoins_tokenises/{$nom_fichier}.xml">
+                <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
+                    <xsl:attribute name="xml:id" select="@xml:id"/>
+                    <xsl:apply-templates xpath-default-namespace="tei"/>
+                </xsl:element>
+            </xsl:result-document>
+        </xsl:for-each>
     </xsl:template>
 
     <xsl:template match="@* | node()">
@@ -33,7 +37,7 @@ simplement actualiser le texte -->
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template match="tei:fw | tei:desc | tei:graphic"/>
+
 
     <xsl:template match="tei:choice">
         <xsl:apply-templates select="tei:reg"/>
@@ -41,39 +45,20 @@ simplement actualiser le texte -->
         <xsl:apply-templates select="tei:corr"/>
     </xsl:template>
 
-    <xsl:template match="tei:text">
-        <text xml:id="{ancestor::tei:TEI/@xml:id}">
-            <xsl:apply-templates/>
-        </text>
+
+
+
+    <xsl:template match="//comment()">
+        <xsl:comment><xsl:value-of select="."/></xsl:comment>
     </xsl:template>
 
-    <!--    <!-\-Conserver les commentaires pour ne pas perdre d'information-\->
-    <xsl:template match="comment()">
-        <xsl:comment><xsl:value-of select="."/></xsl:comment>
-    </xsl:template>-->
-    <!--problème de tokénisation: les virgules-->
+
     <xsl:template match="tei:TEI[@type = 'bibliographie'] | tei:TEI[@type = 'these']"/>
 
     <xsl:template match="tei:TEI[@type = 'transcription']">
         <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:apply-templates/>
         </xsl:element>
-
-
-        <!-- <xsl:analyze-string select="." regex="([.,:;!?])">
-            <xsl:matching-substring>
-                <xsl:element name="pct">
-                    <xsl:attribute name="xml:id">a<xsl:value-of
-                        select="substring-before(uuid:randomUUID(), '-')"/></xsl:attribute>
-                    <xsl:value-of select="regex-group(1)"/>
-                </xsl:element>
-                <xsl:element name="w">
-                    <xsl:attribute name="xml:id">a<xsl:value-of
-                        select="substring-before(uuid:randomUUID(), '-')"/></xsl:attribute>
-                    <xsl:value-of select="regex-group(2)"/>
-                </xsl:element>
-            </xsl:matching-substring>
-        </xsl:analyze-string>-->
     </xsl:template>
 
 
@@ -85,7 +70,7 @@ simplement actualiser le texte -->
         <xsl:for-each select="tokenize(., '\s+')">
             <xsl:analyze-string select="." regex="([:,;¿?.])">
                 <xsl:matching-substring>
-                    <xsl:element name="pct" namespace="http://www.tei-c.org/ns/1.0">
+                    <xsl:element name="pc" namespace="http://www.tei-c.org/ns/1.0">
                         <xsl:value-of select="regex-group(1)"/>
                     </xsl:element>
                 </xsl:matching-substring>
@@ -98,6 +83,5 @@ simplement actualiser le texte -->
         </xsl:for-each>
     </xsl:template>
 
-    <xsl:template match="tei:teiHeader"/>
 
 </xsl:stylesheet>

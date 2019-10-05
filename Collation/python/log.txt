@@ -1,0 +1,5 @@
+Tokénisation du corpus ✓
+Scission du corpus, création de dossiers et de fichiers par chapitre ✓ 
+
+Traitement du chapitre 3
+Transformation en json pour alignement ✓
