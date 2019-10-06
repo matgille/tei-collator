@@ -20,7 +20,7 @@ def generateur_id(size=4, chars=string.ascii_uppercase + string.ascii_lowercase 
     return generateur_lettre_initiale() + ''.join(random.choice(chars) for _ in range(size))
 
 
-def ajout_xmlid(fichier_entree, fichier_sortie):
+def ajout_xmlid(fichier_entree, *fichier_sortie):
     """Création des xml:id pour chaque token. TODO: trouver un
     moyen de pouvoir actualiser la transcription sans avoir à
     re-générer des xml:id. Faire des groupes de n tokens pour retrouver les emplacements ?
@@ -47,15 +47,15 @@ def tokenisation(saxon):
         subprocess.run(["java", "-jar", saxon, "-xi:on", "../../Dedans/XML/corpus/corpus.xml",
                         "../xsl/pre_alignement/tokenisation.xsl"])
         for transcription_individuelle in os.listdir("../temoins_tokenises"):
-            transcription_individuelle = "../temoins_tokenises/" + transcription_individuelle
-            ajout_xmlid(transcription_individuelle, transcription_individuelle)
-        subprocess.run(["java", "-jar", saxon, "../temoins_tokenises/Sal_J.xml",
-                        "../xsl/pre_alignement/regroupement_transcriptions.xsl"])
+            fichier_xml = "../temoins_tokenises/" + transcription_individuelle
+            ajout_xmlid(fichier_xml, fichier_xml)
     print("Tokénisation du corpus ✓")
 
 
-def scission_corpus(saxon):
+def preparation_corpus(saxon):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
+        subprocess.run(["java", "-jar", saxon, "../temoins_tokenises/Sal_J.xml",
+                        "../xsl/pre_alignement/regroupement_transcriptions.xsl"])
         subprocess.run(["java", "-jar", saxon, "../temoins_regroupes/groupe.xml",
                         "../xsl/pre_alignement/scission_chapitres.xsl"])
     print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")

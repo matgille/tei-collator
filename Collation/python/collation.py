@@ -38,7 +38,7 @@ if len(sys.argv) >= 2:  # le nom du script est le premier argument
             fonctions.tokenisation(saxon)
             exit(0)
         elif argument == '--scission' or argument == '-s':
-            fonctions.scission_corpus(saxon)
+            fonctions.preparation_corpus(saxon)
             exit(0)
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.      
 
@@ -52,11 +52,11 @@ elif len(sys.argv) is 2:
         portee = range(argument, arg_plus_1)
 chemin_xsl = "../../"
 
-fonctions.tokenisation(saxon)
+# fonctions.tokenisation(saxon)
 
 # On lemmatise ici. À intégrer ou à faire par ses propres moyens
 
-fonctions.scission_corpus(saxon)
+fonctions.preparation_corpus(saxon)
 
 # Création des fichiers d'apparat
 # with Halo(text='Alignement automatique par chapitre', spinner='dots'):
