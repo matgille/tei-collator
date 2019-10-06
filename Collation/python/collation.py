@@ -54,6 +54,8 @@ chemin_xsl = "../../"
 
 fonctions.tokenisation(saxon)
 
+# On lemmatise ici. À intégrer ou à faire par ses propres moyens
+
 fonctions.scission_corpus(saxon)
 
 # Création des fichiers d'apparat
