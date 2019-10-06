@@ -16,11 +16,11 @@ def generateur_lettre_initiale(size=1, chars=string.ascii_lowercase):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def generateur_id(size=4, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
+def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
     return generateur_lettre_initiale() + ''.join(random.choice(chars) for _ in range(size))
 
 
-def ajout_xmlid(fichier_entree, *fichier_sortie):
+def ajout_xmlid(fichier_entree, fichier_sortie):
     """Création des xml:id pour chaque token. TODO: trouver un
     moyen de pouvoir actualiser la transcription sans avoir à
     re-générer des xml:id. Faire des groupes de n tokens pour retrouver les emplacements ?
