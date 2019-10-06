@@ -71,5 +71,8 @@
         <!--Ajouter les ommissions-->
     </xsl:template>
 
+    <xsl:template match="tei:pc">
+        <xsl:apply-templates/>
+    </xsl:template>
 
 </xsl:stylesheet>
