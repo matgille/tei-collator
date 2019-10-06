@@ -105,8 +105,10 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
 
     alignement_json()
 
-    # Les résultats de la collation ne sont pas directement visibles: on a la liste A puis la liste B: il faut transformer le tout pour avoir un réel alignement. Voir http://collatex.obdurodon.org/xml-json-conversion.xhtml pour la structure du résultat. 
-    # Le résultat de cette dernière transformation est une liste qui comprend elle-même une liste avec l'alignement. 
+    # Les résultats de la collation ne sont pas directement visibles: on a la liste A puis la liste B: il faut
+    # transformer le tout pour avoir un réel alignement. Voir http://collatex.obdurodon.org/xml-json-conversion.xhtml
+    # pour la structure du résultat. Le résultat de cette dernière transformation est une liste qui comprend
+    # elle-même une liste avec l'alignement.
 
     # Création des apparats proprement dite: on compare les lieux variants et on réduit les app.
     with Halo(text='Création des apparats', spinner='dots'):
@@ -335,10 +337,9 @@ def tableau_alignement(saxon, chemin):
 def nettoyage():
     # TODO: ranger les fichiers dans des dossiers
     with Halo(text="Nettoyage du dossier", spinner='dots'):
-        os.mkdir('tex')
-        os.mkdir('xml')
-        os.mkdir('aux')
-        os.mkdir('json')
+        for i in ['tex', 'xml', 'aux', 'json']:
+            if not os.path.exists(i):
+                os.makedirs(i)
         for file in os.listdir('.'):
             path = os.path.join('', file)
             if os.path.isdir(path):
