@@ -39,7 +39,6 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text>
             \documentclass[francais,oneside,a4paper,12pt]{book}
             \input{../../latex/preambule.tex}
-            \usepackage[utf8]{inputenc}
             \begin{document}
             \setstretch{1,1}
            \begin{linenumbers}[1]
