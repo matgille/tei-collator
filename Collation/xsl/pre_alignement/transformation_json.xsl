@@ -26,7 +26,20 @@
         <xsl:for-each select="descendant::tei:w[text()]">
             <xsl:text>{"t": "</xsl:text>
             <xsl:value-of select="."/>
-            <xsl:text> " ,</xsl:text>
+            <xsl:text> "</xsl:text>
+            <xsl:if test="@lemma">
+                <xsl:text>,</xsl:text>
+                <xsl:text>"n": "</xsl:text>
+                <xsl:value-of select="@lemma"/>
+                <xsl:text>" </xsl:text>
+            </xsl:if>
+            <xsl:if test="@pos">
+                <xsl:text>,</xsl:text>
+                <xsl:text>"pos": "</xsl:text>
+                <xsl:value-of select="@pos"/>
+                <xsl:text>" </xsl:text>
+            </xsl:if>
+            <xsl:text>,</xsl:text>
             <xsl:text>"xml:id" : "</xsl:text>
             <xsl:value-of select="@xml:id"/>
             <xsl:text>"}</xsl:text>
