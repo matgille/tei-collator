@@ -5,6 +5,7 @@ etat_correction_temoins.md
 .eps
 .log
 chapitres/
+__pychache__/
 Outils_correction/out/correction.*
 saxon9ee.jar
 .bak
