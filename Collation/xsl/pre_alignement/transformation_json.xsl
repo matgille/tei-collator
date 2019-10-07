@@ -23,6 +23,7 @@
         <xsl:value-of select="@n"/>
         <xsl:text>",
         "tokens" : [</xsl:text>
+        <!--        <xsl:for-each select="descendant::tei:w[text()]|descendant::tei:pc">-->
         <xsl:for-each select="descendant::tei:w[text()]">
             <xsl:text>{"t": "</xsl:text>
             <xsl:value-of select="."/>
@@ -44,6 +45,7 @@
             <xsl:value-of select="@xml:id"/>
             <xsl:text>"}</xsl:text>
             <xsl:variable name="nom_temoin" select="ancestor::temoin/@n"/>
+            <!--<xsl:if test="following::tei:w[text()][ancestor::temoin/@n = $nom_temoin]|following::tei:pc[ancestor::temoin/@n = $nom_temoin]">-->
             <xsl:if test="following::tei:w[text()][ancestor::temoin/@n = $nom_temoin]">
                 <xsl:text>,</xsl:text>
             </xsl:if>

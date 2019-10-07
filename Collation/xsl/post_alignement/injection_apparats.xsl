@@ -70,9 +70,4 @@
         <!--<xsl:if test="following-sibling::tei:w[1]"/>-->
         <!--Ajouter les ommissions-->
     </xsl:template>
-
-    <xsl:template match="tei:pc">
-        <xsl:apply-templates/>
-    </xsl:template>
-
 </xsl:stylesheet>
