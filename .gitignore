@@ -8,7 +8,7 @@ chapitres/
 __pychache__/
 Outils_correction/out/correction.*
 saxon9ee.jar
-.bak
+*.bak
 *.tif*
 .*lock*
 chapitres/
