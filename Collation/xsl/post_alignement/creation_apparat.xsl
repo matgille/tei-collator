@@ -39,6 +39,24 @@
         <xsl:text>","</xsl:text>
         <!--Il y a un dièse de trop à un moment et je n'ai pas réussi à déterminer où.-->
         <xsl:value-of select="replace(@wit, '##', '#')"/>
+        <xsl:text>", "</xsl:text>
+        <xsl:if test="tei:w[@lemma]">
+            <xsl:for-each select="tei:w[@lemma]">
+                <xsl:value-of select="@lemma"/>
+                <xsl:if test="following-sibling::tei:w[@lemma]">
+                    <xsl:text>_</xsl:text>
+                </xsl:if>
+            </xsl:for-each>
+        </xsl:if>
+        <xsl:text>", "</xsl:text>
+        <xsl:if test="tei:w[@pos]">
+            <xsl:for-each select="tei:w[@pos]">
+                <xsl:value-of select="@pos"/>
+                <xsl:if test="following-sibling::tei:w[@pos]">
+                    <xsl:text>_</xsl:text>
+                </xsl:if>
+            </xsl:for-each>
+        </xsl:if>
         <xsl:text>"]</xsl:text>
         <xsl:if test="following-sibling::tei:rdg">
             <xsl:text>,</xsl:text>
