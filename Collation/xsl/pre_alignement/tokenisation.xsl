@@ -37,6 +37,13 @@ simplement actualiser le texte -->
         </xsl:copy>
     </xsl:template>
 
+    <xsl:template match="tei:hi[following-sibling::text()]">
+        <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:copy-of select="."/>
+            <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
+        </xsl:element>
+    </xsl:template>
+
 
 
     <xsl:template match="tei:choice">
@@ -82,6 +89,4 @@ simplement actualiser le texte -->
             </xsl:analyze-string>
         </xsl:for-each>
     </xsl:template>
-
-
 </xsl:stylesheet>
