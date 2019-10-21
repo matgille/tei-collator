@@ -1,79 +1,86 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
 
-<!--Feuille XSL qui permet de tokeniser la source.-->
-<!--étape 1: tokeniser.-->
-<!--Reste à gérer la ponctuation (seule est conservée celle qui finit un noeud comme un p), 
-    les mots coupés par des balises.-->
-<!--Il faut deux niveaux de tokenisation: un niveau où on conserve tout (qui va reservir à la fin pour la réinjection), 
-et un niveau où on élimine le bruit (choix des choice, etc). Sinon, on perd de l'information: les choice > sic par exemples-->
-<!--à faire, URGENT: 1) nettoyer la feuille et 2) créer une sécurité pour ne pas perdre tout le travail en re-tokenisant
-avec de nouveaux xml:id. Faire une feuille de comparaison: si le token existe, ne pas recréer un identifiant par exemple, 
-simplement actualiser le texte -->
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs tei" version="2.0"
-    xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:f="urn:stylesheet-func">
+<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:tei="http://www.tei-c.org/ns/1.0">
+    <xsl:output indent="yes"/>
     <xsl:strip-space elements="*"/>
-    <!--    <xsl:output doctype-system="Sal_J.dtd"/>-->
-
-
-
-
-    <xsl:template match="/">
-        <xsl:for-each select="//tei:TEI[@type = 'transcription']">
-            <xsl:variable name="nom_fichier" select="@xml:id"/>
-            <xsl:result-document href="../temoins_tokenises/{$nom_fichier}.xml">
-                <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
-                    <xsl:attribute name="xml:id" select="@xml:id"/>
-                    <xsl:apply-templates xpath-default-namespace="tei"/>
-                </xsl:element>
-            </xsl:result-document>
-        </xsl:for-each>
-    </xsl:template>
-
+    <!--Première phase de la tokénisation: -->
+    <!--Méthode suivie: sur suggestion de Marjorie Burghart, le "multi-pass" https://stackoverflow.com/a/8215981-->
+    <!--Première Passe-->
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="no">
             <xsl:apply-templates select="@* | node()"/>
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template match="tei:hi[following-sibling::text()]">
+
+    <xsl:template match="/" mode="PremierePasse">
+        <xsl:apply-templates/>
+    </xsl:template>
+
+
+
+    <xsl:variable name="ResultatPremierePasse">
+        <xsl:apply-templates select="/" mode="PremierePasse"/>
+    </xsl:variable>
+
+
+
+    <xsl:template match="//comment()" mode="PremierePasse">
+        <xsl:comment><xsl:value-of select="."/></xsl:comment>
+    </xsl:template>
+
+
+    <xsl:template match="tei:TEI[@type = 'transcription']">
+        <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:attribute name="xml:id" select="@xml:id"/>
+            <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
+
+    <!--Première Passe-->
+
+
+
+
+
+    <!--Seconde Passe-->
+
+
+    <xsl:variable name="ResultatSecondePasse">
+        <xsl:apply-templates select="/" mode="secondePasse"/>
+    </xsl:variable>
+
+    <xsl:template match="@* | node()" mode="secondePasse">
+        <xsl:copy copy-namespaces="no">
+            <xsl:apply-templates mode="secondePasse" select="@* | node()"/>
+        </xsl:copy>
+    </xsl:template>
+
+    <xsl:template
+        match="tei:hi[following-sibling::text()][not(@rend = 'rubrique')][not(@rend = 'souligne')]"
+        mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="."/>
             <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
         </xsl:element>
     </xsl:template>
 
-
-
-    <xsl:template match="tei:choice">
-        <xsl:apply-templates select="tei:reg"/>
-        <xsl:apply-templates select="tei:expan"/>
-        <xsl:apply-templates select="tei:corr"/>
-    </xsl:template>
-
-
-
-
-    <xsl:template match="//comment()">
-        <xsl:comment><xsl:value-of select="."/></xsl:comment>
-    </xsl:template>
-
-
-    <xsl:template match="tei:TEI[@type = 'bibliographie'] | tei:TEI[@type = 'these']"/>
-
-    <xsl:template match="tei:TEI[@type = 'transcription']">
-        <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
-            <xsl:apply-templates/>
+    <xsl:template match="tei:choice" mode="secondePasse">
+        <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:value-of select="substring-after(preceding-sibling::text()[-1], ' ')"/>
+            <xsl:copy-of select="."/>
+            <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
         </xsl:element>
     </xsl:template>
-
 
     <!--On procède en deux temps: d'abord, tokeniser avec espace comme séparateur. Puis on analyse la chaîne produite
     et on en extrait la ponctuation-->
     <!--Pour l'instant la ponctuation n'est pas prise en compte dans la collation, étant donné qu'hormis l'incunable, elle
     est du fait de l'éditeur (moi).-->
-    <xsl:template match="text()[not(ancestor::tei:note)][not(ancestor::tei:teiHeader)]">
+    <xsl:template
+        match="text()[not(ancestor::tei:note)][not(ancestor::tei:teiHeader)][not(ancestor::tei:w)][not(ancestor::tei:desc)]"
+        mode="secondePasse">
         <xsl:for-each select="tokenize(., '\s+')">
             <xsl:analyze-string select="." regex="([:,;¿?.])">
                 <xsl:matching-substring>
@@ -89,4 +96,37 @@ simplement actualiser le texte -->
             </xsl:analyze-string>
         </xsl:for-each>
     </xsl:template>
+
+
+    <!--Seconde Passe-->
+
+
+
+    <!--Troisième Passe: division du document, suppression des doublons-->
+
+    <xsl:template match="/">
+        <xsl:for-each select="//tei:TEI[@type = 'transcription']">
+            <xsl:variable name="nom_fichier" select="@xml:id"/>
+            <xsl:result-document href="../temoins_tokenises/{$nom_fichier}.xml">
+                <xsl:apply-templates select="$ResultatSecondePasse//tei:TEI[@xml:id = $nom_fichier]"
+                    mode="troisiemePasse" xpath-default-namespace="tei"/>
+            </xsl:result-document>
+        </xsl:for-each>
+    </xsl:template>
+
+    <xsl:template match="@* | node()" mode="troisiemePasse">
+        <xsl:copy copy-namespaces="yes">
+            <xsl:apply-templates mode="troisiemePasse" select="@* | node()"/>
+        </xsl:copy>
+    </xsl:template>
+
+    <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
+        mode="troisiemePasse"/>
+
+    <!--Troisième Passe-->
+
+
+
+
+
 </xsl:stylesheet>

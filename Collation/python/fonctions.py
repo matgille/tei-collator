@@ -49,12 +49,14 @@ def tokenisation(saxon):
         for transcription_individuelle in os.listdir("../temoins_tokenises"):
             fichier_xml = "../temoins_tokenises/" + transcription_individuelle
             ajout_xmlid(fichier_xml, fichier_xml)
-    print("Tokénisation du corpus ✓")
+        subprocess.run(["java", "-jar", saxon, "-xi:on", "../temoins_tokenises/Sal_J.xml",
+                        "../xsl/pre_alignement/regularisation.xsl"])
+    print("Tokénisation et régularisation du corpus pour alignement ✓")
 
 
 def preparation_corpus(saxon):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
-        subprocess.run(["java", "-jar", saxon, "../temoins_tokenises/Sal_J.xml",
+        subprocess.run(["java", "-jar", saxon, "../temoins_tokenises_regularises/Sal_J.xml",
                         "../xsl/pre_alignement/regroupement_transcriptions.xsl"])
         subprocess.run(["java", "-jar", saxon, "../temoins_regroupes/groupe.xml",
                         "../xsl/pre_alignement/scission_chapitres.xsl"])
