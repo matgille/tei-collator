@@ -9,7 +9,8 @@
     <xsl:template match="/">
         <xsl:result-document href="../temoins_regroupes/groupe.xml">
             <xsl:element name="teiCorpus" namespace="http://www.tei-c.org/ns/1.0">
-                <xsl:for-each select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI">
+                <xsl:for-each
+                    select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI">
                     <xsl:apply-templates/>
                 </xsl:for-each>
             </xsl:element>
@@ -31,7 +32,7 @@
 
 
     <xsl:template match="@* | node()">
-        <xsl:copy copy-namespaces="no">
+        <xsl:copy copy-namespaces="yes">
             <xsl:apply-templates select="@* | node()"/>
         </xsl:copy>
     </xsl:template>

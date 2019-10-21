@@ -19,6 +19,7 @@
             <xsl:variable name="nom_fichier" select="@xml:id"/>
             <xsl:result-document href="../temoins_tokenises_regularises/{$nom_fichier}.xml">
                 <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
+                    <xsl:attribute name="xml:id" select="$nom_fichier"/>
                     <xsl:apply-templates/>
                 </xsl:element>
             </xsl:result-document>
