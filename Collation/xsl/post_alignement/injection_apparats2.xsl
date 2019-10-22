@@ -60,8 +60,9 @@
         <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="wit" select="@wit"/>
             <xsl:for-each select="tokenize(@xml:id, '_')">
-                <xsl:copy-of
-                    select="document($retour_au_texte)//tei:w[contains($xml_id, @xml:id)]/node()"/>
+                <xsl:variable name="xml_id" select="."/>
+                <xsl:copy-of select="document($retour_au_texte)//tei:w[@xml:id = $xml_id]/node()"/>
+                <xsl:text> </xsl:text>
             </xsl:for-each>
         </xsl:element>
     </xsl:template>
