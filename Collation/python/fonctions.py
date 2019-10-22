@@ -321,12 +321,22 @@ def apparat_final(fichier_entree):
         sortie_xml.close()
 
 
-def injection(saxon, chemin, chapitre):
-    chapitre = "chapitre=" + str(chapitre)
+def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
+    param_chapitre = "chapitre=" + str(chapitre)  # Premier paramètre passé à la xsl: le chapitre à processer
+    param_chemin_sortie = "chemin_sortie=" + str(chemin_sortie)  # Second paramètre: le chemin vers le fichier de sortie
+    if not standalone:  # Si la fonction est appelée dans le cadre du processus complet (toujours question de chemin)
+        fichier_entree = "juxtaposition.xml"
+    else:  # Si la fonction est appelée seule, le chemin est à partir du fichier python
+        fichier_entree = "../chapitres/chapitre4/xml/juxtaposition.xml"
     chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
-    with Halo(text='Injection des apparats dans chaque transcription individuelle', spinner='dots'):
-        subprocess.run(["java", "-jar", saxon, "juxtaposition.xml", chemin_injection, chapitre])
+    with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
+        subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
     print("Injection des apparats dans chaque transcription individuelle ✓")
+    #  import glob
+
+    #  liste = glob.glob('chapitres/chapitre4/xml/apparat_*.xml')
+    #  for i in liste:
+
 
 
 def tableau_alignement(saxon, chemin):

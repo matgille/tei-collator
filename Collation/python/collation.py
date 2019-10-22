@@ -40,6 +40,10 @@ if len(sys.argv) >= 2:  # le nom du script est le premier argument
         elif argument == '--scission' or argument == '-s':
             fonctions.preparation_corpus(saxon)
             exit(0)
+        elif argument == '--injection' or argument == '-i':
+            chemin_sortie = '../chapitres/chapitre' + str(sys.argv[2])+"/xml/"
+            fonctions.injection(saxon, '../', int(sys.argv[2]), True, chemin_sortie)
+            exit(0)
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.      
 
 if not len(sys.argv) >= 2:

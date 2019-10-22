@@ -3,6 +3,7 @@
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
     <xsl:output method="xml"/>
+    <xsl:strip-space elements="*"/>
     <!--Feuille qui réinjecte à l'aide des identifiants de token l'apparat dans chaque transcription individuelle, 
     de manière à pouvoir créer des éditions ayant pour base chacun des manuscrits-->
     <!--FAIT: s'occuper du namespace pour revenir à de la tei. C'est pas très beau mais ça fait le travail, 
@@ -12,7 +13,7 @@
     vaut-il mieux créer un apparat enfant du <sic> ou re-créer des <sic> dans les <rdg> ? La seconde
     option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir-->
     <!--La ponctuation dans les app n'est pas rétablie (ce n'est pas un bug, elle n'est pas conservée). Gérer cela.-->
-
+    <xsl:param name="chemin_sortie"/>
     <xsl:param name="chapitre" select="3"/>
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="no">
@@ -23,7 +24,7 @@
 
     <xsl:template match="*:temoin">
         <xsl:variable name="sigle" select="translate(@n, '#', '')"/>
-        <xsl:result-document href="apparat_{$sigle}_{$chapitre}.xml">
+        <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}.xml">
             <xsl:element name="div" namespace="http://www.tei-c.org/ns/1.0">
                 <xsl:attribute name="type">chapitre</xsl:attribute>
                 <xsl:attribute name="n" select="$chapitre"/>
@@ -48,7 +49,7 @@
         <xsl:variable name="ms" select="ancestor::*:temoin/@n"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="apparat_chapitre"
-            select="concat('../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml')"/>
+            select="concat('../../chapitres/chapitre', $chapitre, '/xml/apparat_collatex.xml')"/>
         <xsl:if
             test="document($apparat_chapitre)//tei:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]">
             <!--Tester si le token est pas déjà dans un apparat qui touche le token précédent: suppression des doublons-->
