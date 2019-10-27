@@ -289,17 +289,17 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
     <!-- ignorer le text entre balises <del>-->
 
-    <xsl:template match="tei:div[@subtype = 'glose']">
+    <xsl:template match="tei:div[@type = 'glose']">
         <xsl:text>\marginpar{\textbf{[Glose]}}</xsl:text>
         <xsl:apply-templates/>
     </xsl:template>
 
-    <xsl:template match="tei:div[@subtype = 'traduction']">
+    <xsl:template match="tei:div[@type = 'traduction']">
         <xsl:apply-templates/>
         <xsl:text>~\\</xsl:text>
     </xsl:template>
 
-    <xsl:template match="tei:div[not(@subtype)]">
+    <xsl:template match="tei:div[not(@type = 'glose' or @type = 'traduction')]">
         <xsl:variable name="temoin_courant">
             <xsl:analyze-string select="@xml:id" regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
                 <xsl:matching-substring>
