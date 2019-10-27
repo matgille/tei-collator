@@ -59,6 +59,16 @@
                                 <xsl:attribute name="xml:id">
                                     <xsl:value-of select="descendant::xml:id"/>
                                 </xsl:attribute>
+                                <xsl:if test="descendant::n">
+                                    <xsl:attribute name="lemma">
+                                        <xsl:value-of select="descendant::n"/>
+                                    </xsl:attribute>
+                                </xsl:if>
+                                <xsl:if test="descendant::pos">
+                                    <xsl:attribute name="pos">
+                                        <xsl:value-of select="descendant::pos"/>
+                                    </xsl:attribute>
+                                </xsl:if>
                                 <xsl:value-of select="descendant::t"/>
                             </xsl:element>
                         </xsl:for-each>
@@ -99,6 +109,16 @@
                                     <xsl:attribute name="xml:id">
                                         <xsl:value-of select="descendant::xml:id"/>
                                     </xsl:attribute>
+                                    <xsl:if test="descendant::n">
+                                        <xsl:attribute name="lemma">
+                                            <xsl:value-of select="descendant::n"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
+                                    <xsl:if test="descendant::pos">
+                                        <xsl:attribute name="pos">
+                                            <xsl:value-of select="descendant::pos"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
                                     <xsl:value-of select="descendant::t"/>
                                 </xsl:element>
                             </xsl:for-each>

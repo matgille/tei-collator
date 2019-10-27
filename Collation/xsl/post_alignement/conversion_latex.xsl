@@ -340,6 +340,18 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text>ouioui</xsl:text>
     </xsl:template>
 
+    <xsl:template match="tei:app[@type = 'orthographique']">
+        <!--Afficher ici la lecture du témoin courant, voir plus bas-->
+        <xsl:variable name="temoin_courant">
+            <xsl:analyze-string select="ancestor::tei:div[@xml:id]/@xml:id"
+                regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
+                <xsl:matching-substring>
+                    <xsl:value-of select="regex-group(1)"/>
+                </xsl:matching-substring>
+            </xsl:analyze-string>
+        </xsl:variable>
+        <xsl:apply-templates select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
+    </xsl:template>
 
   <!--  Ne marche pas pour l'instant avec ednotes (il faudrait pouvoir faire apparaitre
       le texte non mis en forme en note)
@@ -349,8 +361,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text>}</xsl:text>
     </xsl:template>-->
 
-
-    <xsl:template match="tei:app">
+    <xsl:template match="tei:app[@type = 'variante'] | tei:app[@type = 'personne_genre']">
         <xsl:variable name="temoin_courant">
             <xsl:analyze-string select="ancestor::tei:div[@xml:id]/@xml:id"
                 regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
