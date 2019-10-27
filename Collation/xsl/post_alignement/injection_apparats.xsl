@@ -49,7 +49,7 @@
         <xsl:variable name="ms" select="ancestor::*:temoin/@n"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="apparat_chapitre"
-            select="concat('../../chapitres/chapitre', $chapitre, '/xml/apparat_collatex.xml')"/>
+            select="concat('../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml')"/>
         <xsl:if
             test="document($apparat_chapitre)//tei:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]">
             <!--Tester si le token est pas déjà dans un apparat qui touche le token précédent: suppression des doublons-->
