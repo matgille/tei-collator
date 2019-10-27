@@ -341,11 +341,13 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
 
-    <xsl:template match="tei:hi[@rend = 'lettre_attente']">
+  <!--  Ne marche pas pour l'instant avec ednotes (il faudrait pouvoir faire apparaitre
+      le texte non mis en forme en note)
+      <xsl:template match="tei:hi[@rend = 'lettrine']">
         <xsl:text>\lettrine[lines=3, findent=3pt, nindent=0pt]{</xsl:text>
         <xsl:value-of select="upper-case(.)"/>
         <xsl:text>}</xsl:text>
-    </xsl:template>
+    </xsl:template>-->
 
 
     <xsl:template match="tei:app">
