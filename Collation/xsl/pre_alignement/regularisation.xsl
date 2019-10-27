@@ -6,8 +6,8 @@
 
 
     <xsl:strip-space elements="*"/>
-    
-    
+
+
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="no">
             <xsl:apply-templates select="@* | node()"/>
@@ -28,9 +28,11 @@
         </xsl:for-each>
     </xsl:template>
 
-    <xsl:template match="tei:hi">
+    <xsl:template match="tei:hi[not(@rend = 'lettre_attente')]">
         <xsl:value-of select="."/>
     </xsl:template>
+
+    <xsl:template match="tei:hi[@rend = 'lettre_attente']"/>
 
     <xsl:template match="tei:choice">
         <xsl:apply-templates select="tei:reg"/>

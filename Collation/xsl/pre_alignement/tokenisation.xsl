@@ -54,14 +54,34 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template
-        match="tei:hi[following-sibling::text()][not(@rend = 'rubrique')][not(@rend = 'souligne')]"
-        mode="secondePasse">
+    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="."/>
             <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
         </xsl:element>
     </xsl:template>
+
+    <xsl:template match="tei:hi[@rend = 'lettre_attente']" mode="secondePasse">
+        <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:copy-of select="."/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="tei:hi[@rend = 'souligne']">
+        <xsl:element name="hi" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:attribute name="rend">souligne</xsl:attribute>
+            <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
+    <!--Ici commencent les problèmes d'overlapping-->
+    <xsl:template match="tei:hi[@rend = 'souligne' or @rend = 'rubrique']">
+        <xsl:element name="hi" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:attribute name="rend" select="@rend"/>
+            <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
 
     <xsl:template match="tei:choice" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
@@ -114,14 +134,14 @@
     <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
 
-    <xsl:template match="tei:lb[@break = 'n']|tei:pb[@break = 'n']" mode="troisiemePasse">
+    <xsl:template match="tei:lb[@break = 'n'] | tei:pb[@break = 'n']" mode="troisiemePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:value-of select="preceding-sibling::tei:w[1]"/>
             <xsl:copy-of select="."/>
             <xsl:value-of select="following-sibling::tei:w[1]"/>
         </xsl:element>
     </xsl:template>
-    
+
 
     <!--Troisième Passe-->
 
@@ -146,7 +166,7 @@
         </xsl:for-each>
     </xsl:template>
 
-   
+
 
     <xsl:template
         match="tei:w[following-sibling::tei:w[1][child::tei:pb]] | tei:w[preceding-sibling::tei:w[1][child::tei:pb]] | tei:w[following-sibling::tei:w[1][child::tei:lb]] | tei:w[preceding-sibling::tei:w[1][child::tei:lb]]"
