@@ -5,6 +5,7 @@ import random
 import shutil
 import string
 import subprocess
+import glob
 
 import dicttoxml
 from collatex import *
@@ -331,12 +332,15 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
     chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
     with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
         subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
+        fichiers_apparat = 'apparat_*_*.xml'
+        liste = glob.glob(fichiers_apparat)
+        chemin_injection2 = chemin + "xsl/post_alignement/injection_apparats2.xsl"
+        for i in liste:
+            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+            param_sigle = "sigle=" + sigle
+            subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
-    #  import glob
-
-    #  liste = glob.glob('chapitres/chapitre4/xml/apparat_*.xml')
-    #  for i in liste:
-
 
 
 def tableau_alignement(saxon, chemin):
