@@ -1,0 +1,273 @@
+%%%%Prambule du fichier principal: les lignes suivantes, avant \begin{document} et le corps du texte:
+%\documentclass[francais,twoside,a4paper]{book}
+%R\UTF{00E9}soud le probl\UTF{00E8}me de registre (No room for...)
+
+%%%%%%%%%%r\UTF{00E9}soud le probSleme de registre%%%%%%%
+%Utiliser un fichier externe pour la bibliographie%
+%\usepackage{subfiles}
+%Utiliser un fichier externe pour la bibliographie%
+%\input{chemin du prambule}
+
+
+\usepackage{etex}
+\usepackage{graphicx, type1cm, lettrine}
+\reserveinserts{28}
+\usepackage[T1]{fontenc} 
+\usepackage{fontspec}
+\setmainfont{Junicode}
+%\usepackage{fbb}
+\usepackage[spanish]{babel}
+\usepackage{lipsum}
+
+%Diffrents types de guillemets selon la tradition du pays
+\usepackage{csquotes}
+%Diffrents types de guillemets selon la tradition du pays
+
+
+
+%permet de supprimer l'entte/pied de page pour les pages vides aprs un \cleardoublepage
+\usepackage{emptypage}
+%permet de supprimer l'entte/pied de page pour les pages vides aprs un \cleardoublepage
+
+
+
+\usepackage{lettrine}
+\usepackage{url}
+
+%FAIRE DES BOITES
+\usepackage{mdframed}
+%FAIRE DES BOITES
+
+
+%contrle de la mise en page gnrale
+\usepackage{layout}
+%contrle de la mise en page gnrale
+
+
+
+%Bonne hyphenation des urls
+\makeatletter
+\g@addto@macro{\UrlBreaks}{\UrlOrds}
+\makeatother
+%Bonne hyphenation des urls
+
+
+%\usepackage[top=2.5cm, bottom=1.5cm, left=3cm,right=2cm, heightrounded, includefoot]{geometry}
+
+\usepackage[top=2.5cm, bottom=1.5cm, left=2.25cm,right=2cm, heightrounded, marginparwidth=2.5cm, marginparsep=0.8cm, includefoot]{geometry}
+%%%%%%%%%%%%%%RESOUD PROBLEME EDNOTES NEWGEOMETRY
+\makeatletter
+    \newcommand*{\newmanyfootgeometry}[1]{%
+        \newgeometry{#1}\MFL@columnwidth\columnwidth}
+    \makeatother
+\raggedbottom
+%%%%%%%%%%%%%%RESOUD PROBLEME EDNOTES NEWGEOMETRY
+%stemma
+\usepackage{tikz}
+\usetikzlibrary{shapes}
+%stemma
+
+
+%ESPACE ENTRE LES LIGNES
+%\DisemulatePackage{setspace}%n\UTF{00E9}cessaire pour que \UTF{00E7}a marche avec memoir
+\usepackage{setspace}
+\onehalfspacing
+%ESPACE ENTRE LES LIGNES
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%STRUCTURE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Je sais pas  quoi a sert
+\usepackage{etoolbox}
+%Je sais pas  quoi a sert
+\usepackage{ifthen}
+
+%%% HEADER FOOTER
+%replacement?partial or total?for the LATE X macros related with sections?namely titles, headers and contents
+\usepackage[pagestyles,extramarks]{titlesec}
+%replacement?partial or total?for the LATE X macros related with sections?namely titles, headers and contents
+\settitlemarks*{section,subsection,chapter}
+%parties principales du mmoire
+\newpagestyle{commentaire}{
+\setfoot{}{\thepage}{}
+\sethead[ \ifthechapter{}{\large\quad\textsc{\firstextramarks{chapter}\chaptertitle}}][][]{}{}{\large\textit{\sectiontitle}\quad}
+\headrule}
+%parties principales du mmoire
+
+
+
+\assignpagestyle{\chapter}{toc}
+\assignpagestyle{\part}{tic}
+
+
+
+
+
+%corps de texte de l'dition
+\newpagestyle{texte2}{
+\setfoot{}{\thepage}{}
+\sethead[\quad\large\textit{\subsectiontitle}][][]{}{}{\quad\large \quad \Large\textsc{Livre i} -- \large\sectiontitle\quad}
+\headrule}
+%corps de texte de l'dition
+
+
+
+\usepackage{tocloft}
+\renewcommand\cftchapaftersnum{.}% adds dot after chapter title in ToC
+\renewcommand\cftchapdotsep{\cftdotsep}
+%toc dans la toc
+\usepackage{tocbibind}
+%toc dans la toc
+
+%profondeur de la numrotation structurelle
+\setcounter{secnumdepth}{0}
+%profondeur de la numrotation structurelle
+
+%RESET NUMERO CHAPITRE
+\usepackage{remreset}%reset des num\UTF{00E9}ros de notes/chapitres
+\makeatletter
+\@removefromreset{footnote}{}
+\makeatother
+%RESET NUMERO CHAPITRE
+
+
+%%%%%Red\UTF{00E9}finition des diff\UTF{00E9}rents titres de section%%%%%
+\titleformat{\chapter}[display]
+    {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{10pt}{\huge}
+\titlespacing*{\chapter}{-20pt}{-50pt}{10pt}%% > haut de page. La deuxi\UTF{00E8}me fenetre de r\UTF{00E9}glage fait la hauteur avant le titre, la premi\UTF{00E8}re gauche/droite, la derni\UTF{00E8}re la hauteur apr\UTF{00E8}s le titre. 
+\titleformat{\section}
+  {\normalfont\LARGE\bfseries}{\thesection}{1em}{}
+\titlespacing*{\section}{-20pt}{40pt}{10pt}
+\interfootnotelinepenalty=10000
+\titleformat{\subsection}
+  {\normalfont\scshape\Large\bfseries}{\thesubsection}{1em}{}
+  \titlespacing*{\subsection}{10pt}{30pt}{10pt}
+\titleformat{\subsubsection}
+  {\sffamily\large\itshape%\filcenter
+  }{\thesubsubsection}{1em}{}
+  \titlespacing*{\subsubsection}{5pt}{20pt}{30pt}
+%%%%%Red\UTF{00E9}finition des diff\UTF{00E9}rents titres de section%%%%%
+
+
+
+
+%Grosseur d'indentation
+\parindent=1cm
+%Grosseur d'indentation
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%STRUCTURE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+% Commencer les chapitres de l'dition  et la biblio en page impaire (ajouter \cleartorightpage dans la template d'impression du titre de chaque chapitre)
+\makeatletter
+\def\cleartorightpage{\clearpage\if@twoside \ifodd\c@page\else
+\hbox{}\thispagestyle{empty}\newpage\fi\fi}
+\makeatother
+\makeatletter
+\def\cleartorightpage{\clearpage\if@twoside \ifodd\c@page\else
+\hbox{}\thispagestyle{biblio}\newpage\fi\fi}
+\makeatother
+\makeatletter
+\def\cleartorightpage{\clearpage\if@twoside \ifodd\c@page\else
+\hbox{}\thispagestyle{toc}\newpage\fi\fi}
+\makeatother
+% Commencer les chapitres de l'dition en page impaire
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%NOTES DE BAS DE PAGE ET APPARAT%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%notes marginales
+\usepackage{marginnote}
+%notes marginales
+\usepackage{multicol}
+\maxdeadcycles=300%Résoud un problème de boucle: https://stackoverflow.com/questions/53842194/pdflatex-hang-after-large-number-of-figures
+%%%%Notes de bas de page: appel non superscript, appel de note dans le text en exposant.
+\makeatletter
+\renewcommand\@makefntext[1]%
+    {\noindent\makebox[0pt][r]{{\@thefnmark}\,. }#1}
+\makeatother
+%%%%Notes de bas de page: appel non superscript, appel de note dans le text en exposant.
+
+%sets the footnote marker flush with,  but just inside the margin from, the text of the footnote; This option forces footnotes to the bottom of the page
+\usepackage[bottom,flushmargin]{footmisc}
+%sets the footnote marker flush with,  but just inside the margin from, the text of the footnote; This option forces footnotes to the bottom of the page
+
+%%%%Indentation Parfaite Des Notes De Bas De Page
+\makeatletter
+\long\def\@makefntextFB#1{%
+    \ifx\thefootnote\ftnISsymbol
+        \@makefntextORI{#1}%
+    \else
+        \rule\z@\footnotesep
+        \setbox\@tempboxa\hbox{\@thefnmark}%
+            \ifdim\wd\@tempboxa>\z@
+                \kern2em\llap{\@thefnmark.\kern0.5em}%
+            \fi
+        \hangindent2em\hangafter\@ne#1
+    \fi}
+\makeatother
+%%%%Indentation Parfaite Des Notes De Bas De Page
+
+%APPARAT
+
+\usepackage[left,modulo]{lineno}%num\UTF{00E9}rotation des lignes
+
+%sparation des numros de ligne
+ \setlength\linenumbersep{0.3cm}
+%sparation des numros de ligne
+
+\usepackage{ednotes}%apparat
+%run-in paragraph footnotes indented as ordinary footnotes, use the package with the para option:
+\usepackage{manyfoot}
+%run-in paragraph footnotes indented as ordinary footnotes, use the package with the para option:
+
+
+
+
+
+%plusieurs niveaux de notes de bas de page
+%\usepackage[ruled]{bigfoot}
+\DeclareNewFootnote{B}[arabic]
+\usepackage{perpage}
+\MakePerPage{footnote}
+\renewcommand{\thefootnote}{\alph{footnote}}
+%\DeclareNewFootnote{A}[alph]
+%
+%plusieurs niveaux de notes de bas de page
+
+% Dcaler le crochet fermant aprs le tmoin de la leon retenue (suppose de jouer aussi avec la feuille XSL)
+ \newcommand{\Anotefmt}{% 
+% % \renewcommand*{\sameline}[1]{\linesfmt{##1}}% 
+% % \renewcommand*{\differentlines}[2]{\linesfmt{##1\textendash##2}}% 
+% % \renewcommand*{\linesfmt}[1]{\textbf{##1}\enspace}% 
+% % \renewcommand*{\pageandline}[2]{##1.##2}% ##1 page, ##2 line. 
+% % \renewcommand*{\repeatref}[1]{##1}% E.g., ... 
+% % % \renewcommand*{\repeatref}[1]{\textnormal{/}}% ... instead. 
+% rgle d'origine
+% % \renewcommand{\lemmafmt}[1]{##1\thinspace]\enskip}% 
+% rgle d'origine
+% nouvelle rgle
+\renewcommand{\lemmafmt}[1]{##1~}% 
+% % \renewcommand{\lemmaellipsis}{\textsymmdots}% 
+% % \renewcommand{\notefmt}[1]{##1}% 
+ } 
+ % Dcaler le crochet fermant aprs le tmoin de la leon retenue (suppose de jouer aussi avec la feuille XSL)
+
+
+%APPARAT
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%NOTES DE BAS DE PAGE%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\hsp}{\hspace{20pt}}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
