@@ -314,7 +314,7 @@ def apparat_final(fichier_entree):
                     comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
                     comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
                     # Ici il faut se rappeler qu'il y a une différence entre les formes
-                    if not comparaison_lemme and not comparaison_pos:  # si il y a une différence de lemmes + pos
+                    if not comparaison_lemme:  # si il y a une différence de lemmes seulement: "vraie variante"
                         type_apparat = "variante"
                     elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
                         type_apparat = "personne_genre"
