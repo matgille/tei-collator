@@ -358,7 +358,7 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
         fichiers_apparat = 'apparat_*_*.xml'
         liste = glob.glob(fichiers_apparat)
         chemin_injection2 = chemin + "xsl/post_alignement/injection_apparats2.xsl"
-        for i in liste:
+        for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
             sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle

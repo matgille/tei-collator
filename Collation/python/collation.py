@@ -90,14 +90,12 @@ for i in portee:
     # Création du tableau d'alignement pour visualisation (le rendre optionnel)
     fonctions.tableau_alignement(saxon, chemin_xsl)
 
-
     for file in os.listdir('.'):
-       if fnmatch.fnmatch(file, 'apparat_*_*.xml'):
-          fonctions.transformation_latex(saxon, file, chemin_xsl)
-
+        if fnmatch.fnmatch(file, 'apparat_*_*.xml'):
+            fonctions.transformation_latex(saxon, file, chemin_xsl)
 
     fonctions.nettoyage()
-    # On revient á la racine du projet pour finir la boucle      
+    # On revient à la racine du projet pour finir la boucle
     os.chdir("../../")
 
     print("Fait en %s secondes. \n" % (round(time.time() - start_time)))
