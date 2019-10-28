@@ -32,6 +32,10 @@
         <xsl:value-of select="."/>
     </xsl:template>
 
+    <xsl:template match="tei:hi[@rend = 'lettre_capitulaire']">
+        <xsl:value-of select="lower-case(.)"/>
+    </xsl:template>
+
     <xsl:template match="tei:hi[@rend = 'lettre_attente']"/>
 
     <xsl:template match="tei:choice">

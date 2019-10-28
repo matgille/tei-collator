@@ -232,8 +232,6 @@ def apparat_final(fichier_entree):
                 id_token = dic.get(key)[0]
                 lecon_depart = dic.get(key)[1]
                 temoin = dic.get(key)[2]
-                # lecon_depart_neutralisee = annulation_phenomenes(lecon_depart)
-                # liste_entree.append(lecon_depart_neutralisee)
                 liste_entree.append(lecon_depart)
 
             result = False;
@@ -262,6 +260,10 @@ def apparat_final(fichier_entree):
                 # - si les tokens ont un lemme distinct ou le même lemme et un POS distint (= changement de genre / de
                 # nombre de l'objet référent), typer "variante"
 
+                # dans un premier temps, on va créer un apparat typé variante, ou orthographique.
+                # il sera facile de créer un apparat de type inversion (si on retrouve les mêmes POS et lemmes dans
+                # un ordre distinct, penser à ça.)
+
                 else:  # Si les leçons sont différentes: étape 2
 
                     # app = etree.SubElement(root, "app", nsmap=nsmap)
@@ -273,45 +275,66 @@ def apparat_final(fichier_entree):
                     # car on l'a déjà utilisée pour vérifier l'égalité entre leçons
                     # dans le lieu variant précédent
                     liste_entree = []
+                    liste_lemme = []
+                    liste_pos = []
                     for key in dic:
                         id_token = dic.get(key)[0]
                         lecon_depart = dic.get(key)[1]
                         temoin = dic.get(key)[2]
-                        # lecon_depart_neutralisee = annulation_phenomenes(lecon_depart)
+                        lemme = dic.get(key)[3]  # attention à bien faire la comparaison SSI le lemme/pos existe
+                        pos = dic.get(key)[4]  # idem
+
+                        # ajouter le lemme à la liste
+                        # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante grapique.
+                        # comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
+                        liste_lemme.append(lemme)
+                        liste_pos.append(pos)
+
                         # Si le lieu variant n'existe pas dans la liste, 
                         # créer un item de dictionnaire
-
                         if lecon_depart not in liste_entree:
-                            # if lecon_depart_neutralisee not in liste_entree:
-                            dict_sortie[lecon_depart] = [id_token, temoin]
+                            dict_sortie[lecon_depart] = [id_token, temoin, lemme, pos]
                             # Ajouter le lieu variant dans la liste.
                             liste_entree.append(lecon_depart)
-                            # liste_entree.append(lecon_depart_neutralisee)
 
                         # Si le lieu variant a déjà été rencontré
                         else:
-                            # dict_comparaison = {}
-                            # for item in dict_sortie:
-                            #    dict_comparaison[annulation_phenomenes(item)] = item
-                            # lecon_depart2 = dict_comparaison.get(lecon_depart_neutralisee)
                             temoin1 = dict_sortie.get(lecon_depart)[1]
                             token1 = dict_sortie.get(lecon_depart)[0]
+                            lemme1 = dict_sortie.get(lecon_depart)[2]
+                            pos1 = dict_sortie.get(lecon_depart)[3]
                             token2 = token1 + "_" + id_token
                             temoin2 = temoin1 + " " + temoin
-                            dict_sortie[lecon_depart] = [token2, temoin2]
+                            lemme2 = lemme1 + "_" + lemme
+                            pos2 = pos1 + " " + pos
+                            dict_sortie[lecon_depart] = [token2, temoin2, lemme2, pos2]
                             # Mise à jour la liste
-                            # liste_entree.append(lecon_depart_neutralisee)
                             liste_entree.append(lecon_depart)
 
+                    comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
+                    comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
+                    # Ici il faut se rappeler qu'il y a une différence entre les formes
+                    if not comparaison_lemme:  # si il y a une différence de lemmes seulement: "vraie variante"
+                        type_apparat = "variante"
+                    elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
+                        type_apparat = "personne_genre"
+                    elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
+                        type_apparat = "orthographique"
+                    app.set("type", type_apparat)
+            # Prochaine étape: réintégrer la ponctuation car c'est trop le bordel, et faire le tri après.
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
             for key in dict_sortie:
                 lecon = str(key)
                 xml_id = dict_sortie.get(key)[0]
                 temoin = dict_sortie.get(key)[1]
+                lemmes = dict_sortie.get(key)[2]
+                pos = dict_sortie.get(key)[3]
                 # rdg = etree.SubElement(app, "rdg", nsmap=nsmap)
                 rdg = etree.SubElement(app, "{%s}rdg" % ns_tei)
                 rdg.set("wit", temoin)
                 rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)
+                rdg.set("lemma", lemmes)
+                rdg.set("pos", pos)
                 rdg.text = lecon
 
         # L'apparat est produit. Écriture du fichier xml            
