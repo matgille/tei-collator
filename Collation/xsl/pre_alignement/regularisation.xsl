@@ -29,7 +29,7 @@
     </xsl:template>
 
     <xsl:template match="tei:hi[not(@rend = 'lettre_attente')]">
-        <xsl:value-of select="."/>
+        <xsl:value-of select="lower-case(.)"/>
     </xsl:template>
 
     <xsl:template match="tei:hi[@rend = 'lettre_capitulaire']">

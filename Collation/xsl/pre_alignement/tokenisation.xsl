@@ -54,18 +54,28 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']" mode="secondePasse">
+    <xsl:template
+        match="tei:hi[following-sibling::text()][not(following-sibling::tei:hi[@rend = 'lettre_capitulaire'])][@rend = 'lettrine']"
+        mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="."/>
             <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="tei:hi[@rend = 'lettre_attente']" mode="secondePasse">
+
+    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:copy-of select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
             <xsl:copy-of select="."/>
+            <xsl:copy-of select="following-sibling::tei:hi[@rend = 'lettre_capitulaire']"/>
+            <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
         </xsl:element>
     </xsl:template>
+
+
+    <xsl:template match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']"
+        mode="secondePasse"/>
 
     <xsl:template match="tei:hi[@rend = 'souligne']">
         <xsl:element name="hi" namespace="http://www.tei-c.org/ns/1.0">
