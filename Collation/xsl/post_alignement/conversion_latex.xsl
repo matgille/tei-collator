@@ -123,6 +123,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         </xsl:text>
     </xsl:template>
 
+    <xsl:template match="tei:lb"/>
+
     <xsl:template match="tei:w">
         <xsl:text> </xsl:text>
         <xsl:apply-templates/>
@@ -240,7 +242,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:apply-templates/>
     </xsl:template>
 
- 
+
 
     <xsl:template match="tei:title">
         <xsl:text>\textit{</xsl:text>
