@@ -55,7 +55,14 @@
         <xsl:if
             test="document($apparat_chapitre)//tei:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]">
             <!--Tester si le token est pas déjà dans un apparat qui touche le token précédent: suppression des doublons-->
-            <xsl:variable name="token_precedent" select="preceding::tei:w[1]/@xml:id"/>
+            <xsl:variable name="token_precedent">
+                <xsl:choose>
+                    <xsl:when test="preceding::tei:w[1]">
+                        <xsl:value-of select="preceding::tei:w[1]/@xml:id"/>
+                    </xsl:when>
+                    <xsl:otherwise>False</xsl:otherwise>
+                </xsl:choose>
+            </xsl:variable>
             <xsl:if
                 test="not(contains(document($apparat_chapitre)//tei:rdg[contains(@wit, $ms)][contains(@xml:id, $xml_id)]/@xml:id, $token_precedent))">
                 <xsl:copy-of
