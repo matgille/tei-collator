@@ -340,7 +340,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text>ouioui</xsl:text>
     </xsl:template>
 
-    <xsl:template match="tei:app[@type = 'orthographique']">
+    <xsl:template match="tei:app[@type = 'graphique']">
         <xsl:text> </xsl:text>
         <!--Afficher ici la lecture du témoin courant, voir plus bas-->
         <xsl:variable name="temoin_courant">

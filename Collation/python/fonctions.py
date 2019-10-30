@@ -260,7 +260,7 @@ def apparat_final(fichier_entree):
                 # - si les tokens ont un lemme distinct ou le même lemme et un POS distint (= changement de genre / de
                 # nombre de l'objet référent), typer "variante"
 
-                # dans un premier temps, on va créer un apparat typé variante, ou orthographique.
+                # dans un premier temps, on va créer un apparat typé variante, ou graphique.
                 # il sera facile de créer un apparat de type inversion (si on retrouve les mêmes POS et lemmes dans
                 # un ordre distinct, penser à ça.)
 
@@ -319,7 +319,7 @@ def apparat_final(fichier_entree):
                     elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
                         type_apparat = "personne_genre"
                     elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
-                        type_apparat = "orthographique"
+                        type_apparat = "graphique"
                     app.set("type", type_apparat)
             # Prochaine étape: réintégrer la ponctuation car c'est trop le bordel, et faire le tri après.
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
