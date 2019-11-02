@@ -18,13 +18,13 @@
 
 
     <xsl:template match="@* | node()">
-        <xsl:copy copy-namespaces="no">
+        <xsl:copy copy-namespaces="yes">
             <xsl:apply-templates select="@* | node()"/>
         </xsl:copy>
     </xsl:template>
 
     <xsl:template match="/">
-        <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}_out.xml">
+        <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}_outb.xml">
             <xsl:apply-templates/>
         </xsl:result-document>
     </xsl:template>
@@ -39,7 +39,7 @@
         </xsl:for-each>
     </xsl:template>
 
-    <xsl:template match="tei:rdg[translate(@wit, '#', '') != $sigle]">
+    <xsl:template match="tei:rdg[not(contains(@wit, $sigle))]">
         <xsl:variable name="sigle_ms" select="ancestor::tei:TEI/@xml:id"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="nombre_temoins"
@@ -49,16 +49,15 @@
             select="concat($chemin_sortie2, 'temoins_tokenises?=*.xml')"/>
         <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="wit" select="@wit"/>
-            <xsl:value-of select="."/>
-            <!--<xsl:for-each select="tokenize(@xml:id, '_')">
-                <xsl:copy-of
-                    select="substring(collection($retour_au_texte)//tei:w[contains($xml_id, @xml:id)]/text(), 1, $premiere_chaine)"
-                />
-            </xsl:for-each>-->
+            <xsl:for-each select="tei:w">
+<!--                <xsl:text> </xsl:text>-->
+                <xsl:copy-of select="."/>
+            </xsl:for-each>
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="tei:rdg[translate(@wit, '#', '') = $sigle]">
+
+    <xsl:template match="tei:rdg[contains(@wit, $sigle)]">
         <xsl:variable name="sigle_ms" select="ancestor::tei:TEI/@xml:id"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="retour_au_texte"
@@ -67,8 +66,8 @@
             <xsl:attribute name="wit" select="@wit"/>
             <xsl:for-each select="tokenize(@xml:id, '_')">
                 <xsl:variable name="xml_id" select="."/>
-                <xsl:copy-of select="document($retour_au_texte)//tei:w[@xml:id = $xml_id]/node()"/>
-                <xsl:text> </xsl:text>
+<!--                <xsl:text> </xsl:text>-->
+                <xsl:copy-of select="document($retour_au_texte)//tei:w[@xml:id = $xml_id]"/>
             </xsl:for-each>
         </xsl:element>
     </xsl:template>

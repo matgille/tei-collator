@@ -91,7 +91,7 @@ for i in portee:
     fonctions.tableau_alignement(saxon, chemin_xsl)
 
     for file in os.listdir('.'):
-        if fnmatch.fnmatch(file, 'apparat_*_*.xml'):
+        if fnmatch.fnmatch(file, 'apparat_*_*out.xml'):
             fonctions.transformation_latex(saxon, file, chemin_xsl)
 
     fonctions.nettoyage()

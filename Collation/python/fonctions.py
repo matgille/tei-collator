@@ -321,7 +321,7 @@ def apparat_final(fichier_entree):
                     elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
                         type_apparat = "graphique"
                     app.set("type", type_apparat)
-            # Prochaine étape: réintégrer la ponctuation car c'est trop le bordel, et faire le tri après.
+
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
             for key in dict_sortie:
                 lecon = str(key)
@@ -333,15 +333,28 @@ def apparat_final(fichier_entree):
                 rdg = etree.SubElement(app, "{%s}rdg" % ns_tei)
                 rdg.set("wit", temoin)
                 rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)
-                rdg.set("lemma", lemmes)
-                rdg.set("pos", pos)
-                rdg.text = lecon
+                # Re-créer les noeuds tei:w
+                liste_w = lecon.split()
+                liste_id = xml_id.split('_')
+                n = 0
+                for mot in liste_w:
+                    nombre_temoins = temoin.count("#")
+                    nombre_mots = len(liste_w)
+                    position_mot = liste_w.index(mot)
+                    position_finale = (nombre_temoins * (position_mot + 1))
+                    position_initiale = position_finale - nombre_temoins
+                    xml_id_courant = "_".join(liste_id[n::nombre_mots]) # on va distribuer les xml:id:
+                    # abcd > ac, db pour 2 témoins qui lisent la même chose
+                    word = etree.SubElement(rdg, "{%s}w" % ns_tei)
+                    word.set("{http://www.w3.org/XML/1998/namespace}id", xml_id_courant)
+                    word.text = mot
+                    n = n + 1
 
         # L'apparat est produit. Écriture du fichier xml            
         # print(etree.tostring(root))
         sortie_xml = open("apparat_collatex.xml", "w+")
-        string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
-        sortie_xml.write(str(string))
+        output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+        sortie_xml.write(str(output))
         sortie_xml.close()
 
 
@@ -357,12 +370,20 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
         subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
         fichiers_apparat = 'apparat_*_*.xml'
         liste = glob.glob(fichiers_apparat)
+        chemin_injection_ponctuation = chemin + "xsl/post_alignement/injection_ponctuation.xsl"
         chemin_injection2 = chemin + "xsl/post_alignement/injection_apparats2.xsl"
         for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
             sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle
             subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+        fichiers_apparat = 'apparat_*_*outb.xml'
+        liste = glob.glob(fichiers_apparat)
+        for i in liste:
+            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+            param_sigle = "sigle=" + sigle
+            subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
 
 

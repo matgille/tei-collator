@@ -403,7 +403,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                     <xsl:text>\textit{om.}~</xsl:text>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:text>\textit{</xsl:text>
+            <xsl:text> \textit{</xsl:text>
             <xsl:value-of select="$sigle_temoin"/>
             <xsl:text>}~</xsl:text>
         </xsl:for-each>
