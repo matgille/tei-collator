@@ -368,6 +368,7 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
     chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
     with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
         subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
+        #  première étape de l'injection. Noeuds textuels
         fichiers_apparat = 'apparat_*_*.xml'
         liste = glob.glob(fichiers_apparat)
         chemin_injection_ponctuation = chemin + "xsl/post_alignement/injection_ponctuation.xsl"
@@ -377,6 +378,8 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle
             subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+            os.remove(i)
+            # seconde étape: noeuds non textuels
         fichiers_apparat = 'apparat_*_*outb.xml'
         liste = glob.glob(fichiers_apparat)
         for i in liste:
@@ -384,6 +387,8 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle
             subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
+            #  troisième étape: ponctuation
+            os.remove(i)
     print("Injection des apparats dans chaque transcription individuelle ✓")
 
 

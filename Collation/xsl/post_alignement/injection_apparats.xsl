@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Première phase de l'injection: récupération des apparats et des noeuds textuels-->
+<!--Première phase de l'injection: récupération des apparats et des noeuds textuels uniquement
+plus suppression de la redondance-->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
@@ -14,7 +15,6 @@
     <!--Question importante sur l'injection: pour un sic par exemple dans un lieu variant, 
     vaut-il mieux créer un apparat enfant du <sic> ou re-créer des <sic> dans les <rdg> ? La seconde
     option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir-->
-    <!--La ponctuation dans les app n'est pas rétablie (ce n'est pas un bug, elle n'est pas conservée). Gérer cela.-->
     <xsl:param name="chemin_sortie"/>
     <xsl:param name="chapitre" select="21"/>
 
@@ -103,16 +103,5 @@
 
 
 
-
-    <!--
-    Comment ajouter la ponctuation ? 
     
-    <!-\-Passer au multipass ici-\->
-    <xsl:template match="tei:pc">
-        <xsl:variable name="emplacement" select="preceding::tei:w/@xml:id"/>
-    </xsl:template>
-    
-    <xsl:template match="tei:w" mode="seconde_asse"></xsl:template>
-    
-    -->
 </xsl:stylesheet>

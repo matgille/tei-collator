@@ -50,12 +50,10 @@
         <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="wit" select="@wit"/>
             <xsl:for-each select="tei:w">
-<!--                <xsl:text> </xsl:text>-->
                 <xsl:copy-of select="."/>
             </xsl:for-each>
         </xsl:element>
     </xsl:template>
-
 
     <xsl:template match="tei:rdg[contains(@wit, $sigle)]">
         <xsl:variable name="sigle_ms" select="ancestor::tei:TEI/@xml:id"/>
@@ -66,14 +64,11 @@
             <xsl:attribute name="wit" select="@wit"/>
             <xsl:for-each select="tokenize(@xml:id, '_')">
                 <xsl:variable name="xml_id" select="."/>
-<!--                <xsl:text> </xsl:text>-->
                 <xsl:copy-of select="document($retour_au_texte)//tei:w[@xml:id = $xml_id]"/>
             </xsl:for-each>
         </xsl:element>
     </xsl:template>
 
-    <!--On peut imaginer de créer une nouvelle strate de comparaison, en prenant les noeuds enfants des rdg et en les comparant, 
-    Même si la chaîne de caractère est identique, pour vérifier que je n'ai pas ajouté de balise pour décrire un phénomène donné
-    Si le noeud est différent, on va créer un nouveau rdg avec le noeud qui varie.-->
+  
 
 </xsl:stylesheet>
