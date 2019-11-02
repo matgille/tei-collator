@@ -220,9 +220,13 @@ def apparat_final(fichier_entree):
 
     with open(fichier_entree, 'r+') as fichier:
         liste_dict = json.load(fichier)
-        ns_tei = "http://www.tei-c.org/ns/1.0"
-        nsmap = {'tei': ns_tei}
-        root = etree.Element("root", nsmap=nsmap)
+
+        tei_namespace = "http://www.tei-c.org/ns/1.0"
+        tei = "{%s}" % tei_namespace
+        NSMAP0 = {None: tei_namespace}  # the default namespace (no prefix)
+        NSMAP1 = {'tei': tei_namespace} # pour la recherche d'éléments avec la méthode xpath
+        root = etree.Element(tei + "root", nsmap=NSMAP0)  # https://lxml.de/tutorial.html#namespaces
+        #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml
         for dic in liste_dict:
             dict_sortie = {}
             liste_entree = []
@@ -243,13 +247,13 @@ def apparat_final(fichier_entree):
                 # entre eux,ne pas créer d'apparat mais imprimer 
                 # directement le texte    
                 if result:
-                    myElement = root.find('tei:app', nsmap)
+                    myElement = root.find('app', NSMAP0)
                     if myElement is None:
                         root.text = lecon_depart
                     else:
                         # root.xpath va sortir une liste: il faut aller chercher les items 
                         # individuels de cette liste, même si il n'y en n'a qu'un
-                        dernier_app = root.xpath('tei:app[last()]', namespaces=nsmap)
+                        dernier_app = root.xpath('tei:app[last()]', namespaces=NSMAP1)
                         for i in dernier_app:
                             i.tail = lecon_depart
 
@@ -266,9 +270,7 @@ def apparat_final(fichier_entree):
 
                 else:  # Si les leçons sont différentes: étape 2
 
-                    # app = etree.SubElement(root, "app", nsmap=nsmap)
-                    app = etree.SubElement(root, "{%s}app" % ns_tei)
-                    #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml               
+                    app = etree.SubElement(root, tei + "app")
 
                     # La liste créée va permettre de vérifier si une leçon identique
                     # a déjà été traitée auparavant. On la réinitialise
@@ -329,10 +331,11 @@ def apparat_final(fichier_entree):
                 temoin = dict_sortie.get(key)[1]
                 lemmes = dict_sortie.get(key)[2]
                 pos = dict_sortie.get(key)[3]
-                # rdg = etree.SubElement(app, "rdg", nsmap=nsmap)
-                rdg = etree.SubElement(app, "{%s}rdg" % ns_tei)
+                # rdg = etree.SubElement(app, "rdg", NSMAP=NSMAP1)
+                rdg = etree.SubElement(app, tei + "rdg")
                 rdg.set("wit", temoin)
-                rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)
+                rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id) # ensemble des id des tokens, pour la
+                # suppression de la redondance plus tard
                 # Re-créer les noeuds tei:w
                 liste_w = lecon.split()
                 liste_id = xml_id.split('_')
@@ -344,14 +347,14 @@ def apparat_final(fichier_entree):
                     position_finale = (nombre_temoins * (position_mot + 1))
                     position_initiale = position_finale - nombre_temoins
                     xml_id_courant = "_".join(liste_id[n::nombre_mots]) # on va distribuer les xml:id:
-                    # abcd > ac, db pour 2 témoins qui lisent la même chose
-                    word = etree.SubElement(rdg, "{%s}w" % ns_tei)
+                    # abcd > ac, db pour 2 témoins qui lisent la même chose (ab et cd sont les identifiants des deux
+                    # tokens identiques, donc il faut distribuer pour identifier le premier token, puis le second)
+                    word = etree.SubElement(rdg, tei + "w")
                     word.set("{http://www.w3.org/XML/1998/namespace}id", xml_id_courant)
                     word.text = mot
                     n = n + 1
 
-        # L'apparat est produit. Écriture du fichier xml            
-        # print(etree.tostring(root))
+        # L'apparat est produit. Écriture du fichier xml
         sortie_xml = open("apparat_collatex.xml", "w+")
         output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
         sortie_xml.write(str(output))
@@ -365,13 +368,14 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
         fichier_entree = "juxtaposition.xml"
     else:  # Si la fonction est appelée seule, le chemin est à partir du fichier python
         fichier_entree = "../chapitres/chapitre4/xml/juxtaposition.xml"
-    chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
     with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
+        #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
+        chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
         subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
-        #  première étape de l'injection. Noeuds textuels
         fichiers_apparat = 'apparat_*_*.xml'
         liste = glob.glob(fichiers_apparat)
-        chemin_injection_ponctuation = chemin + "xsl/post_alignement/injection_ponctuation.xsl"
+
+        # seconde étape: noeuds non textuels
         chemin_injection2 = chemin + "xsl/post_alignement/injection_apparats2.xsl"
         for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
             sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
@@ -379,7 +383,9 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
             param_sigle = "sigle=" + sigle
             subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
             os.remove(i)
-            # seconde étape: noeuds non textuels
+
+        #  troisième étape: ponctuation
+        chemin_injection_ponctuation = chemin + "xsl/post_alignement/injection_ponctuation.xsl"
         fichiers_apparat = 'apparat_*_*outb.xml'
         liste = glob.glob(fichiers_apparat)
         for i in liste:
@@ -387,7 +393,6 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle
             subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
-            #  troisième étape: ponctuation
             os.remove(i)
     print("Injection des apparats dans chaque transcription individuelle ✓")
 
