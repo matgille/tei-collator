@@ -138,37 +138,31 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
         # regroupement des lemmes
 
 
-# Cette fonction concentre toutes les manipulations à effectuer pour annuler
-# les phénomènes graphiques surtout qui sont le fruit de l'édition et non 
-# pas le reflet du texte. 
-# Pour l'instant: annulation de l'accentuation, de la segmentation, de la casse
-
-
-
 def apparat_final(fichier_entree):
     """
         Cette fonction permet de passer de la table d'alignement à 
         l'apparat proprement dit, avec création d'apparat s'il y a
         variation, et regroupement des leçons identiques. 
-        Elle fonctionne avec une lsite de dictionnaires au format JSON, 
-        chaque dictionnaire représentant un lieu variant. 
+        Elle fonctionne avec une liste de dictionnaires au format JSON,
+        chaque dictionnaire représentant un lieu variant. Les trois premiers items de la liste
+        pourront être par exemple:
         
          liste_dict = 
             [{
-                "0" : ["", "", "Phil_J"],
-                "1" : ["a0a6f5ec2-a98u9ds98yh", "Ca iiii", "Mad_G"],
-                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "Ca iiii", "Phil_Z"]
+                "0" : ["", "", "Phil_J", "LEMMA", "POS"],
+                "1" : ["a0a6f5ec2-a98u9ds98yh", "Ca iiii", "Mad_G", "LEMMA", "POS"],
+                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "Ca iiii", "Phil_Z", "LEMMA", "POS"]
                 }, {
-                "0" : ["a4d2587a-a98u98yh", "do", "Phil_J"],
-                "1" : ["a0a6f5ec2-a98u9ds98yh", "do", "Mad_G"],
-                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "donde", "Phil_Z"],
-                "3" : ["prout-cacau98yh", "onde", "Phil_K"],
-                "4" : ["a4sde2587a-a9fu98yh", "donde", "Phil_Ñ"],
-                "5" : ["a4sd88888e2587a-a999999h", "do", "Phil_M"]
+                "0" : ["a4d2587a-a98u98yh", "do", "Phil_J", "LEMMA", "POS"],
+                "1" : ["a0a6f5ec2-a98u9ds98yh", "do", "Mad_G", "LEMMA", "POS"],
+                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "donde", "Phil_Z", "LEMMA", "POS"],
+                "3" : ["prout-cacau98yh", "onde", "Phil_K", "LEMMA", "POS"],
+                "4" : ["a4sde2587a-a9fu98yh", "donde", "Phil_U", "LEMMA", "POS"],
+                "5" : ["a4sd88888e2587a-a999999h", "do", "Phil_M", "LEMMA", "POS"]
                 }, {
-                "0" : ["a4d2587a-a98u98yh", "muesstra", "Phil_J"],
-                "1" : ["a0a6f5ec2-a98u9ds98yh", "muestra", "Mad_G"],
-                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "prueua", "Phil_Z"]
+                "0" : ["a4d2587a-a98u98yh", "muesstra", "Phil_J", "LEMMA", "POS"],
+                "1" : ["a0a6f5ec2-a98u9ds98yh", "muestra", "Mad_G", "LEMMA", "POS"],
+                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "prueua", "Phil_Z", "LEMMA", "POS"]
             }]
         
         Fonctionnement de la fonction: 
@@ -180,32 +174,28 @@ def apparat_final(fichier_entree):
             variants, et on enclenche la suite. 
         2 ) Si il y a des lieux variants, on fonctionne de la manière suivante. On a deux dictionnaires, 
             un dictionnaire d'entrée (décrit plus haut), et un dictionnaire de sortie qui contiendra les 
-            informations d'apparat. On va créer une liste liste_entree qui va nous permettre de comparer chaque chaîne
+            informations d'apparat. On va créer une liste liste_lecons qui va nous permettre de comparer chaque chaîne
             aux chaînes précédentes. 
             
             *Pour chaque item* du dictionnaire d'entrée, on vérifie que la chaîne, en position 1, n'est pas déjà présente
-            dans la liste liste_entree. 
+            dans la liste liste_lecons. 
                 - Si elle n'est pas présente, on l'ajoute à la liste, et on crée un item
                 dans le dictionnaire de sortie dict_sortie. Cet item est organisé de la façon suivante:
-                    "lieu_variant1": ["témoin(s)", "id_token(s)"]
-                - Si la chaîne existe déjà dans la liste liste_entree, c'est qu'elle est aussi dans le 
+                    "lieu_variant": ["témoin(s)", "id_token(s)", "lemme", "pos"]
+                    On le voit, la valeur correspondant à chaque clé est une liste.
+                - Si la chaîne existe déjà dans la liste liste_lecons, c'est qu'elle est aussi dans le 
                 dictionnaire de sortie: on va donc modifier la valeur de l'item dont la clé est cette chaîne, 
-                en ajoutant le témoin correspondant ainsi que les identifiants de token.
-        
-            L'idée est aussi de pouvoir neutraliser certains phénomènes qui ne peuvent être comparés, comme
-            l'accentuation, la casse, ou la segmentation, car pour mon projet elles sont de mon fait et ce 
-            ne sont pas des phénomènes propres aux témoins. Mis en pause pour le moment car cela pose des 
-            problèmes assez importants. 
-            
-        3 ) Une fois le dictionnaire créé, on le transforme en xml en suivant la grammaire de la TEI pour les apparat. 
-            Il reste encore quelques points 
-            problématiques (les espaces de noms sont assez mal gérés en particulier), mais 
-            cela marche assez bien.
-        4 ) La dernière étape est la réinitialisation de la liste liste_entree et du dictionnaire dict_sortie,
-            qui est en réalité en début de boucle. 
+                en ajoutant le témoin correspondant ainsi que les identifiants de token, de lemme et de pos.
+
+        3 ) Une fois le dictionnaire créé, on le transforme en xml en suivant la grammaire de la TEI pour les apparat.
+
+        4) On va effectuer une opération de comparaison des lemmes et des POS pour déterminer le type de variante
+
+        5 ) La dernière étape est la réinitialisation de la liste liste_lecons et du dictionnaire dict_sortie,
+            qui est en réalité en début de boucle.
             
             
-        Pour l'instant, n'est traité que l'xml:id, mais on peut ajouter d'autres fonctions
+        Pour l'instant, n'est traité que l'xml:id, mais aussi le POS et le lemma, mais on peut ajouter d'autres fonctions
         
            
     """
@@ -221,19 +211,19 @@ def apparat_final(fichier_entree):
         #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml
         for dic in liste_dict:
             dict_sortie = {}
-            liste_entree = []
+            liste_lecons = []
 
             # Étape 1: déterminer si il y a variation ou pas
             for key in dic:
                 id_token = dic.get(key)[0]
                 lecon_depart = dic.get(key)[1]
                 temoin = dic.get(key)[2]
-                liste_entree.append(lecon_depart)
+                liste_lecons.append(lecon_depart)
 
             result = False;
-            if len(liste_entree) > 0:
+            if len(liste_lecons) > 0:
                 # Comparer chaque lecon à la première
-                result = all(elem == liste_entree[0] for elem in liste_entree)
+                result = all(elem == liste_lecons[0] for elem in liste_lecons)
 
                 # Première étape. Si tous les lieux variants sont égaux 
                 # entre eux,ne pas créer d'apparat mais imprimer 
@@ -249,16 +239,6 @@ def apparat_final(fichier_entree):
                         for i in dernier_app:
                             i.tail = lecon_depart
 
-                # C'est ici que l'on pourrait faire intervenir le lemmatiseur
-                # et le POS, pour créer typer les apparats voire en créer de diverses sortes
-                # (linguistiques, etc):
-                # - si tous les tokens ont le même lemme et le même POS, créer un type (graphique)
-                # - si les tokens ont un lemme distinct ou le même lemme et un POS distint (= changement de genre / de
-                # nombre de l'objet référent), typer "variante"
-
-                # dans un premier temps, on va créer un apparat typé variante, ou graphique.
-                # il sera facile de créer un apparat de type inversion (si on retrouve les mêmes POS et lemmes dans
-                # un ordre distinct, penser à ça.)
 
                 else:  # Si les leçons sont différentes: étape 2
 
@@ -268,7 +248,7 @@ def apparat_final(fichier_entree):
                     # a déjà été traitée auparavant. On la réinitialise
                     # car on l'a déjà utilisée pour vérifier l'égalité entre leçons
                     # dans le lieu variant précédent
-                    liste_entree = []
+                    liste_lecons = []
                     liste_lemme = []
                     liste_pos = []
                     for key in dic:
@@ -286,24 +266,28 @@ def apparat_final(fichier_entree):
 
                         # Si le lieu variant n'existe pas dans la liste, 
                         # créer un item de dictionnaire
-                        if lecon_depart not in liste_entree:
-                            dict_sortie[lecon_depart] = [id_token, temoin, lemme, pos]
+                        if lecon_depart not in liste_lecons:
+                            dict_sortie[lecon_depart] = [id_token, temoin]
+                            # dict_sortie[lecon_depart] = [id_token, temoin, lemme, pos]
+
                             # Ajouter le lieu variant dans la liste.
-                            liste_entree.append(lecon_depart)
+                            liste_lecons.append(lecon_depart)
 
                         # Si le lieu variant a déjà été rencontré
                         else:
                             temoin1 = dict_sortie.get(lecon_depart)[1]
                             token1 = dict_sortie.get(lecon_depart)[0]
-                            lemme1 = dict_sortie.get(lecon_depart)[2]
-                            pos1 = dict_sortie.get(lecon_depart)[3]
+                            # lemme1 = dict_sortie.get(lecon_depart)[2]
+                            # pos1 = dict_sortie.get(lecon_depart)[3]
                             token2 = token1 + "_" + id_token
                             temoin2 = temoin1 + " " + temoin
-                            lemme2 = lemme1 + "_" + lemme
-                            pos2 = pos1 + " " + pos
-                            dict_sortie[lecon_depart] = [token2, temoin2, lemme2, pos2]
+                            # lemme2 = lemme1 + "_" + lemme
+                            # pos2 = pos1 + " " + pos
+                            # dict_sortie[lecon_depart] = [token2, temoin2, lemme2, pos2]
+                            dict_sortie[lecon_depart] = [token2, temoin2]
+
                             # Mise à jour la liste
-                            liste_entree.append(lecon_depart)
+                            liste_lecons.append(lecon_depart)
 
                     comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
                     comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
@@ -321,9 +305,8 @@ def apparat_final(fichier_entree):
                 lecon = str(key)
                 xml_id = dict_sortie.get(key)[0]
                 temoin = dict_sortie.get(key)[1]
-                lemmes = dict_sortie.get(key)[2]
-                pos = dict_sortie.get(key)[3]
-                # rdg = etree.SubElement(app, "rdg", NSMAP=NSMAP1)
+                # lemmes = dict_sortie.get(key)[2] # si on veut ajouter les informations grammaticales à l'output
+                # pos = dict_sortie.get(key)[3] # idem
                 rdg = etree.SubElement(app, tei + "rdg")
                 rdg.set("wit", temoin)
                 rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id) # ensemble des id des tokens, pour la
