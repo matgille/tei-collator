@@ -16,7 +16,9 @@
     option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir-->
     <!--La ponctuation dans les app n'est pas rétablie (ce n'est pas un bug, elle n'est pas conservée). Gérer cela.-->
     <xsl:param name="chemin_sortie"/>
-    <xsl:param name="chapitre" select="3"/>
+    <xsl:param name="chapitre" select="21"/>
+
+
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="no">
             <xsl:apply-templates select="@* | node()"/>
@@ -24,17 +26,7 @@
     </xsl:template>
 
 
-    <xsl:template match="*:temoin">
-        <xsl:variable name="sigle" select="translate(@n, '#', '')"/>
-        <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}.xml">
-            <xsl:element name="div" namespace="http://www.tei-c.org/ns/1.0">
-                <xsl:attribute name="type">chapitre</xsl:attribute>
-                <xsl:attribute name="n" select="$chapitre"/>
-                <xsl:attribute name="xml:id" select="concat($sigle, '_3_3_', $chapitre)"/>
-                <xsl:apply-templates/>
-            </xsl:element>
-        </xsl:result-document>
-    </xsl:template>
+
 
     <xsl:template match="tei:w">
         <!--Fonctionnement pour l'instant: on va comparer deux fichiers xml. Pour chaque token dans la transcription originale (xml 1), 
@@ -52,32 +44,75 @@
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="apparat_chapitre"
             select="concat('../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml')"/>
-        <xsl:if
-            test="document($apparat_chapitre)//tei:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]">
-            <!--Tester si le token est pas déjà dans un apparat qui touche le token précédent: suppression des doublons-->
-            <xsl:variable name="token_precedent">
+        <xsl:variable name="token_precedent">
+            <xsl:choose>
+                <xsl:when test="preceding::tei:w[1]">
+                    <xsl:value-of select="preceding::tei:w[1]/@xml:id"/>
+                </xsl:when>
+                <xsl:otherwise>False</xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+
+        <xsl:variable name="recuperation_apparat">
+            <xsl:for-each select="document($apparat_chapitre)//tei:rdg[contains(@wit, $ms)]/tei:w">
                 <xsl:choose>
-                    <xsl:when test="preceding::tei:w[1]">
-                        <xsl:value-of select="preceding::tei:w[1]/@xml:id"/>
+                    <xsl:when test="contains(@xml:id, $xml_id)">
+                        <xsl:choose>
+                            <xsl:when test="contains(parent::tei:rdg/@xml:id, $token_precedent)">
+                                <xsl:text>Redondance</xsl:text>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:copy-of select="ancestor::tei:app"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
                     </xsl:when>
-                    <xsl:otherwise>False</xsl:otherwise>
+                    <xsl:otherwise/>
                 </xsl:choose>
-            </xsl:variable>
-            <xsl:if
-                test="not(contains(document($apparat_chapitre)//tei:rdg[contains(@wit, $ms)][contains(@xml:id, $xml_id)]/@xml:id, $token_precedent))">
-                <xsl:copy-of
-                    select="document($apparat_chapitre)//tei:app[child::tei:rdg[contains(@wit, $ms) and contains(@xml:id, $xml_id)]]"
-                />
-            </xsl:if>
-            <!--Tester si le token est pas déjà dans un apparat qui touche le token précédent-->
-        </xsl:if>
-        <xsl:if
-            test="not(document($apparat_chapitre)//tei:rdg[contains(@wit, $ms)][contains(@xml:id, $xml_id)])">
-            <xsl:copy-of select="."/>
-        </xsl:if>
+            </xsl:for-each>
+        </xsl:variable>
+
+
+        <xsl:choose>
+            <xsl:when test="$recuperation_apparat = ''">
+                <xsl:copy-of select="."/>
+            </xsl:when>
+            <xsl:when test="$recuperation_apparat = 'Redondance'"/>
+            <xsl:otherwise>
+                <xsl:copy-of select="$recuperation_apparat"/>
+            </xsl:otherwise>
+        </xsl:choose>
+
 
         <!--Ajouter les ommissions-->
         <!--<xsl:if test="following-sibling::tei:w[1]"/>-->
         <!--Ajouter les ommissions-->
     </xsl:template>
+
+
+    <xsl:template match="*:temoin">
+        <xsl:variable name="sigle" select="translate(@n, '#', '')"/>
+        <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}.xml">
+            <xsl:element name="div" namespace="http://www.tei-c.org/ns/1.0">
+                <xsl:attribute name="type">chapitre</xsl:attribute>
+                <xsl:attribute name="n" select="$chapitre"/>
+                <xsl:attribute name="xml:id" select="concat($sigle, '_3_3_', $chapitre)"/>
+                <xsl:apply-templates/>
+            </xsl:element>
+        </xsl:result-document>
+    </xsl:template>
+
+
+
+
+    <!--
+    Comment ajouter la ponctuation ? 
+    
+    <!-\-Passer au multipass ici-\->
+    <xsl:template match="tei:pc">
+        <xsl:variable name="emplacement" select="preceding::tei:w/@xml:id"/>
+    </xsl:template>
+    
+    <xsl:template match="tei:w" mode="seconde_asse"></xsl:template>
+    
+    -->
 </xsl:stylesheet>
