@@ -144,14 +144,6 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
 # Pour l'instant: annulation de l'accentuation, de la segmentation, de la casse
 
 
-def remplacements_en_chaîne(texte):
-    return texte.replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u").replace(" ",
-                                                                                                                   "")
-
-
-def annulation_phenomenes(chaine_a_transformer):
-    return remplacements_en_chaîne(chaine_a_transformer).lower()
-
 
 def apparat_final(fichier_entree):
     """
