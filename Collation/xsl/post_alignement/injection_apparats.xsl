@@ -44,6 +44,11 @@ plus suppression de la redondance-->
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="apparat_chapitre"
             select="concat('../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml')"/>
+
+
+        <!--Suppression de la redondance: si le token a déjà été rencontré, ne rien faire.-->
+        <!--Si c'est la première occurrence du token, copier le noeud trouvé dans le document
+        apparat_collatex.xml-->
         <xsl:variable name="token_precedent">
             <xsl:choose>
                 <xsl:when test="preceding::tei:w[1]">
@@ -53,24 +58,34 @@ plus suppression de la redondance-->
             </xsl:choose>
         </xsl:variable>
 
+
         <xsl:variable name="recuperation_apparat">
             <xsl:for-each select="document($apparat_chapitre)//tei:rdg[contains(@wit, $ms)]/tei:w">
                 <xsl:choose>
                     <xsl:when test="contains(@xml:id, $xml_id)">
                         <xsl:choose>
+                            <!--Si le token trouvé a été traité (il appartient à un rdg qui compte un autre
+                            w traité auparavant), on ne fait rien-->
                             <xsl:when test="contains(parent::tei:rdg/@xml:id, $token_precedent)">
                                 <xsl:text>Redondance</xsl:text>
                             </xsl:when>
+                            <!--Si le token trouvé a été traité-->
+                            
+                            <!--Si le token trouvé n'a pas été traité: on copie l'apparat (donc
+                                l'ensemble des noeuds tei:w fils, d'où la nécessité de
+                                réduire la redondance)-->
                             <xsl:otherwise>
                                 <xsl:copy-of select="ancestor::tei:app"/>
                             </xsl:otherwise>
+                            <!--Si le token trouvé n'a pas été traité: on copie l'apparat-->
                         </xsl:choose>
                     </xsl:when>
+                    <!--Si le token n'a pas été trouvé, c'est qu'il n'est pas dans un apparat-->
                     <xsl:otherwise/>
+                    <!--On va donc copier le noeud tei:w uniquement-->
                 </xsl:choose>
             </xsl:for-each>
         </xsl:variable>
-
 
         <xsl:choose>
             <xsl:when test="$recuperation_apparat = ''">
@@ -81,7 +96,7 @@ plus suppression de la redondance-->
                 <xsl:copy-of select="$recuperation_apparat"/>
             </xsl:otherwise>
         </xsl:choose>
-
+        <!--Suppression de la redondance: si le token a déjà été rencontré, ne rien faire.-->
 
         <!--Ajouter les ommissions-->
         <!--<xsl:if test="following-sibling::tei:w[1]"/>-->
@@ -89,6 +104,7 @@ plus suppression de la redondance-->
     </xsl:template>
 
 
+    <!--Création des différents fichiers xml par témoin-->
     <xsl:template match="*:temoin">
         <xsl:variable name="sigle" select="translate(@n, '#', '')"/>
         <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}.xml">
@@ -100,8 +116,9 @@ plus suppression de la redondance-->
             </xsl:element>
         </xsl:result-document>
     </xsl:template>
+    <!--Création des différents fichiers xml par témoin-->
 
 
 
-    
+
 </xsl:stylesheet>

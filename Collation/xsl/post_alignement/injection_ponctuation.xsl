@@ -40,14 +40,12 @@ Résultat: un fichier final qui marche !-->
         <xsl:choose>
             <xsl:when
                 test="document($temoin_tokenise)//tei:w[contains($xml_id, @xml:id)]/following::*[1][self::tei:pc]">
-<!--                <xsl:text>Oui</xsl:text>-->
                 <xsl:copy-of select="."/>
                 <xsl:copy-of
                     select="document($temoin_tokenise)//tei:w[contains($xml_id, @xml:id)]/following::*[1][self::tei:pc]"
                 />
             </xsl:when>
             <xsl:otherwise>
-<!--                <xsl:text>Non</xsl:text>-->
                 <xsl:copy-of select="."/>
             </xsl:otherwise>
         </xsl:choose>

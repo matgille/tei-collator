@@ -363,6 +363,10 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
     <xsl:template match="tei:hi[@rend = 'lettre_attente']"/>
 
+    <xsl:template match="tei:hi[@rend = 'lettre_capitulaire']">
+        <xsl:value-of select="lower-case(.)"/>
+    </xsl:template>
+
     <xsl:template match="tei:app[@type = 'variante'] | tei:app[@type = 'personne_genre']">
         <xsl:text> </xsl:text>
         <xsl:variable name="temoin_courant">
