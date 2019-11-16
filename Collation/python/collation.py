@@ -56,7 +56,7 @@ elif len(sys.argv) is 2:
         portee = range(argument, arg_plus_1)
 chemin_xsl = "../../"
 
-# fonctions.tokenisation(saxon)
+# fonctions.tokenisation(saxon) désactivé pour l'instant (risque de perte de l'annotation grammaticale)
 
 # On lemmatise ici. À intégrer ou à faire par ses propres moyens
 
