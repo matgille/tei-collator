@@ -26,7 +26,8 @@
 
 
 
-    <xsl:template match="tei:TEI[@type = 'transcription']">
+    <xsl:template
+        match="tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
         <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="xml:id" select="@xml:id"/>
             <xsl:apply-templates/>
@@ -77,7 +78,7 @@
     <xsl:template match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']"
         mode="secondePasse"/>
 
-   
+
 
     <!--Ici commencent les problèmes d'overlapping-->
     <xsl:template match="tei:hi[@rend = 'souligne' or @rend = 'rubrique']">
@@ -161,7 +162,7 @@
     </xsl:template>
 
     <xsl:template match="/">
-        <xsl:for-each select="//tei:TEI[@type = 'transcription']">
+        <xsl:for-each select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
             <xsl:result-document href="../temoins_tokenises/{$nom_fichier}.xml">
                 <xsl:apply-templates
