@@ -13,7 +13,8 @@ from halo import Halo
 from lxml import etree
 
 
-def generateur_lettre_initiale(size=1, chars=string.ascii_lowercase):
+def generateur_lettre_initiale(size=1, chars=string.ascii_lowercase):  # éviter les nombres en premier caractère de
+    # l'@xml:id (interdit)
     return ''.join(random.choice(chars) for _ in range(size))
 
 
@@ -206,7 +207,7 @@ def apparat_final(fichier_entree):
         tei_namespace = "http://www.tei-c.org/ns/1.0"
         tei = "{%s}" % tei_namespace
         NSMAP0 = {None: tei_namespace}  # the default namespace (no prefix)
-        NSMAP1 = {'tei': tei_namespace} # pour la recherche d'éléments avec la méthode xpath
+        NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
         root = etree.Element(tei + "root", nsmap=NSMAP0)  # https://lxml.de/tutorial.html#namespaces
         #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml
         for dic in liste_dict:
@@ -297,7 +298,11 @@ def apparat_final(fichier_entree):
                     elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
                         type_apparat = "personne_genre"
                     elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
-                        type_apparat = "graphique"
+                        if liste_lemme[0] == '' or liste_pos[0] == '':  # si c'est parce qu'ils sont vides, variante
+                            # indéterminée
+                            type_apparat = "indetermine"
+                        else:  # si on a un lemme et un PoS, la variante est graphique
+                            type_apparat = "graphique"
                     app.set("type", type_apparat)
 
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
@@ -309,7 +314,7 @@ def apparat_final(fichier_entree):
                 # pos = dict_sortie.get(key)[3] # idem
                 rdg = etree.SubElement(app, tei + "rdg")
                 rdg.set("wit", temoin)
-                rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id) # ensemble des id des tokens, pour la
+                rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)  # ensemble des id des tokens, pour la
                 # suppression de la redondance plus tard
                 # Re-créer les noeuds tei:w
                 liste_w = lecon.split()
@@ -321,7 +326,7 @@ def apparat_final(fichier_entree):
                     position_mot = liste_w.index(mot)
                     position_finale = (nombre_temoins * (position_mot + 1))
                     position_initiale = position_finale - nombre_temoins
-                    xml_id_courant = "_".join(liste_id[n::nombre_mots]) # on va distribuer les xml:id:
+                    xml_id_courant = "_".join(liste_id[n::nombre_mots])  # on va distribuer les xml:id:
                     # abcd > ac, db pour 2 témoins qui lisent la même chose (ab et cd sont les identifiants des deux
                     # tokens identiques, donc il faut distribuer pour identifier le premier token, puis le second)
                     word = etree.SubElement(rdg, tei + "w")

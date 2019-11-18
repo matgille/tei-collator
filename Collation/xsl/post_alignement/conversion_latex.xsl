@@ -367,7 +367,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:value-of select="lower-case(.)"/>
     </xsl:template>
 
-    <xsl:template match="tei:app[@type = 'variante'] | tei:app[@type = 'personne_genre']">
+    <xsl:template
+        match="tei:app[@type = 'variante'] | tei:app[@type = 'personne_genre'] | tei:app[@type = 'indetermine']">
         <xsl:text> </xsl:text>
         <xsl:variable name="temoin_courant">
             <xsl:analyze-string select="ancestor::tei:div[@xml:id]/@xml:id"
