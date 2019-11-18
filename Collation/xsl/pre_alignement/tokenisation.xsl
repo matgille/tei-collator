@@ -64,7 +64,8 @@
         </xsl:element>
     </xsl:template>-->
 
-
+    <!--Il faut faire la même chose avec les unclear|damage-->
+    <!--Qu'est-ce que le texte: c'est ici ce que tu va processer. Donc un élément éliminé n'est pas le texte-->
     <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
@@ -162,7 +163,8 @@
     </xsl:template>
 
     <xsl:template match="/">
-        <xsl:for-each select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
+        <xsl:for-each
+            select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
             <xsl:result-document href="../temoins_tokenises/{$nom_fichier}.xml">
                 <xsl:apply-templates
