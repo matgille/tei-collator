@@ -40,7 +40,7 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
         </xsl:for-each>
     </xsl:template>
 
-    <!--Pour les leçons autre que le manuscrit base-->
+    <!--Pour les leçons autres que le manuscrit base: on ne veut que les différences textuelles (revoir)-->
     <xsl:template match="tei:rdg[not(contains(@wit, $sigle))]">
         <xsl:variable name="sigle_ms" select="ancestor::tei:TEI/@xml:id"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
@@ -58,7 +58,7 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
             <!--On ne récupère rien-->
         </xsl:element>
     </xsl:template>
-    <!--Pour les leçons autre que le manuscrit base-->
+    <!--Pour les leçons autres que le manuscrit base-->
 
 
     <!--Pour les leçons qui touchent au manuscrit base-->
