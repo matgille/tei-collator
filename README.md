@@ -6,4 +6,5 @@ Ce dépôt rassemble l'ensemble des fichiers qui constituent mon travail de thè
 
 ### Fichiers importants
 
- La documentation de mon travail est rassemblée dans une ODD accessible [ici](/Dedans/XML/schemas/pseudojerizB_ODD.xml).
+ La documentation de mon travail est rassemblée dans une ODD accessible
+[ici](/Dedans/XML/schemas/ODD.xml).
