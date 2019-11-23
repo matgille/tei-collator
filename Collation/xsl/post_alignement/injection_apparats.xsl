@@ -70,7 +70,7 @@ plus suppression de la redondance-->
                                 <xsl:text>Redondance</xsl:text>
                             </xsl:when>
                             <!--Si le token trouvé a été traité-->
-                            
+
                             <!--Si le token trouvé n'a pas été traité: on copie l'apparat (donc
                                 l'ensemble des noeuds tei:w fils, d'où la nécessité de
                                 réduire la redondance)-->
@@ -101,6 +101,10 @@ plus suppression de la redondance-->
         <!--Ajouter les ommissions-->
         <!--<xsl:if test="following-sibling::tei:w[1]"/>-->
         <!--Ajouter les ommissions-->
+    </xsl:template>
+
+    <xsl:template match="tei:note">
+        <xsl:apply-templates/>
     </xsl:template>
 
 
