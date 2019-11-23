@@ -13,3 +13,5 @@ saxon9ee.jar
 *.tif*
 .*lock*
 chapitres/
+temoins_regroupes/
+temoins_tokenises/
