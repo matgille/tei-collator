@@ -148,7 +148,12 @@
             <xsl:value-of select="following-sibling::tei:w[1]"/>
         </xsl:element>
     </xsl:template>
-
+<!--
+    <xsl:template match="tei:lb[@break = 'y'] | tei:pb[@break = 'y'] | tei:pb[not(@break)]"
+        mode="troisiemePasse">
+        <xsl:copy-of select="."/>
+    </xsl:template>
+-->
 
     <!--Troisième Passe-->
 

@@ -103,10 +103,6 @@ plus suppression de la redondance-->
         <!--Ajouter les ommissions-->
     </xsl:template>
 
-    <xsl:template match="tei:note">
-        <xsl:apply-templates/>
-    </xsl:template>
-
 
     <!--Création des différents fichiers xml par témoin-->
     <xsl:template match="*:temoin">

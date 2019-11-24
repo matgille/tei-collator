@@ -5,6 +5,14 @@
     xmlns:f="urn:stylesheet-func">
 
     <xsl:strip-space elements="*"/>
+    
+    
+    
+    <xsl:template match="@* | node()">
+        <xsl:copy copy-namespaces="yes">
+            <xsl:apply-templates select="@* | node()"/>
+        </xsl:copy>
+    </xsl:template>
 
     <xsl:template match="/">
         <xsl:result-document href="../temoins_regroupes/groupe.xml">
@@ -17,7 +25,7 @@
         </xsl:result-document>
     </xsl:template>
 
-    <xsl:template match="tei:teiHeader | tei:facsimile | tei:pb | tei:cb | tei:note"/>
+    <xsl:template match="tei:teiHeader | tei:facsimile"/>
     <xsl:template match="tei:hi">
         <xsl:apply-templates/>
     </xsl:template>
@@ -30,11 +38,5 @@
     </xsl:template>
 
 
-
-    <xsl:template match="@* | node()">
-        <xsl:copy copy-namespaces="yes">
-            <xsl:apply-templates select="@* | node()"/>
-        </xsl:copy>
-    </xsl:template>
 
 </xsl:stylesheet>
