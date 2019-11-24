@@ -30,8 +30,11 @@ Résultat: un fichier final qui marche !-->
         </xsl:result-document>
     </xsl:template>
 
-    <xsl:template match="tei:pc"/>
+    <!--Éviter que ne soient supprimés des éléments de ponctuation qui ne suivent pas directement un token-->
+    <xsl:template match="tei:pc[preceding::*[1][self::tei:w]]"/>
+    <!--Éviter que ne soient supprimés des éléments de ponctuation qui ne suivent pas directement un token-->
 
+    <!--On prend chaque token, et si un élément de ponctuation suit, on copie le token et la ponctuation-->
     <xsl:template match="tei:w">
         <xsl:variable name="ms" select="ancestor::*:temoin/@n"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
@@ -50,4 +53,7 @@ Résultat: un fichier final qui marche !-->
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
+    <!--On prend chaque token, et si un élément de ponctuation suit, on copie le token et la ponctuation-->
+
+
 </xsl:stylesheet>
