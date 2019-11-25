@@ -5,4 +5,4 @@ Plusieurs licences différentes s'appliquent aux différents documents de ce dé
 ## Documents XML
 
 
-Voir la licence particulière pour les documents XML [ici](Dedans/XML/LICENSE)
+Voir la licence particulière pour les documents XML [ici](Dedans/XML/LICENSE.md)
