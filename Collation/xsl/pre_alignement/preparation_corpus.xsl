@@ -37,14 +37,32 @@
                 </xsl:element>
             </xsl:result-document>
         </xsl:for-each>
+        <xsl:for-each
+            select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre'][not(@subtype)]">
+            <xsl:variable name="numero_chapitre" select="@n"/>
+            <xsl:result-document
+                href="../chapitres/chapitre{$numero_chapitre}/juxtaposition_orig.xml">
+                <xsl:element name="groupe">
+                    <xsl:element name="temoin">
+                        <xsl:attribute name="n">
+                            <xsl:value-of select="ancestor::tei:TEI/@xml:id"/>
+                        </xsl:attribute>
+                        <xsl:apply-templates/>
+                    </xsl:element>
+                    <xsl:for-each
+                        select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[not(@xml:id = 'Sal_J')]//tei:div[@type = 'chapitre'][not(@subtype)][@n = $numero_chapitre]">
+                        <xsl:element name="temoin">
+                            <xsl:attribute name="n">
+                                <xsl:value-of select="ancestor::tei:TEI/@xml:id"/>
+                            </xsl:attribute>
+                            <xsl:apply-templates/>
+                        </xsl:element>
+                    </xsl:for-each>
+                </xsl:element>
+            </xsl:result-document>
+        </xsl:for-each>
     </xsl:template>
 
     <xsl:template match="tei:teiHeader | tei:facsimile"/>
-    <xsl:template match="tei:hi">
-        <xsl:apply-templates/>
-    </xsl:template>
 
-    <!--    Créer un mode pour la collation, un mode pour la réinjection ensuite. Ce qui change 
-    est le dossier source: temoins_tokenises_regularises/ pour la collation, temoins_tokenises/ 
-    pour l'injection-->
 </xsl:stylesheet>

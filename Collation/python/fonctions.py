@@ -344,9 +344,9 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
     param_chapitre = "chapitre=" + str(chapitre)  # Premier paramètre passé à la xsl: le chapitre à processer
     param_chemin_sortie = "chemin_sortie=" + str(chemin_sortie)  # Second paramètre: le chemin vers le fichier de sortie
     if not standalone:  # Si la fonction est appelée dans le cadre du processus complet (toujours question de chemin)
-        fichier_entree = "juxtaposition.xml"
+        fichier_entree = "juxtaposition_orig.xml"
     else:  # Si la fonction est appelée seule, le chemin est à partir du fichier python
-        fichier_entree = "../chapitres/chapitre4/xml/juxtaposition.xml"
+        fichier_entree = "../chapitres/chapitre4/xml/juxtaposition_orig.xml"
     with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
         #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
         chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
