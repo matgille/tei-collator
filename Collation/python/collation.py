@@ -58,7 +58,7 @@ chemin_xsl = "../../"
 
 # fonctions.tokenisation(saxon) désactivé pour l'instant (risque de perte de l'annotation grammaticale)
 
-# On lemmatise ici. À intégrer ou à faire par ses propres moyens
+# On lemmatise ici.
 
 fonctions.preparation_corpus(saxon)
 

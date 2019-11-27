@@ -60,9 +60,7 @@ def tokenisation(saxon):
 def preparation_corpus(saxon):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
         subprocess.run(["java", "-jar", saxon, "../temoins_tokenises_regularises/Sal_J.xml",
-                        "../xsl/pre_alignement/regroupement_transcriptions.xsl"])
-        subprocess.run(["java", "-jar", saxon, "../temoins_regroupes/groupe.xml",
-                        "../xsl/pre_alignement/scission_chapitres.xsl"])
+                        "../xsl/pre_alignement/preparation_corpus.xsl"])
     print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
 
 
