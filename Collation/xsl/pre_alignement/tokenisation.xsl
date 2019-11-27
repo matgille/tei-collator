@@ -94,7 +94,10 @@
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:value-of select="substring-after(preceding-sibling::text()[-1], ' ')"/>
             <xsl:copy-of select="."/>
-            <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
+            <xsl:if test="not(contains(',.;?!¿', substring-before(following-sibling::text()[1], ' ')))">
+                <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
+            </xsl:if>
+            <!--Attention à ne pas copier un élément d eponctuation par mégarde-->
         </xsl:element>
     </xsl:template>
 
@@ -148,7 +151,7 @@
             <xsl:value-of select="following-sibling::tei:w[1]"/>
         </xsl:element>
     </xsl:template>
-<!--
+    <!--
     <xsl:template match="tei:lb[@break = 'y'] | tei:pb[@break = 'y'] | tei:pb[not(@break)]"
         mode="troisiemePasse">
         <xsl:copy-of select="."/>

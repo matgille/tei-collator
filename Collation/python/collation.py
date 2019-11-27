@@ -37,8 +37,11 @@ if len(sys.argv) >= 2:  # le nom du script est le premier argument
         elif argument == '--tokenisation' or argument == '-t':
             fonctions.tokenisation(saxon)
             exit(0)
-        elif argument == '--scission' or argument == '-s':
+        elif argument == '--preparation' or argument == '-p':
             fonctions.preparation_corpus(saxon)
+            exit(0)
+        elif argument == '--nettoyage' or argument == '-n':
+            fonctions.nettoyage()
             exit(0)
         elif argument == '--injection' or argument == '-i':
             chemin_sortie = '../chapitres/chapitre' + str(sys.argv[2]) + "/xml/"
