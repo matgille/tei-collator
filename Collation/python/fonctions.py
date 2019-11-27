@@ -23,7 +23,8 @@ def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase 
 
 
 def ajout_xmlid(fichier_entree, fichier_sortie):
-    """Création des xml:id pour chaque token. TODO: trouver un
+    """Création des xml:id pour chaque token.
+    TODO: trouver un
     moyen de pouvoir actualiser la transcription sans avoir à
     re-générer des xml:id. Faire des groupes de n tokens pour retrouver les emplacements ?
     pour chaque token, récupérer le bi/trigramme suivant et aller le retrouver dans le fichier de sortie
