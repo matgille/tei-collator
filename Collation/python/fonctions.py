@@ -23,7 +23,8 @@ def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase 
 
 
 def ajout_xmlid(fichier_entree, fichier_sortie):
-    """Création des xml:id pour chaque token. TODO: trouver un
+    """Création des xml:id pour chaque token.
+    TODO: trouver un
     moyen de pouvoir actualiser la transcription sans avoir à
     re-générer des xml:id. Faire des groupes de n tokens pour retrouver les emplacements ?
     pour chaque token, récupérer le bi/trigramme suivant et aller le retrouver dans le fichier de sortie
@@ -59,9 +60,7 @@ def tokenisation(saxon):
 def preparation_corpus(saxon):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
         subprocess.run(["java", "-jar", saxon, "../temoins_tokenises_regularises/Sal_J.xml",
-                        "../xsl/pre_alignement/regroupement_transcriptions.xsl"])
-        subprocess.run(["java", "-jar", saxon, "../temoins_regroupes/groupe.xml",
-                        "../xsl/pre_alignement/scission_chapitres.xsl"])
+                        "../xsl/pre_alignement/preparation_corpus.xsl"])
     print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
 
 
@@ -345,9 +344,9 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
     param_chapitre = "chapitre=" + str(chapitre)  # Premier paramètre passé à la xsl: le chapitre à processer
     param_chemin_sortie = "chemin_sortie=" + str(chemin_sortie)  # Second paramètre: le chemin vers le fichier de sortie
     if not standalone:  # Si la fonction est appelée dans le cadre du processus complet (toujours question de chemin)
-        fichier_entree = "juxtaposition.xml"
+        fichier_entree = "juxtaposition_orig.xml"
     else:  # Si la fonction est appelée seule, le chemin est à partir du fichier python
-        fichier_entree = "../chapitres/chapitre4/xml/juxtaposition.xml"
+        fichier_entree = "../chapitres/chapitre4/xml/juxtaposition_orig.xml"
     with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
         #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
         chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
