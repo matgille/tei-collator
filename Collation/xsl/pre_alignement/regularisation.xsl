@@ -39,20 +39,22 @@
     <xsl:template match="tei:hi[@rend = 'lettre_attente']"/>
 
     <xsl:template match="tei:choice">
-        <xsl:apply-templates select="tei:reg"/>
-        <xsl:apply-templates select="tei:expan"/>
-        <xsl:apply-templates select="tei:corr"/>
+        <xsl:value-of select="tei:reg"/>
+        <xsl:value-of select="tei:expan"/>
+        <xsl:value-of select="tei:corr"/>
     </xsl:template>
 
-    <xsl:template match="tei:lb | tei:pb | tei:cb"/>
+    <xsl:template match="tei:lb | tei:pb | tei:cb | tei:note | tei:fw"/>
 
+    <xsl:template match="tei:seg">
+        <xsl:apply-templates/>
+    </xsl:template>
 
-
+    <!--
     <xsl:template match="text()">
         <xsl:variable name="v1" select="replace(., '⁊', 'e')"/>
         <xsl:value-of select="$v1"/>
-    </xsl:template>
+    </xsl:template>-->
 
-    <xsl:template match="tei:fw"/>
 
 </xsl:stylesheet>

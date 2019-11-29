@@ -148,9 +148,23 @@
     <xsl:template match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'] | tei:pb[@break = 'n']"
         mode="troisiemePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-            <xsl:value-of select="preceding-sibling::tei:w[1]"/>
+            <xsl:choose>
+                <xsl:when test="preceding-sibling::tei:w[1]/child::text()">
+                    <xsl:copy-of select="preceding-sibling::tei:w[1]/child::text()"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:copy-of select="preceding-sibling::tei:w[1]/child::node()"/>
+                </xsl:otherwise>
+            </xsl:choose>
             <xsl:copy-of select="."/>
-            <xsl:value-of select="following-sibling::tei:w[1]"/>
+            <xsl:choose>
+                <xsl:when test="following-sibling::tei:w[1]/child::text()">
+                    <xsl:copy-of select="following-sibling::tei:w[1]/child::text()"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:copy-of select="following-sibling::tei:w[1]/child::node()"/>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:element>
     </xsl:template>
     <!--
@@ -190,10 +204,6 @@
     </xsl:template>
 
 
-
-    <xsl:template
-        match="tei:w[following-sibling::tei:w[1][child::tei:pb]] | tei:w[preceding-sibling::tei:w[1][child::tei:pb]] | tei:w[following-sibling::tei:w[1][child::tei:lb]] | tei:w[preceding-sibling::tei:w[1][child::tei:lb]]"
-        mode="quatriemePasse"/>
 
 
     <!--        <xsl:template match="tei:w[following-sibling::tei:lb[1]]" mode="troisiemePasse"/>-->
