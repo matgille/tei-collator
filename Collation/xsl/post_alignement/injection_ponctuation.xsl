@@ -30,10 +30,10 @@ Résultat: un fichier final qui marche !-->
         </xsl:result-document>
     </xsl:template>
 
-    <!--Éviter que ne soient supprimés des éléments de ponctuation qui ne suivent pas directement un token-->
-    <xsl:template match="tei:pc[preceding::*[1][self::tei:w]]"/>
-    <!--Éviter que ne soient supprimés des éléments de ponctuation qui ne suivent pas directement un token-->
-    <!--Cela ne marche pas. Trouver une solution pour que les ponctuations ne soient pas répétées-->
+    <!--Redondance de la ponctuation-->
+    <xsl:template
+        match="tei:pc[preceding::*[1][self::tei:w]] | tei:pc[preceding-sibling::*[1][self::tei:app]]"/>
+    <!--Redondance de la ponctuation-->
 
 
     <!--On prend chaque token, et si un élément de ponctuation suit, on copie le token et la ponctuation-->

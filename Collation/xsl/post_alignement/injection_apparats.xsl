@@ -119,6 +119,4 @@ plus suppression de la redondance-->
     <!--Création des différents fichiers xml par témoin-->
 
 
-
-
 </xsl:stylesheet>
