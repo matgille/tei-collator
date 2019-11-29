@@ -47,6 +47,8 @@ Résultat: un fichier final qui marche !-->
                 test="document($temoin_tokenise)//tei:w[contains($xml_id, @xml:id)]/following::*[1][self::tei:pc]">
                 <xsl:copy-of select="."/>
                 <xsl:copy-of
+                    select="document($temoin_tokenise)//tei:w[contains($xml_id, @xml:id)]/following::*[1][self::tei:pb]"/>
+                <xsl:copy-of
                     select="document($temoin_tokenise)//tei:w[contains($xml_id, @xml:id)]/following::*[1][self::tei:pc]"
                 />
             </xsl:when>

@@ -44,17 +44,9 @@
         <xsl:apply-templates select="tei:corr"/>
     </xsl:template>
 
-    <xsl:template match="tei:lb[@break = 'y']">
-        <xsl:text> </xsl:text>
-    </xsl:template>
+    <xsl:template match="tei:lb | tei:pb | tei:cb"/>
 
-    <xsl:template match="tei:lb[@break = 'n']"/>
 
-    <xsl:template match="tei:pb[@break = 'y']">
-        <xsl:text> </xsl:text>
-    </xsl:template>
-
-    <xsl:template match="tei:pb[@break = 'n']"/>
 
     <xsl:template match="text()">
         <xsl:variable name="v1" select="replace(., '⁊', 'e')"/>

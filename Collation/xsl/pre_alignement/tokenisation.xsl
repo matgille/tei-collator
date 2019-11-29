@@ -94,7 +94,8 @@
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:value-of select="substring-after(preceding-sibling::text()[-1], ' ')"/>
             <xsl:copy-of select="."/>
-            <xsl:if test="not(contains(',.;?!¿', substring-before(following-sibling::text()[1], ' ')))">
+            <xsl:if
+                test="not(contains(',.;?!¿', substring-before(following-sibling::text()[1], ' ')))">
                 <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
             </xsl:if>
             <!--Attention à ne pas copier un élément d eponctuation par mégarde-->
@@ -144,7 +145,8 @@
     <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
 
-    <xsl:template match="tei:lb[@break = 'n'] | tei:pb[@break = 'n']" mode="troisiemePasse">
+    <xsl:template match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'] | tei:pb[@break = 'n']"
+        mode="troisiemePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:value-of select="preceding-sibling::tei:w[1]"/>
             <xsl:copy-of select="."/>
@@ -169,6 +171,11 @@
             <xsl:apply-templates mode="quatriemePasse" select="@* | node()"/>
         </xsl:copy>
     </xsl:template>
+
+    <xsl:template
+        match="tei:w[preceding-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:cb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:cb[@break = 'n']]]"
+        mode="quatriemePasse"/>
+
 
     <xsl:template match="/">
         <xsl:for-each
