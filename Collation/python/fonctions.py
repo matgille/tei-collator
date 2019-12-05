@@ -100,7 +100,9 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
     # Export au format JSON (permet de conserver les xml:id)
     def alignement_json():
         with Halo(text='Alignement CollateX', spinner='dots'):
-            resultat_json = collate(json.loads(entree_json1), output="json")
+            json_str = json.loads(entree_json1, strict=False) # permet de mieux gérer les sauts de ligne pour le
+            # JSON: https://stackoverflow.com/a/29827074
+            resultat_json = collate(json_str, output="json")
             sortie_json = open("alignement_collatex.json", "w")
             sortie_json.write(resultat_json)
             sortie_json.close()
@@ -346,7 +348,7 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
     if not standalone:  # Si la fonction est appelée dans le cadre du processus complet (toujours question de chemin)
         fichier_entree = "juxtaposition_orig.xml"
     else:  # Si la fonction est appelée seule, le chemin est à partir du fichier python
-        fichier_entree = "../chapitres/chapitre4/xml/juxtaposition_orig.xml"
+        fichier_entree = "../chapitres/chapitre9/xml/juxtaposition_orig.xml"
     with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
         #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
         chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
