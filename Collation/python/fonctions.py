@@ -82,9 +82,7 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
         assert fichier_a_collationer.endswiths(".json")
     except:
         while not fichier_a_collationer.endswith('.json'):
-            fichier_a_collationer = input(
-                "Le fichier indiqué n'est pas un fichier JSON. Veuillez indiquer un fichier. \n")
-
+            fichier_a_collationer = input("Le fichier indiqué n'est pas un fichier JSON. Veuillez indiquer un fichier.")
     entree_json0 = open(fichier_a_collationer, "r")  # ouvrir le fichier en mode lecture et le mettre dans une variable
     entree_json1 = entree_json0.read()
     entree_json0.close()
@@ -100,7 +98,7 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
     # Export au format JSON (permet de conserver les xml:id)
     def alignement_json():
         with Halo(text='Alignement CollateX', spinner='dots'):
-            json_str = json.loads(entree_json1, strict=False) # permet de mieux gérer les sauts de ligne pour le
+            json_str = json.loads(entree_json1) # permet de mieux gérer les sauts de ligne pour le
             # JSON: https://stackoverflow.com/a/29827074
             resultat_json = collate(json_str, output="json")
             sortie_json = open("alignement_collatex.json", "w")

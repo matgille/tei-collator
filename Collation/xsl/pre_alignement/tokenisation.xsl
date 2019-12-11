@@ -1,7 +1,8 @@
 
 <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:tei="http://www.tei-c.org/ns/1.0">
-    <xsl:output indent="no"/>
+    xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:cw="chezwam"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xsl:output method="xml" indent="no"/>
     <xsl:strip-space elements="*"/>
     <!--Première phase de la tokénisation: -->
     <!--Méthode suivie: sur suggestion de Marjorie Burghart, le "multi-pass" https://stackoverflow.com/a/8215981-->
@@ -79,7 +80,36 @@
     <xsl:template match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']"
         mode="secondePasse"/>
 
-
+    <!--https://stackoverflow.com/questions/17468891/substring-after-last-character-in-xslt-->
+    <xsl:function name="cw:substring-after-last" as="xs:string" xmlns:cw="chezwam">
+        <xsl:param name="value" as="xs:string?"/>
+        <xsl:param name="separator" as="xs:string"/>
+        <xsl:choose>
+            <xsl:when test="contains($value, $separator)">
+                <xsl:value-of
+                    select="cw:substring-after-last(substring-after($value, $separator), $separator)"
+                />
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="$value"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:function>
+    <!--
+    <xsl:template match="tei:anchor[not(substring(following-sibling::text()[1], 1) = ' ')]">
+        <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:value-of select="cw:substring-after-last(preceding-sibling::text()[1], ' ')"/>
+            <xsl:if test="preceding-sibling::*[1][self::tei:lb]">
+                <xsl:copy-of select="preceding-sibling::*[1][self::tei:lb]"/>
+            </xsl:if>
+            <xsl:copy-of select="."/>
+            <xsl:if test="following-sibling::*[1][self::tei:lb]">
+                <xsl:copy-of select="following-sibling::*[1][self::tei:lb]"/>
+            </xsl:if>
+            <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
+        </xsl:element>
+    </xsl:template>
+-->
 
     <!--Ici commencent les problèmes d'overlapping-->
     <xsl:template match="tei:hi[@rend = 'souligne' or @rend = 'rubrique']">
@@ -144,25 +174,27 @@
 
     <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
-
     <xsl:template match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'] | tei:pb[@break = 'n']"
         mode="troisiemePasse">
+        <!--<xsl:template
+        match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'][not(ancestor::tei:w)] | tei:pb[@break = 'n']"
+        mode="troisiemePasse">-->
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:choose>
-                <xsl:when test="preceding-sibling::tei:w[1]/child::text()">
-                    <xsl:copy-of select="preceding-sibling::tei:w[1]/child::text()"/>
+                <xsl:when test="preceding::tei:w[1]/child::text()">
+                    <xsl:copy-of select="preceding::tei:w[1]/child::text()"/>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:copy-of select="preceding-sibling::tei:w[1]/child::node()"/>
+                    <xsl:copy-of select="preceding::tei:w[1]/child::node()"/>
                 </xsl:otherwise>
             </xsl:choose>
             <xsl:copy-of select="."/>
             <xsl:choose>
-                <xsl:when test="following-sibling::tei:w[1]/child::text()">
-                    <xsl:copy-of select="following-sibling::tei:w[1]/child::text()"/>
+                <xsl:when test="following::tei:w[1]/child::text()">
+                    <xsl:copy-of select="following::tei:w[1]/child::text()"/>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:copy-of select="following-sibling::tei:w[1]/child::node()"/>
+                    <xsl:copy-of select="following::tei:w[1]/child::node()"/>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:element>

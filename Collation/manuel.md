@@ -3,9 +3,7 @@
 Ce document présente le fonctionnement du répertoire Collation qui permet une collation 
 semi-automatisée des transcriptions individuelles du Regimiento. 
 
-
-Les étapes 3 et 4 viennent du fait que Collatex ne gère pas les informations
-contextuelles en sortie (xml:id par exemple) 
+Le programme fonctionne en trois partie: une partie de préparation du corpus, la collation en soi, puis l'injection des apparats dans le corpus originel. 
 
 
 ## Étape 1 Tokénisation et régularisation

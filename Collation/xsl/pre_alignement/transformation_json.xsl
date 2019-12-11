@@ -9,6 +9,9 @@
     xmlns:tei="http://www.tei-c.org/ns/1.0" version="3.0">
     <xsl:output method="text"/>
 
+    <xsl:strip-space elements="*"/>
+
+
     <xsl:template match="/">
         <xsl:text>{
         "witnesses" : [</xsl:text>
@@ -23,10 +26,11 @@
         <xsl:value-of select="@n"/>
         <xsl:text>",
         "tokens" : [</xsl:text>
-        <!--        <xsl:for-each select="descendant::tei:w[text()]|descendant::tei:pc">-->
+        <!--<xsl:for-each select="descendant::tei:w[text()]|descendant::tei:pc">-->
         <xsl:for-each select="descendant::tei:w[text()]">
             <xsl:text>{"t": "</xsl:text>
-            <xsl:value-of select="."/>
+            <xsl:value-of select="normalize-space(.)"/>
+            <!--pour éviter des sauts de ligne qui sont vraiment pas appréciés par le validateur JSON-->
             <xsl:text> "</xsl:text>
             <xsl:if test="@lemma">
                 <xsl:text>,</xsl:text>

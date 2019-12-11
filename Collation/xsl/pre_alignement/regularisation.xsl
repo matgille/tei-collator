@@ -4,7 +4,7 @@
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
 
-
+    <xsl:output method="xml"/>
     <xsl:strip-space elements="*"/>
 
 
@@ -32,9 +32,6 @@
         <xsl:value-of select="lower-case(.)"/>
     </xsl:template>
 
-    <xsl:template match="tei:hi[@rend = 'lettre_capitulaire']">
-        <xsl:value-of select="lower-case(.)"/>
-    </xsl:template>
 
     <xsl:template match="tei:hi[@rend = 'lettre_attente']"/>
 
