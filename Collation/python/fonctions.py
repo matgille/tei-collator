@@ -1,6 +1,7 @@
 import fnmatch
 import json
 import os
+import re
 import random
 import shutil
 import string
@@ -98,7 +99,7 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
     # Export au format JSON (permet de conserver les xml:id)
     def alignement_json():
         with Halo(text='Alignement CollateX', spinner='dots'):
-            json_str = json.loads(entree_json1) # permet de mieux gérer les sauts de ligne pour le
+            json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
             # JSON: https://stackoverflow.com/a/29827074
             resultat_json = collate(json_str, output="json")
             sortie_json = open("alignement_collatex.json", "w")
@@ -297,10 +298,10 @@ def apparat_final(fichier_entree):
                     elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
                         type_apparat = "personne_genre"
                     elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
-                        if liste_lemme[0] == '' or liste_pos[0] == '':  # si c'est parce qu'ils sont vides, variante
+                        if liste_lemme[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
                             # indéterminée
                             type_apparat = "indetermine"
-                        else:  # si on a un lemme et un PoS, la variante est graphique
+                        else:  # si on a un lemme et un PoS identiques, la variante est graphique
                             type_apparat = "graphique"
                     app.set("type", type_apparat)
 
@@ -409,6 +410,62 @@ def nettoyage():
                 shutil.move(os.path.abspath(file), new_path)
 
     print("Nettoyage du dossier ✓")
+
+
+def txt_to_liste(filename):
+    maliste = []
+    # scinder par l'espace et ajouter chacun des fichiers à la liste de liste. Il y aura un problème avec les doubles sauts de ligne.
+    fichier = open(filename, 'r')
+    for line in fichier.readlines():
+        if not re.match(r'^\s*$',
+                        line):  # https://stackoverflow.com/a/3711884 élimination des lignes vides (séparateur de phrase)
+            resultat = re.split(r'\s+', line)
+            maliste.append(resultat)
+    return maliste
+
+
+def lemmatisation(chemin, saxon):
+    for fichier in os.listdir(
+            '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
+        if fnmatch.fnmatch(fichier, '*.xml'):
+            fichier_sans_extension = os.path.splitext(fichier)[0]
+            fichier_xsl = chemin + "transformation_freeling.xsl"
+            print("Lemmatisation de: " + str(fichier_sans_extension))
+            chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
+
+            subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl])
+
+            fichier_entree_txt = '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation' \
+                                 '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
+            fichier_sortie = '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation' \
+                             '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
+            cmd_sh = ["analyze.sh", fichier_entree_txt,
+                      fichier_sortie]  # je dois passer par un script externe car ça tourne dans le vide, pas trouvé pourquoi
+            subprocess.run(cmd_sh)
+            maliste = txt_to_liste(fichier_sortie)
+            parser = etree.XMLParser(load_dtd=True,
+                                     resolve_entities=True)  # inutile car les entités ont déjà été résolues
+            # auparavant normalement, mais au cas où.
+            fichier_xml = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/" + fichier
+            f = etree.parse(fichier_xml, parser=parser)
+            root = f.getroot()
+            tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
+            groupe_words = "//tei:w"
+            tokens = root.xpath(groupe_words, namespaces=tei)
+            for mot in tokens:
+                nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
+                nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
+                position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à enlever 1 quand on cherche dans la liste
+                liste_correcte = maliste[position_absolue_element - 2]
+                lemme_position = liste_correcte[1]
+                pos_position = liste_correcte[2]
+                mot.set("lemma", lemme_position)
+                mot.set("pos", pos_position)
+            fichier_sortie = fichier_xml
+            sortie_xml = open(fichier_sortie, "w+")
+            string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+            sortie_xml.write(str(string))
+            sortie_xml.close()
 
 
 def transformation_latex(saxon, fichier_xml, chemin):

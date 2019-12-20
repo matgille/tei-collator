@@ -178,7 +178,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                     critique...)-->
                     <xsl:when test="(ancestor::tei:app/@type = 'notable')">
                         <xsl:text>\footnote{Ajouté en marge:\textit{</xsl:text>
-                        <xsl:apply-templates select="tei:rdg"/>
+                        <xsl:apply-templates/>
                         <xsl:text>}}</xsl:text>
                     </xsl:when>
                     <!--Si l'apparat n'est pas un apparat principal mais un apparat de point notables (notable)-->

@@ -18,11 +18,6 @@
     <xsl:template match="comment()">
         <xsl:comment><xsl:value-of select="."/></xsl:comment>
     </xsl:template>-->
-    <xsl:template match="tei:teiHeader"/>
-    <xsl:template match="tei:fw"/>
-    <xsl:template match="tei:note"/>
-    <xsl:template match="tei:lb"/>
-    <xsl:template match="tei:facsimile"/>
     <xsl:template match="tei:orig"/>
     <xsl:template match="tei:abbr"/>
     <xsl:template match="tei:p[@n != 'Jl6hyqYStB']"/>

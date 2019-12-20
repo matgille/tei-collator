@@ -47,7 +47,11 @@ if len(sys.argv) >= 2:  # le nom du script est le premier argument
             chemin_sortie = '../chapitres/chapitre' + str(sys.argv[2]) + "/xml/"
             fonctions.injection(saxon, '../', int(sys.argv[2]), True, chemin_sortie)
             exit(0)
-# Sinon, enclencher tout le processus de transformation, alignement, apparation.      
+        elif argument == '--lemmatisation' or argument == '-l':
+            chemin = '../xsl/pre_alignement/'
+            fonctions.lemmatisation(chemin, saxon)
+            exit(0)
+# Sinon, enclencher tout le processus de transformation, alignement, apparation.
 
 if not len(sys.argv) >= 2:
     portee = range(3, 23)  # Chapitres processables pour l'instant
