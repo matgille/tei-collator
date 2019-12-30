@@ -7,6 +7,7 @@ import shutil
 import string
 import subprocess
 import glob
+import xml.etree.ElementTree as ET
 
 import dicttoxml
 from collatex import *
@@ -45,8 +46,27 @@ def ajout_xmlid(fichier_entree, fichier_sortie):
     sortie_xml.close()
 
 
-# Attention à l'option -xi:(on|off) de saxon pour activer Xinclude le cas échéant 
 def tokenisation(saxon):
+    # for fichier in os.listdir(
+    #         '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/castillan/'):
+    #     print(fichier)
+    #     if fnmatch.fnmatch(fichier, 'Sev_R.xml'):
+    #         chemin_fichier = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/castillan/" + fichier
+    #         parser = etree.XMLParser(load_dtd=True, resolve_entities=False)
+    #         f = etree.parse(chemin_fichier, parser=parser)
+    #         f.xinclude()  # https://lxml.de/3.3/api.html#xinclude-and-elementinclude
+    #         root = f.getroot()
+    #         text_root = str(etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True))
+    #         text_root = text_root.replace("&", "±")
+    #         text_root = text_root.replace(";", "™")
+    #         text_root = text_root.replace("\\n", "")
+    #         tree = ET.ElementTree(ET.fromstring(text_root))
+    #         print(text_root)
+    #         chemin_fichier_test = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/test/" + fichier
+    #         with open(chemin_fichier_test, "w+") as sortie_xml:
+    #             sortie_xml.write(text_root)
+    # tei = {'tei': 'http://www.tei-c.org/ns/1.0', 'xi': 'http://www.w3.org/2001/XInclude',
+    #        'xml': 'http://www.w3.org/XML/1998/namespace'}
     with Halo(text='Tokénisation du corpus parallélisé.', spinner='dots'):
         subprocess.run(["java", "-jar", saxon, "-xi:on", "../../Dedans/XML/corpus/corpus.xml",
                         "../xsl/pre_alignement/tokenisation.xsl"])
@@ -55,7 +75,37 @@ def tokenisation(saxon):
             ajout_xmlid(fichier_xml, fichier_xml)
         subprocess.run(["java", "-jar", saxon, "-xi:on", "../temoins_tokenises/Sal_J.xml",
                         "../xsl/pre_alignement/regularisation.xsl"])
+
     print("Tokénisation et régularisation du corpus pour alignement ✓")
+
+
+# def nouvelle_tokenisation():
+#     parser = etree.XMLParser(load_dtd=True,
+#                              resolve_entities=True)  # inutile car les entités ont déjà été résolues
+#     # auparavant normalement, mais au cas où.
+#     fichier_xml = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml"
+#     f = etree.parse(fichier_xml, parser=parser)
+#     f.xinclude()  # https://lxml.de/3.3/api.html#xinclude-and-elementinclude
+#     root = f.getroot()
+#     tei = {'tei': 'http://www.tei-c.org/ns/1.0', 'xi': 'http://www.w3.org/2001/XInclude',
+#            'xml': 'http://www.w3.org/XML/1998/namespace'}
+#     fichiers_tei = root.xpath("descendant::tei:TEI[ancestor::tei:teiCorpus[@xml:id='castB']][@type='transcription']",
+#                               namespaces=tei)
+#     for fichier in fichiers_tei:
+#         groupe_paragraphes = "descendant::tei:p"
+#         paragraphes = fichier.xpath(groupe_paragraphes, namespaces=tei)
+#         for paragraphe in paragraphes:
+#             paragraphe.xpath('tokenize(., "\s+")')
+#             test = etree.tostring(paragraphe, pretty_print=True)
+#             print(test.decode().split(' '))
+#         identifiant_fichier = fichier.xpath('@xml:id', namespaces=tei)
+#         fichier_sortie = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises/" + str(
+#             identifiant_fichier[0]) + ".xml"
+#         os.makedirs(os.path.dirname(fichier_sortie),
+#                     exist_ok=True)  # https://stackoverflow.com/a/12517490 (si le dossier n'existe pas)
+#         with open(fichier_sortie, "w+") as sortie_xml:
+#             chaine = etree.tostring(fichier, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+#             sortie_xml.write(str(chaine))
 
 
 def preparation_corpus(saxon):
@@ -413,8 +463,10 @@ def nettoyage():
 
 
 def txt_to_liste(filename):
+    '''
+        Transforme le fichier txt produit par Freeling en liste de listes pour processage ultérieur.
+    '''
     maliste = []
-    # scinder par l'espace et ajouter chacun des fichiers à la liste de liste. Il y aura un problème avec les doubles sauts de ligne.
     fichier = open(filename, 'r')
     for line in fichier.readlines():
         if not re.match(r'^\s*$',
@@ -433,15 +485,16 @@ def lemmatisation(chemin, saxon):
             print("Lemmatisation de: " + str(fichier_sans_extension))
             chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
 
-            subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl])
-
             fichier_entree_txt = '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation' \
                                  '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
+            param_sortie = "sortie="+ fichier_entree_txt
+            subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl, param_sortie])
+
             fichier_sortie = '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation' \
                              '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
             cmd_sh = ["analyze.sh", fichier_entree_txt,
                       fichier_sortie]  # je dois passer par un script externe car ça tourne dans le vide, pas trouvé pourquoi
-            subprocess.run(cmd_sh)
+            subprocess.run(cmd_sh) # analyze est dans /usr/bin
             maliste = txt_to_liste(fichier_sortie)
             parser = etree.XMLParser(load_dtd=True,
                                      resolve_entities=True)  # inutile car les entités ont déjà été résolues
@@ -456,7 +509,7 @@ def lemmatisation(chemin, saxon):
                 nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
                 nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
                 position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à enlever 1 quand on cherche dans la liste
-                liste_correcte = maliste[position_absolue_element - 2]
+                liste_correcte = maliste[position_absolue_element - 2] # ne marche pas parfaitement, avec J ça coince. Marche avec U. Voir ce qui se passe.
                 lemme_position = liste_correcte[1]
                 pos_position = liste_correcte[2]
                 mot.set("lemma", lemme_position)

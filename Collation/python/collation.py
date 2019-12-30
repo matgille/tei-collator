@@ -37,6 +37,9 @@ if len(sys.argv) >= 2:  # le nom du script est le premier argument
         elif argument == '--tokenisation' or argument == '-t':
             fonctions.tokenisation(saxon)
             exit(0)
+        elif argument == '--ntokenisation' or argument == '-nt':
+            fonctions.nouvelle_tokenisation()
+            exit(0)
         elif argument == '--preparation' or argument == '-p':
             fonctions.preparation_corpus(saxon)
             exit(0)
