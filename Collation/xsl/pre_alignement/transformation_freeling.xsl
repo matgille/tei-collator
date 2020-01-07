@@ -3,14 +3,24 @@
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
 
+    <xsl:param name="sortie"/>
     <xsl:output method="text"/>
     <xsl:strip-space elements="*"/>
+
+
+    <xsl:template match="tei:TEI">
+        <xsl:result-document href="{$sortie}">
+            <xsl:apply-templates select="descendant::tei:text"/>
+        </xsl:result-document>
+    </xsl:template>
+    
+    <!--
 
     <xsl:template match="tei:TEI">
         <xsl:result-document href="../temoins_tokenises_regularises/txt/{@xml:id}.txt">
             <xsl:apply-templates select="descendant::tei:text"/>
         </xsl:result-document>
-    </xsl:template>
+    </xsl:template>-->
 
     <xsl:template match="tei:teiHeader | tei:fw | tei:note | tei:del"/>
 

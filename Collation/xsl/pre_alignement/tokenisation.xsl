@@ -7,6 +7,7 @@
     <!--Première phase de la tokénisation: -->
     <!--Méthode suivie: sur suggestion de Marjorie Burghart, le "multi-pass" https://stackoverflow.com/a/8215981-->
     <!--Première Passe-->
+    <!--Il serait probablement plus simple de passer par du python pour faire ça-->
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="yes">
             <xsl:apply-templates select="@* | node()"/>
@@ -128,7 +129,7 @@
                 test="not(contains(',.;?!¿', substring-before(following-sibling::text()[1], ' ')))">
                 <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
             </xsl:if>
-            <!--Attention à ne pas copier un élément d eponctuation par mégarde-->
+            <!--Attention à ne pas copier un élément de ponctuation par mégarde-->
         </xsl:element>
     </xsl:template>
 
