@@ -4,6 +4,7 @@ etat_correction_temoins.md
 .aux
 .eps
 .log
+test/
 chapitres/
 __pycache__/
 myenv/
