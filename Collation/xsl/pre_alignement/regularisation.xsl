@@ -35,13 +35,16 @@
 
     <xsl:template match="tei:hi[@rend = 'lettre_attente']"/>
 
+    <xsl:template match="tei:w[not(text()) and descendant::tei:corr/not(descendant::text())]"/>
+<!--Revient à exclure les w vide-->
+
     <xsl:template match="tei:choice">
         <xsl:value-of select="tei:reg"/>
         <xsl:value-of select="tei:expan"/>
         <xsl:value-of select="tei:corr"/>
     </xsl:template>
 
-    <xsl:template match="tei:lb | tei:pb | tei:cb | tei:note | tei:fw"/>
+    <xsl:template match="tei:lb | tei:pb | tei:cb | tei:note | tei:fw | tei:del"/>
 
     <xsl:template match="tei:seg">
         <xsl:apply-templates/>

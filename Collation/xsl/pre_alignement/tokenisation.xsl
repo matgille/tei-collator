@@ -126,7 +126,7 @@
             <xsl:value-of select="substring-after(preceding-sibling::text()[-1], ' ')"/>
             <xsl:copy-of select="."/>
             <xsl:if
-                test="not(contains(',.;?!¿', substring-before(following-sibling::text()[1], ' ')))">
+                test="not(contains(',.;?!¡¿', substring-before(following-sibling::text()[1], ' ')))">
                 <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
             </xsl:if>
             <!--Attention à ne pas copier un élément de ponctuation par mégarde-->
@@ -139,7 +139,7 @@
         match="text()[not(ancestor::tei:note)][not(ancestor::tei:teiHeader)][not(ancestor::tei:w)][not(ancestor::tei:desc)]"
         mode="secondePasse">
         <xsl:for-each select="tokenize(., '\s+')">
-            <xsl:analyze-string select="." regex="([:,;¿?.])">
+            <xsl:analyze-string select="." regex="([:,;¿?!¡.])">
                 <xsl:matching-substring>
                     <xsl:element name="pc" namespace="http://www.tei-c.org/ns/1.0">
                         <xsl:value-of select="regex-group(1)"/>
@@ -222,6 +222,8 @@
     <xsl:template
         match="tei:w[preceding-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:cb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:cb[@break = 'n']]]"
         mode="quatriemePasse"/>
+
+    <xsl:template match="tei:w[not(descendant::text())]" mode="quatriemePasse"/>
 
 
     <xsl:template match="/">
