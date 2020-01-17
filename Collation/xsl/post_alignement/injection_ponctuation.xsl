@@ -8,7 +8,7 @@ Résultat: un fichier final qui marche !-->
     <xsl:output method="xml"/>
     <xsl:strip-space elements="*"/>
 
-    <xsl:param name="chapitre" select="'9'"/>
+    <xsl:param name="chapitre" select="'20'"/>
     <xsl:param name="chemin_sortie">
         <xsl:text>../../chapitres/chapitre</xsl:text>
         <xsl:value-of select="$chapitre"/>

@@ -100,9 +100,9 @@ for i in portee:
     # Création du tableau d'alignement pour visualisation (le rendre optionnel)
     fonctions.tableau_alignement(saxon, chemin_xsl)
 
-    for fichier in os.listdir('.'):
-        if fnmatch.fnmatch(fichier, 'apparat_*_*out.xml'):
-            fonctions.transformation_latex(saxon, fichier, chemin_xsl)
+    # for fichier in os.listdir('.'):
+    #     if fnmatch.fnmatch(fichier, 'apparat_*_*out.xml'):
+    #         fonctions.transformation_latex(saxon, fichier, chemin_xsl)
 
     fonctions.nettoyage()
     # On revient à la racine du projet pour finir la boucle

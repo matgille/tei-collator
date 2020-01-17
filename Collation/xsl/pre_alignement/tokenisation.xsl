@@ -220,10 +220,9 @@
     </xsl:template>
 
     <xsl:template
-        match="tei:w[preceding-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:cb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:cb[@break = 'n']]]"
+        match="tei:w[not(descendant::text())] | tei:w[preceding-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:cb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:cb[@break = 'n']]]"
         mode="quatriemePasse"/>
 
-    <xsl:template match="tei:w[not(descendant::text())]" mode="quatriemePasse"/>
 
 
     <xsl:template match="/">
@@ -240,8 +239,6 @@
 
 
 
-
-    <!--        <xsl:template match="tei:w[following-sibling::tei:lb[1]]" mode="troisiemePasse"/>-->
 
 
     <!--Quatrième passe-->

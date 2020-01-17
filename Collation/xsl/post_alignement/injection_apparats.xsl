@@ -16,7 +16,7 @@ plus suppression de la redondance-->
     vaut-il mieux créer un apparat enfant du <sic> ou re-créer des <sic> dans les <rdg> ? La seconde
     option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir-->
     <xsl:param name="chemin_sortie"/>
-    <xsl:param name="chapitre" select="21"/>
+    <xsl:param name="chapitre" select="20"/>
 
 
     <xsl:template match="@* | node()">
@@ -44,7 +44,6 @@ plus suppression de la redondance-->
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="apparat_chapitre"
             select="concat('../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml')"/>
-
 
         <!--Suppression de la redondance: si le token a déjà été rencontré, ne rien faire.-->
         <!--Si c'est la première occurrence du token, copier le noeud trouvé dans le document
@@ -102,6 +101,8 @@ plus suppression de la redondance-->
         <!--<xsl:if test="following-sibling::tei:w[1]"/>-->
         <!--Ajouter les ommissions-->
     </xsl:template>
+
+    <xsl:template match="tei:pc"/>
 
 
     <!--Création des différents fichiers xml par témoin-->

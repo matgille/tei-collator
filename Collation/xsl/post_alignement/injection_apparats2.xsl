@@ -8,14 +8,14 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
 
     <xsl:strip-space elements="*"/>
 
-    <xsl:param name="chapitre" select="'21'"/>
+    <xsl:param name="chapitre" select="'20'"/>
     <xsl:param name="chemin_sortie">
         <xsl:text>../../chapitres/chapitre</xsl:text>
         <xsl:value-of select="$chapitre"/>
         <xsl:text>/</xsl:text>
     </xsl:param>
     <xsl:param name="chemin_sortie2" select="'../../'"/>
-    <xsl:param name="sigle" select="'Mad_G'"/>
+    <xsl:param name="sigle" select="'Sal_J'"/>
 
 
     <xsl:template match="@* | node()">
@@ -52,9 +52,9 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
         <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="wit" select="@wit"/>
             <!--On ne récupère rien (à changer p.e.)-->
-            <xsl:for-each select="tei:w">
-                <xsl:copy-of select="."/>
-            </xsl:for-each>
+            <!--            <xsl:for-each select="tei:w">-->
+            <xsl:copy-of select="tei:w | tei:pc"/>
+            <!--</xsl:for-each>-->
             <!--On ne récupère rien-->
         </xsl:element>
     </xsl:template>

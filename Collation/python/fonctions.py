@@ -397,7 +397,7 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
     if not standalone:  # Si la fonction est appelée dans le cadre du processus complet (toujours question de chemin)
         fichier_entree = "juxtaposition_orig.xml"
     else:  # Si la fonction est appelée seule, le chemin est à partir du fichier python
-        fichier_entree = "../chapitres/chapitre9/xml/juxtaposition_orig.xml"
+        fichier_entree = "../chapitres/chapitre20/xml/juxtaposition_orig.xml"
     with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
         #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
         chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
@@ -412,7 +412,7 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle
             subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
-            os.remove(i)
+            # os.remove(i)
 
         #  troisième étape: ponctuation
         chemin_injection_ponctuation = chemin + "xsl/post_alignement/injection_ponctuation.xsl"
@@ -423,7 +423,7 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle
             subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
-            os.remove(i)
+            # os.remove(i)
     print("Injection des apparats dans chaque transcription individuelle ✓")
 
 
@@ -493,7 +493,8 @@ def lemmatisation(chemin, saxon):
             fichier_sortie = '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation' \
                              '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
             cmd_sh = ["analyze.sh", fichier_entree_txt,
-                      fichier_sortie]  # je dois passer par un script externe car ça tourne dans le vide, pas trouvé pourquoi
+                      fichier_sortie]  # je dois passer par un script externe car un subprocess tourne dans le vide,
+            # pas trouvé pourquoi
             subprocess.run(cmd_sh)  # analyze est dans /usr/bin
             maliste = txt_to_liste(fichier_sortie)
             parser = etree.XMLParser(load_dtd=True,
