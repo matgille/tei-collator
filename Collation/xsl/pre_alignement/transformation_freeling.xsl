@@ -3,6 +3,8 @@
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
 
+<!--Il vaudrait mieux le transformer en fonction python, ce serait plus simple-->
+
     <xsl:param name="sortie"/>
     <xsl:output method="text"/>
     <xsl:strip-space elements="*"/>
