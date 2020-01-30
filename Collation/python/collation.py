@@ -11,7 +11,7 @@ import fonctions
 # conseils.
 
 
-saxon = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation/Saxon-HE-9.8.0-14.jar"
+saxon = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/Saxon-HE-9.8.0-14.jar"
 # saxon = "../Collation/Saxon-HE-9.8.0-14.jar"
 # S'il y a un argument qui est une cdc, un fichier à traiter, passer directement à l'alignement
 if len(sys.argv) >= 2:  # le nom du script est le premier argument

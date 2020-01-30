@@ -48,10 +48,10 @@ def ajout_xmlid(fichier_entree, fichier_sortie):
 
 def tokenisation(saxon):
     # for fichier in os.listdir(
-    #         '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/castillan/'):
+    #         '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/castillan/'):
     #     print(fichier)
     #     if fnmatch.fnmatch(fichier, 'Sev_R.xml'):
-    #         chemin_fichier = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/castillan/" + fichier
+    #         chemin_fichier = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/castillan/" + fichier
     #         parser = etree.XMLParser(load_dtd=True, resolve_entities=False)
     #         f = etree.parse(chemin_fichier, parser=parser)
     #         f.xinclude()  # https://lxml.de/3.3/api.html#xinclude-and-elementinclude
@@ -62,7 +62,7 @@ def tokenisation(saxon):
     #         text_root = text_root.replace("\\n", "")
     #         tree = ET.ElementTree(ET.fromstring(text_root))
     #         print(text_root)
-    #         chemin_fichier_test = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/test/" + fichier
+    #         chemin_fichier_test = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/test/" + fichier
     #         with open(chemin_fichier_test, "w+") as sortie_xml:
     #             sortie_xml.write(text_root)
     # tei = {'tei': 'http://www.tei-c.org/ns/1.0', 'xi': 'http://www.w3.org/2001/XInclude',
@@ -83,7 +83,7 @@ def tokenisation(saxon):
 #     parser = etree.XMLParser(load_dtd=True,
 #                              resolve_entities=True)  # inutile car les entités ont déjà été résolues
 #     # auparavant normalement, mais au cas où.
-#     fichier_xml = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml"
+#     fichier_xml = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml"
 #     f = etree.parse(fichier_xml, parser=parser)
 #     f.xinclude()  # https://lxml.de/3.3/api.html#xinclude-and-elementinclude
 #     root = f.getroot()
@@ -99,7 +99,7 @@ def tokenisation(saxon):
 #             test = etree.tostring(paragraphe, pretty_print=True)
 #             print(test.decode().split(' '))
 #         identifiant_fichier = fichier.xpath('@xml:id', namespaces=tei)
-#         fichier_sortie = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises/" + str(
+#         fichier_sortie = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises/" + str(
 #             identifiant_fichier[0]) + ".xml"
 #         os.makedirs(os.path.dirname(fichier_sortie),
 #                     exist_ok=True)  # https://stackoverflow.com/a/12517490 (si le dossier n'existe pas)
@@ -478,19 +478,19 @@ def txt_to_liste(filename):
 
 def lemmatisation(chemin, saxon):
     for fichier in os.listdir(
-            '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
+            '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
         if fnmatch.fnmatch(fichier, '*.xml'):
             fichier_sans_extension = os.path.splitext(fichier)[0]
             fichier_xsl = chemin + "transformation_freeling.xsl"
             print("Lemmatisation de: " + str(fichier_sans_extension))
             chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
 
-            fichier_entree_txt = '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation' \
+            fichier_entree_txt = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
                                  '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
             param_sortie = "sortie=" + fichier_entree_txt
             subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl, param_sortie])
 
-            fichier_sortie = '/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation' \
+            fichier_sortie = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
                              '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
             cmd_sh = ["analyze.sh", fichier_entree_txt,
                       fichier_sortie]  # je dois passer par un script externe car un subprocess tourne dans le vide,
@@ -500,8 +500,8 @@ def lemmatisation(chemin, saxon):
             parser = etree.XMLParser(load_dtd=True,
                                      resolve_entities=True)  # inutile car les entités ont déjà été résolues
             # auparavant normalement, mais au cas où.
-            fichier_xml = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/" + fichier
-            # fichier_xml_sortie = "/home/mgl/Desktop/These/Edition/hyperregimiento-de-los-principes/Collation
+            fichier_xml = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/" + fichier
+            # fichier_xml_sortie = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation
             # /temoins_tokenises_regularises/test/test_" + fichier
             f = etree.parse(fichier_xml, parser=parser)
             root = f.getroot()
