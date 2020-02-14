@@ -50,9 +50,13 @@ if len(sys.argv) >= 2:  # le nom du script est le premier argument
             chemin_sortie = '../chapitres/chapitre' + str(sys.argv[2]) + "/xml/"
             fonctions.injection(saxon, '../', int(sys.argv[2]), True, chemin_sortie)
             exit(0)
-        elif argument == '--lemmatisation' or argument == '-l':
+        elif argument == '--lemmatisation_castillane' or argument == '-lc':
             chemin = '../xsl/pre_alignement/'
-            fonctions.lemmatisation(chemin, saxon)
+            fonctions.lemmatisation(chemin, saxon, "castillan")
+            exit(0)
+        elif argument == '--lemmatisation_latine' or argument == '-ll':
+            chemin = '../xsl/pre_alignement/'
+            fonctions.lemmatisation(chemin, saxon, "latin")
             exit(0)
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.
 

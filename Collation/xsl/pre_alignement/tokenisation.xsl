@@ -139,7 +139,7 @@
         match="text()[not(ancestor::tei:note)][not(ancestor::tei:teiHeader)][not(ancestor::tei:w)][not(ancestor::tei:desc)]"
         mode="secondePasse">
         <xsl:for-each select="tokenize(., '\s+')">
-            <xsl:analyze-string select="." regex="([:,;¿?!¡.])">
+            <xsl:analyze-string select="." regex="([():,;¿?!¡.])">
                 <xsl:matching-substring>
                     <xsl:element name="pc" namespace="http://www.tei-c.org/ns/1.0">
                         <xsl:value-of select="regex-group(1)"/>

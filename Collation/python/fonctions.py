@@ -476,63 +476,133 @@ def txt_to_liste(filename):
     return maliste
 
 
-def lemmatisation(chemin, saxon):
-    for fichier in os.listdir(
-            '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
-        if fnmatch.fnmatch(fichier, '*.xml'):
-            fichier_sans_extension = os.path.splitext(fichier)[0]
-            fichier_xsl = chemin + "transformation_freeling.xsl"
-            print("Lemmatisation de: " + str(fichier_sans_extension))
-            chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
+def lemmatisation(chemin, saxon, langue):
+    if langue == "castillan":
+        for fichier in os.listdir(
+                '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
+            if fnmatch.fnmatch(fichier, '*.xml'):
+                fichier_sans_extension = os.path.splitext(fichier)[0]
+                fichier_xsl = chemin + "transformation_freeling.xsl"
+                print("Lemmatisation de: " + str(fichier_sans_extension))
+                chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
 
-            fichier_entree_txt = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
-                                 '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
-            param_sortie = "sortie=" + fichier_entree_txt
-            subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl, param_sortie])
+                fichier_entree_txt = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
+                                     '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
+                param_sortie = "sortie=" + fichier_entree_txt
+                subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl, param_sortie])
 
-            fichier_sortie = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
-                             '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
-            cmd_sh = ["analyze.sh", fichier_entree_txt,
-                      fichier_sortie]  # je dois passer par un script externe car un subprocess tourne dans le vide,
-            # pas trouvé pourquoi
-            subprocess.run(cmd_sh)  # analyze est dans /usr/bin
-            maliste = txt_to_liste(fichier_sortie)
-            parser = etree.XMLParser(load_dtd=True,
-                                     resolve_entities=True)  # inutile car les entités ont déjà été résolues
-            # auparavant normalement, mais au cas où.
-            fichier_xml = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/" + fichier
-            # fichier_xml_sortie = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation
-            # /temoins_tokenises_regularises/test/test_" + fichier
-            f = etree.parse(fichier_xml, parser=parser)
-            root = f.getroot()
-            tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
-            groupe_words = "//tei:w"
-            tokens = root.xpath(groupe_words, namespaces=tei)
-            nombre_mots = int(root.xpath("count(//tei:w)", namespaces=tei))
-            nombre_pc = int(root.xpath("count(//tei:pc)", namespaces=tei))
-            nombre_tokens = nombre_mots + nombre_pc
-            fichier_sortie = fichier_xml
-            for mot in tokens:
-                nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
-                nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
-                position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à enlever 1 quand on cherche dans la liste
-                if position_absolue_element % round(nombre_tokens / 20) == 0:
-                    print('Réinjection dans le xml: ' + str(round(position_absolue_element / nombre_tokens * 100)) + '%',
-                          end="\r")
-                # print("mot: " + str(mot.xpath("text()")))
-                # print(len(maliste))
-                # print(maliste[position_absolue_element - 2])
-                liste_correcte = maliste[position_absolue_element - 2]  # Ça marche bien si la lemmatisation se fait
-                # sans retokenisation. Pour l'instant, ça bloque avec les chiffre (ochenta mill est fusionné). Voir
-                # avec les devs de Freeling.
-                lemme_position = liste_correcte[1]
-                pos_position = liste_correcte[2]
-                mot.set("lemma", lemme_position)
-                mot.set("pos", pos_position)
-            sortie_xml = open(fichier_sortie, "w+")
-            string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
-            sortie_xml.write(str(string))
-            sortie_xml.close()
+                fichier_sortie = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
+                                 '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
+                cmd_sh = ["analyze.sh", fichier_entree_txt,
+                          fichier_sortie]  # je dois passer par un script externe car un subprocess tourne dans le vide,
+                # pas trouvé pourquoi
+                subprocess.run(cmd_sh)  # analyze est dans /usr/bin
+                maliste = txt_to_liste(fichier_sortie)
+                parser = etree.XMLParser(load_dtd=True,
+                                         resolve_entities=True)  # inutile car les entités ont déjà été résolues
+                # auparavant normalement, mais au cas où.
+                fichier_xml = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/" + fichier
+                # fichier_xml_sortie = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation
+                # /temoins_tokenises_regularises/test/test_" + fichier
+                f = etree.parse(fichier_xml, parser=parser)
+                root = f.getroot()
+                tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
+                groupe_words = "//tei:w"
+                tokens = root.xpath(groupe_words, namespaces=tei)
+                nombre_mots = int(root.xpath("count(//tei:w)", namespaces=tei))
+                nombre_pc = int(root.xpath("count(//tei:pc)", namespaces=tei))
+                nombre_tokens = nombre_mots + nombre_pc
+                fichier_sortie = fichier_xml
+                for mot in tokens:
+                    nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
+                    nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
+                    position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à enlever 1 quand on cherche dans la liste
+                    if position_absolue_element % round(nombre_tokens / 20) == 0:
+                        print('Réinjection dans le xml: ' + str(
+                            round(position_absolue_element / nombre_tokens * 100)) + '%',
+                              end="\r")
+                    # print("mot: " + str(mot.xpath("text()")))
+                    # print(len(maliste))
+                    # print(maliste[position_absolue_element - 2])
+                    liste_correcte = maliste[position_absolue_element - 2]  # Ça marche bien si la lemmatisation se fait
+                    # sans retokenisation. Pour l'instant, ça bloque avec les chiffre (ochenta mill est fusionné). Voir
+                    # avec les devs de Freeling.
+                    lemme_position = liste_correcte[1]
+                    pos_position = liste_correcte[2]
+                    mot.set("lemma", lemme_position)
+                    mot.set("pos", pos_position)
+                sortie_xml = open(fichier_sortie, "w+")
+                string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+                sortie_xml.write(str(string))
+                sortie_xml.close()
+    elif langue == "latin":
+        for fichier in os.listdir(
+                '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
+            if fnmatch.fnmatch(fichier, 'Rome_W.xml'):
+                fichier_sans_extension = os.path.splitext(fichier)[0]
+                fichier_xsl = chemin + "transformation_freeling.xsl"
+                print("Lemmatisation de: " + str(fichier_sans_extension))
+                chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
+
+                fichier_entree_txt = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
+                                     '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
+                param_sortie = "sortie=" + fichier_entree_txt
+                subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl, param_sortie])
+
+
+                modele_latin = "/home/mgl/Bureau/programmes/pie_docs/latin/model.tar"
+
+                cmd = "pie tag <%s,lemma> %s --device cuda:0" % (modele_latin, fichier_entree_txt)
+                subprocess.run(cmd.split())
+                fichier_seul = os.path.splitext(fichier_entree_txt)[0]
+                fichier_lemmatise = str(fichier_seul) + "-pie.txt"
+
+                maliste = []
+                # scinder par l'espace et ajouter chacun des fichiers à la liste de liste.
+                with open(fichier_lemmatise, 'r') as f:
+                    for line in f.readlines():
+                        resultat = re.split(r'\s+', line)
+                        maliste.append(resultat)
+
+                # Nettoyage de la liste
+                maliste.pop(0)  # on supprime les titres de colonnes
+                del maliste[1::2]  # on supprime une ligne sur deux (toutes les lignes paires une fois la première supprimée)
+
+                parser = etree.XMLParser(load_dtd=True,
+                                         resolve_entities=True)  # inutile car les entités ont déjà été résolues
+                # auparavant normalement, mais au cas où.
+                fichier_xml = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/" + fichier
+                f = etree.parse(fichier_xml, parser=parser)
+                root = f.getroot()
+                tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
+                groupe_words = "//tei:w"
+                tokens = root.xpath(groupe_words, namespaces=tei)
+                nombre_mots = int(root.xpath("count(//tei:w)", namespaces=tei))
+                nombre_pc = int(root.xpath("count(//tei:pc)", namespaces=tei))
+                nombre_tokens = nombre_mots + nombre_pc
+                fichier_sortie = fichier_xml
+                for mot in tokens:
+                    nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
+                    nombre_ponctuation_precedente = int(
+                        mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
+                    position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à enlever 1 quand on cherche dans la liste
+                    if position_absolue_element % round(nombre_tokens / 20) == 0:
+                        print('Réinjection dans le xml: ' + str(
+                            round(position_absolue_element / nombre_tokens * 100)) + '%',
+                              end="\r")
+                    # print("mot: " + str(mot.xpath("text()")))
+                    # print(len(maliste))
+                    # print(maliste[position_absolue_element - 2])
+                    liste_correcte = maliste[position_absolue_element - 2]
+                    lemme_position = liste_correcte[1]
+                    # pos_position = liste_correcte[2]
+                    mot.set("lemma", lemme_position)
+                    # mot.set("pos", pos_position)
+                sortie_xml = open(fichier_sortie, "w+")
+                a_ecrire = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode(
+                    'utf8')
+                sortie_xml.write(str(a_ecrire))
+                sortie_xml.close()
 
 
 def transformation_latex(saxon, fichier_xml, chemin):
