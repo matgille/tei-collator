@@ -11,6 +11,8 @@ import fonctions
 # conseils.
 
 
+t0 = time.time()
+
 saxon = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/Saxon-HE-9.8.0-14.jar"
 # saxon = "../Collation/Saxon-HE-9.8.0-14.jar"
 # S'il y a un argument qui est une cdc, un fichier à traiter, passer directement à l'alignement
@@ -53,10 +55,16 @@ if len(sys.argv) >= 2:  # le nom du script est le premier argument
         elif argument == '--lemmatisation_castillane' or argument == '-lc':
             chemin = '../xsl/pre_alignement/'
             fonctions.lemmatisation(chemin, saxon, "castillan")
+            t1 = time.time()
+            temps_total = t1 - t0
+            print(temps_total)
             exit(0)
         elif argument == '--lemmatisation_latine' or argument == '-ll':
             chemin = '../xsl/pre_alignement/'
             fonctions.lemmatisation(chemin, saxon, "latin")
+            t1 = time.time()
+            temps_total = t1 - t0
+            print(temps_total)
             exit(0)
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.
 
@@ -114,4 +122,7 @@ for i in portee:
 
     print("Fait en %s secondes. \n" % (round(time.time() - start_time)))
 
+t1 = time.time()
+temps_total = t1 - t0
+print(temps_total)
 # fonctions.concatenation_pdf()

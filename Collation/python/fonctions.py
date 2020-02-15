@@ -539,7 +539,8 @@ def lemmatisation(chemin, saxon, langue):
         for fichier in os.listdir(
                 '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
             if fnmatch.fnmatch(fichier, 'Rome_W.xml'):
-                fichier_sans_extension = os.path.splitext(fichier)[0]
+                fichier_sans_extension \
+                    = os.path.splitext(fichier)[0]
                 fichier_xsl = chemin + "transformation_freeling.xsl"
                 print("Lemmatisation de: " + str(fichier_sans_extension))
                 chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
