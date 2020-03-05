@@ -13,10 +13,11 @@ from halo import Halo
 from lxml import etree
 
 
-def preparation_corpus(saxon):
+def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
-        subprocess.run(["java", "-jar", saxon, "temoins_tokenises_regularises/Sal_J.xml",
-                        "xsl/pre_alignement/preparation_corpus_bis.xsl"])
+        cmd = "java -jar %s temoins_tokenises_regularises/%s.xml xsl/pre_alignement/preparation_corpus_bis.xsl " \
+              "temoin_leader=%s scinder_par=%s element_base=%s" % (saxon, temoin_leader, temoin_leader, scinder_par, element_base)
+        subprocess.run(cmd.split())
     print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
 
 

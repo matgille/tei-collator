@@ -19,6 +19,10 @@ if not settings['corpus']['lemmatized'] and settings['lemmatize']:
 else:
     lemmatiser = False
 
+temoin_leader = settings['fichier_leader'].split(".")[0]
+element_base = settings['scission']['element_base']
+scinder_par = settings['scission']['scinder_par']
+
 path = settings['structure']
 lang = settings['lang']
 teiCorpus = settings['tei:teiCorpus']
