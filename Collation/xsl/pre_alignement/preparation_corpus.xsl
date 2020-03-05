@@ -5,6 +5,9 @@
     xmlns:f="urn:stylesheet-func">
 
     <xsl:strip-space elements="*"/>
+    <xsl:param name="temoin_leader">Sal_J</xsl:param>
+    <xsl:param name="scinder_par">chapitre</xsl:param>
+    <xsl:param name="element_base">p</xsl:param>
 
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="yes">
@@ -17,9 +20,14 @@
         <!--On crée un fichier où les encodages sont juxtaposés, pour après le convertir en json
         selon ce que requiert CollateX-->
         <xsl:for-each
-            select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre']">
-            <xsl:variable name="numero_chapitre" select="@n"/>
-            <xsl:result-document href="../divs/div{$numero_chapitre}/juxtaposition.xml">
+            select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = $temoin_leader]//tei:div[@type = $scinder_par]//*[name() = $element_base]">
+            <xsl:variable name="ident_paragraphe" select="@n"/>
+            <xsl:variable name="chapitre_courant" select="ancestor::tei:div[@type = $scinder_par]/@n"/>
+            <xsl:variable name="ident"
+                select="count(preceding::*[name() = $element_base][ancestor::tei:div[@type = $scinder_par][@n = $chapitre_courant]]) + 1"/>
+            <xsl:variable name="numero" select="ancestor::tei:div[@type = $scinder_par]/@n"/>
+            <xsl:result-document
+                href="divs/div{$numero}/juxtaposition_{$ident}.xml">
                 <xsl:element name="groupe">
                     <xsl:element name="temoin">
                         <xsl:attribute name="n">
@@ -28,7 +36,7 @@
                         <xsl:apply-templates/>
                     </xsl:element>
                     <xsl:for-each
-                        select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[not(@xml:id = 'Sal_J')]//tei:div[@type = 'chapitre'][@n = $numero_chapitre]">
+                        select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[not(@xml:id = $temoin_leader)]//tei:div[@type = $scinder_par]//*[name() = $element_base][@n = $ident_paragraphe]">
                         <xsl:element name="temoin">
                             <xsl:attribute name="n">
                                 <xsl:value-of select="ancestor::tei:TEI/@xml:id"/>
@@ -43,10 +51,10 @@
         veut conserver la structuration d'origine pour la réinjection: on va créer un fichier
         juxtaposition_orig qui va nous servir de fichier base pour réinjecter les informations contextuelles.-->
         <xsl:for-each
-            select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre']">
+            select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[@xml:id = $temoin_leader]//tei:div[@type = $scinder_par]">
             <xsl:variable name="numero_chapitre" select="@n"/>
             <xsl:result-document
-                href="../divs/div{$numero_chapitre}/juxtaposition_orig.xml">
+                href="divs/div{$numero_chapitre}/juxtaposition_orig.xml">
                 <xsl:element name="groupe">
                     <xsl:element name="temoin">
                         <xsl:attribute name="n">
@@ -55,7 +63,7 @@
                         <xsl:apply-templates/>
                     </xsl:element>
                     <xsl:for-each
-                        select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[not(@xml:id = 'Sal_J')]//tei:div[@type = 'chapitre'][@n = $numero_chapitre]">
+                        select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[not(@xml:id = $temoin_leader)]//tei:div[@type = $scinder_par][@n = $numero_chapitre]">
                         <xsl:element name="temoin">
                             <xsl:attribute name="n">
                                 <xsl:value-of select="ancestor::tei:TEI/@xml:id"/>
