@@ -127,7 +127,6 @@ def lemmatisation(fichier, moteur_xslt, langue):
             "temoins_tokenises_regularises/txt/%s.txt" % nom_fichier_sans_rien)
         lemmatizer = BackoffLatinLemmatizer()
         ma_liste_lemmatisee = lemmatizer.lemmatize(ma_liste_tokenisee)
-        # print(ma_liste_lemmatisee)
         parser = etree.XMLParser(load_dtd=True,
                                  resolve_entities=True)  # inutile car les entités ont déjà été résolues
         # auparavant normalement, mais au cas où.

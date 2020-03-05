@@ -43,7 +43,7 @@ plus suppression de la redondance-->
         <xsl:variable name="ms" select="ancestor::*:temoin/@n"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:variable name="apparat_chapitre"
-            select="concat('../../chapitres/chapitre', $chapitre, '/apparat_collatex.xml')"/>
+            select="concat('../../divs/div', $chapitre, '/apparat_collatex.xml')"/>
 
         <!--Suppression de la redondance: si le token a déjà été rencontré, ne rien faire.-->
         <!--Si c'est la première occurrence du token, copier le noeud trouvé dans le document

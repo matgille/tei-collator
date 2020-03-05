@@ -19,7 +19,7 @@
         <xsl:for-each
             select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre']">
             <xsl:variable name="numero_chapitre" select="@n"/>
-            <xsl:result-document href="../chapitres/chapitre{$numero_chapitre}/juxtaposition.xml">
+            <xsl:result-document href="../divs/div{$numero_chapitre}/juxtaposition.xml">
                 <xsl:element name="groupe">
                     <xsl:element name="temoin">
                         <xsl:attribute name="n">
@@ -46,7 +46,7 @@
             select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre']">
             <xsl:variable name="numero_chapitre" select="@n"/>
             <xsl:result-document
-                href="../chapitres/chapitre{$numero_chapitre}/juxtaposition_orig.xml">
+                href="../divs/div{$numero_chapitre}/juxtaposition_orig.xml">
                 <xsl:element name="groupe">
                     <xsl:element name="temoin">
                         <xsl:attribute name="n">

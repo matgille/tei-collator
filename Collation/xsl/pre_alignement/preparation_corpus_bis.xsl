@@ -7,7 +7,7 @@
     <xsl:strip-space elements="*"/>
     <xsl:param name="temoin_leader">''Sal_J''</xsl:param>
     <xsl:param name="element_scission">tei:div[@type='chapitre']</xsl:param>
-    <xsl:param name="scinder_par">chapitre</xsl:param>
+    <xsl:param name="scinder_par">div</xsl:param>
     <xsl:param name="element_base">tei:p</xsl:param>
 
     <xsl:template match="@* | node()">
@@ -67,7 +67,7 @@
             select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre']">
             <xsl:variable name="numero_chapitre" select="@n"/>
             <xsl:result-document
-                href="chapitres/{$scinder_par}{$numero_chapitre}/juxtaposition_orig.xml">
+                href="{$scinder_par}s/{$scinder_par}{$numero_chapitre}/juxtaposition_orig.xml">
                 <xsl:element name="groupe">
                     <xsl:element name="temoin">
                         <xsl:attribute name="n">

@@ -38,10 +38,12 @@ if len(sys.argv) == 1:  # si il n'y a pas d'argument
     if settings.xmlId and not settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
+                temoin = "temoins_tokenises_regularises/%s" % temoin
                 ajoutXmlId(temoin, temoin)
     if settings.lemmatiser:
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
+                temoin = "temoins_tokenises_regularises/%s" % temoin
                 lemmatisation(temoin, saxon, settings.lang)
     portee = range(3, 23)
 elif isInt(sys.argv[1]):  # Si on passe un entier, c'est un chapitre à processer
@@ -60,13 +62,14 @@ elif type(sys.argv[1]) is str:
         nettoyage()
         exit(0)
     elif argument == '--injection' or argument == '-i':
-        chemin_sortie = 'chapitres/chapitre' + str(sys.argv[2]) + "/xml/"
+        chemin_sortie = 'divs/div' + str(sys.argv[2]) + "/xml/"
         injection(saxon, '', int(sys.argv[2]), True, chemin_sortie)
         exit(0)
     elif argument == '--lemmatisation' or argument == '-l':
         chemin = 'xsl/pre_alignement/'
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
+                temoin = "temoins_tokenises_regularises/%s" % temoin
                 lemmatisation(temoin, saxon, python.settings.lang)
         t1 = time.time()
         temps_total = t1 - t0
@@ -88,11 +91,10 @@ preparation_corpus(saxon)
 
 for i in portee:
     start_time = time.time()
-    chemin = "chapitres/chapitre" + str(i)
-    print("Traitement du chapitre " + str(i))
+    chemin = "divs/div" + str(i)
+    print("Traitement de la division " + str(i))
     for fichier_xml in os.listdir(chemin):
-        pattern = re.compile("juxtaposition_[1-9].*")
-        print(fichier_xml)
+        pattern = re.compile("juxtaposition_[1-9].*xml")
         if pattern.match(fichier_xml):
             fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
             numero = fichier_sans_extension.split("_")[1]
@@ -106,7 +108,7 @@ for i in portee:
             # Alignement avec CollateX. Il en ressort du JSON, encore
             alignement(fichier_json_complet, saxon, chemin_xsl, numero, chemin)
 
-    chemin_chapitre = "chapitres/chapitre%s" % i
+    chemin_chapitre = "divs/div%s" % i
     chemin_final = "%s/final.json" % chemin_chapitre
     with open(chemin_final, "w") as final: # ici on prend tous les json d'alignement et on les fonde en un gros
         # fichier json
@@ -162,21 +164,22 @@ for i in portee:
     print("Création des apparats ✓")
 
     # Réinjection des apparats.
-    injection(saxon, chemin_xsl, i)
+    injection(saxon, chemin, i)
 
-    # Création du tableau d'alignement pour visualisation (le rendre optionnel)
-    # tableau_alignement(saxon, chemin_xsl)
+    # Création du tableau d'alignement pour visualisation
+    if python.settings.tableauxAlignement:
+        tableau_alignement(saxon, chemin_xsl)
 
-    # for fichier in os.listdir('.'):
-    #     if fnmatch.fnmatch(fichier, 'apparat_*_*out.xml'):
-    #         transformation_latex(saxon, fichier, chemin_xsl)
+    if python.settings.latex:
+        for fichier in os.listdir(chemin):
+            if fnmatch.fnmatch(fichier, 'apparat_*_*out.xml'):
+                transformation_latex(saxon, fichier, chemin_xsl)
+
 
     # nettoyage()
     # On revient à la racine du projet pour finir la boucle
 
-    print("Fait en %s secondes. \n" % (round(time.time() - start_time)))
 
 t1 = time.time()
 temps_total = t1 - t0
-print(temps_total)
-# concatenation_pdf()
+print("Fait en %s secondes. \n" % (round(temps_total)))

@@ -32,10 +32,9 @@ def ajoutXmlId(fichier_entree, fichier_sortie):
     tokens = root.xpath("//tei:w", namespaces=tei)
     for w in tokens:
         w.set("{http://www.w3.org/XML/1998/namespace}id", generateur_id())
-    sortie_xml = open(fichier_sortie, "w+")
-    string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
-    sortie_xml.write(str(string))
-    sortie_xml.close()
+    with open(fichier_sortie, "w+") as sortie_xml:
+        string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+        sortie_xml.write(str(string))
 
 
 def tokenisation(saxon):

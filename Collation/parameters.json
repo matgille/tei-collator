@@ -4,7 +4,7 @@
   "tei:teiCorpus": true, // les fichiers sont-ils inclus dans un tei:teiCorpus ?
   "fichier_leader": "Sal_J.xml", // le programme a besoin d'un fichier leader dont il va utiliser la structure.
   "scission": {
-    "scinder": true, // est-ce que le programme scinde la collation (pour les gros fichiers xml)
+    "scinder": true, // est-ce que le programme scinde la collation (pour les gros fichiers xml) et n'aligne que bloc par bloc (évite l'overlapping)
     "scinder_par": "chapitre",
     "element_scission": "tei:div[@type='chapitre']", // si oui, le programme va scinder le xml en petits fichiers. Sur quel niveau on scinde le tout.
     "element_base": null // y a-t-il un élément sur lequel opérer la collation ? tei:l ou tei:p
@@ -17,6 +17,7 @@
   "lemmatize": false, // lemmatiser avant de collationner ?
   "lang": "spa_o", // la langue, selon le standard ISO 639-3. Le latin et le castillan médiéval ne sont pas codés: utiliser lat_o et spa_o
   "sortie":{
-    "tableaux_alignement": true // créer les tableaux d'alignement
+    "tableaux_alignement": false, // créer les tableaux d'alignement
+    "LaTeX": false
   }
 }

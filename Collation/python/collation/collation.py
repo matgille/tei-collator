@@ -23,10 +23,8 @@ def preparation_corpus(saxon):
 # Étape avant la collation: transformation en json selon la structure voulue par CollateX.
 # Voir https://collatex.net/doc/#json-input
 def transformation_json(saxon, output_fichier_json, input_fichier_xml):
-    with Halo(text='Transformation en json', spinner='dots'):
-        subprocess.run(["java", "-jar", saxon, output_fichier_json, input_fichier_xml,
-                        "xsl/pre_alignement/transformation_json.xsl"])
-    print("Transformation en json pour alignement ✓")
+    subprocess.run(["java", "-jar", saxon, output_fichier_json, input_fichier_xml,
+                    "xsl/pre_alignement/transformation_json.xsl"])
 
 
 def alignement(fichier_a_collationer, saxon, chemin_xsl, numero, chemin):
@@ -53,15 +51,12 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl, numero, chemin):
 
     # Export au format JSON (permet de conserver les xml:id)
     def alignement_json(numero):
-        with Halo(text='Alignement CollateX', spinner='dots'):
-            json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
-            # JSON: https://stackoverflow.com/a/29827074
-            resultat_json = collate(json_str, output="json")
-            nom_fichier_sortie = "%s/alignement_collatex%s.json" % (chemin, numero)
-            sortie_json = open(nom_fichier_sortie, "w")
+        json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
+        # JSON: https://stackoverflow.com/a/29827074
+        resultat_json = collate(json_str, output="json")
+        nom_fichier_sortie = "%s/alignement_collatex%s.json" % (chemin, numero)
+        with open(nom_fichier_sortie, "w") as sortie_json:
             sortie_json.write(resultat_json)
-            sortie_json.close()
-        print("Alignement CollateX ✓")
 
     alignement_json(numero)
 
@@ -263,28 +258,24 @@ def apparat_final(fichier_entree, chemin):
 
         # L'apparat est produit. Écriture du fichier xml
         sortie = "%s/apparat_collatex.xml" % chemin
-        sortie_xml = open(sortie, "w+")
-        output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
-        sortie_xml.write(str(output))
-        sortie_xml.close()
+        with open(sortie, "w+") as sortie_xml:
+            output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+            sortie_xml.write(str(output))
 
 
-def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie='chapitres/chapitre6/'):
-    print("---- INJECTION 1 ----")
+def injection(saxon, chemin, chapitre):
+    print("---- INJECTION 1: apparats ----")
     param_chapitre = "chapitre=" + str(chapitre)  # Premier paramètre passé à la xsl: le chapitre à processer
-    param_chemin_sortie = "chemin_sortie=" + str(chemin_sortie)  # Second paramètre: le chemin vers le fichier de sortie
-    if not standalone:  # Si la fonction est appelée dans le cadre du processus complet (toujours question de chemin)
-        fichier_entree = "chapitres/chapitre6/juxtaposition_orig.xml"
-    else:  # Si la fonction est appelée seule, le chemin est à partir du fichier python
-        fichier_entree = "chapitres/chapitre20/xml/juxtaposition_orig.xml"
+    param_chemin_sortie = "chemin_sortie=%s/" % chemin  # Second paramètre: le chemin vers le fichier de sortie
+    fichier_entree = "%s/juxtaposition_orig.xml" % chemin
     # with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
     #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
     chemin_injection = "xsl/post_alignement/injection_apparats.xsl"
     subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
 
     # seconde étape: noeuds non textuels
-    print("\n---- INJECTION 2 ----")
-    fichiers_apparat = 'chapitres/chapitre6/apparat_*_*.xml'
+    print("\n---- INJECTION 2: suppression de la redondance ----")
+    fichiers_apparat = 'divs/div6/apparat_*_*.xml'
     liste = glob.glob(fichiers_apparat)
     chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
     for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
@@ -294,7 +285,7 @@ def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie='chapitre
         subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
     #  troisième étape: ponctuation
-    print("\n---- INJECTION 3 ----")
+    print("\n---- INJECTION 3: ponctuation ----")
     chemin_injection_ponctuation = "xsl/post_alignement/injection_ponctuation.xsl"
     liste = glob.glob(fichiers_apparat)
     for i in liste:
@@ -374,5 +365,5 @@ def transformation_latex(saxon, fichier_xml, chemin):
 
 def concatenation_pdf():
     with Halo(text='Création d\'un fichier unique d\'apparat ✓', spinner='dots'):
-        subprocess.run(["pdftk", "chapitres/chapitre*/*.pdf", "output", "III_3_apparat.pdf"])
+        subprocess.run(["pdftk", "divs/div*/*.pdf", "output", "III_3_apparat.pdf"])
     print("Création d'un fichier unique d'apparat ✓")

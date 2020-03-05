@@ -10,7 +10,7 @@ Résultat: un fichier final qui marche !-->
 
     <xsl:param name="chapitre" select="'20'"/>
     <xsl:param name="chemin_sortie">
-        <xsl:text>chapitres/chapitre</xsl:text>
+        <xsl:text>divs/div</xsl:text>
         <xsl:value-of select="$chapitre"/>
         <xsl:text>/</xsl:text>
     </xsl:param>
