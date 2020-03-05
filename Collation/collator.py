@@ -84,7 +84,7 @@ chemin_xsl = ""
 
 # On lemmatise ici.
 
-preparation_corpus(saxon)
+preparation_corpus(saxon, python.settings.temoin_leader, python.settings.scinder_par, python.settings.element_base)
 
 # Création des fichiers d'apparat
 # with Halo(text='Alignement automatique par chapitre', spinner='dots'):
@@ -106,11 +106,11 @@ for i in portee:
             transformation_json(saxon, output_fichier_json, input_fichier_xml)
 
             # Alignement avec CollateX. Il en ressort du JSON, encore
-            alignement(fichier_json_complet, saxon, chemin_xsl, numero, chemin)
+            alignement(fichier_json_complet, numero, chemin, python.settings.alignement)
 
     chemin_chapitre = "divs/div%s" % i
     chemin_final = "%s/final.json" % chemin_chapitre
-    with open(chemin_final, "w") as final: # ici on prend tous les json d'alignement et on les fonde en un gros
+    with open(chemin_final, "w") as final:  # ici on prend tous les json d'alignement et on les fonde en un gros
         # fichier json
         final_dict = {'table': [], 'witnesses': []}
         n = 0
@@ -125,9 +125,9 @@ for i in portee:
                 n = len(dict0['table'])  # n est le nombre de témoins
                 for j in range(n):  # pour chaque témoin
                     witness = dict0['witnesses'][j]
-                    if len(final_dict['witnesses']) != n: # tant que la liste des témoins n'est pas complète
+                    if len(final_dict['witnesses']) != n:  # tant que la liste des témoins n'est pas complète
                         final_dict['witnesses'].append(witness)
-                    if len(final_dict['table']) != n: #
+                    if len(final_dict['table']) != n:  #
                         liste_vide = []
                         final_dict['table'].append(liste_vide)
                     for element in dict0['table'][j]:
@@ -149,13 +149,15 @@ for i in portee:
         chemin_regroupement = "xsl/post_alignement/regroupement.xsl"
         # Regroupement des lieux variants (témoin A puis témoin B puis témoin C
         # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
-        cmd = "java -jar %s -o:%s/aligne_regroupe.xml %s/alignement_collatex.xml %s" % (saxon, chemin_chapitre, chemin_chapitre, chemin_regroupement)
+        cmd = "java -jar %s -o:%s/aligne_regroupe.xml %s/alignement_collatex.xml %s" % (
+        saxon, chemin_chapitre, chemin_chapitre, chemin_regroupement)
         subprocess.run(cmd.split())
 
         # C'est à ce niveau que l'étape de correction devrait avoir lieu. Y réfléchir.
         # Création de l'apparat: transformation de aligne_regroupe.xml en JSON
         chemin_xsl_apparat = "xsl/post_alignement/creation_apparat.xsl"
-        cmd = "java -jar %s -o:%s/apparat_final.json %s/aligne_regroupe.xml %s" % (saxon, chemin_chapitre, chemin_chapitre, chemin_xsl_apparat)
+        cmd = "java -jar %s -o:%s/apparat_final.json %s/aligne_regroupe.xml %s" % (
+        saxon, chemin_chapitre, chemin_chapitre, chemin_xsl_apparat)
         subprocess.run(cmd.split())
         # Création de l'apparat: suppression de la redondance, identification des lieux variants,
         # regroupement des lemmes
@@ -168,17 +170,16 @@ for i in portee:
 
     # Création du tableau d'alignement pour visualisation
     if python.settings.tableauxAlignement:
-        tableau_alignement(saxon, chemin_xsl)
+        tableau_alignement(saxon, chemin)
 
     if python.settings.latex:
         for fichier in os.listdir(chemin):
             if fnmatch.fnmatch(fichier, 'apparat_*_*out.xml'):
-                transformation_latex(saxon, fichier, chemin_xsl)
-
+                fichier = "%s/%s" % (chemin, fichier)
+                transformation_latex(saxon, fichier, chemin)
 
     # nettoyage()
     # On revient à la racine du projet pour finir la boucle
-
 
 t1 = time.time()
 temps_total = t1 - t0
