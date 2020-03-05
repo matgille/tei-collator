@@ -32,16 +32,16 @@ def lemmatisation(fichier, moteur_xslt, langue):
     :return: retourne un fichier lemmatisé
     """
     fichier_sans_extension = os.path.splitext(fichier)[0]
-    fichier_xsl = "../xsl/lemmatisation/transformation_pre_lemmatisation.xsl"
-    chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
-    fichier_entree_txt = '../temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
+    fichier_xsl = "xsl/lemmatisation/transformation_pre_lemmatisation.xsl"
+    chemin_vers_fichier = "temoins_tokenises_regularises/" + str(fichier)
+    fichier_entree_txt = 'temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
     param_sortie = "sortie=" + fichier_entree_txt
     subprocess.run(["java", "-jar", moteur_xslt, chemin_vers_fichier, fichier_xsl, param_sortie])
     clear()
     print("Tokénisation et régularisation du fichier ✓\nLemmatisation...")
     if langue == "spa_o":
-        fichier_lemmatise = '../temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
-        cmd_sh = ["sh", "lemmatisation/analyze.sh", fichier_entree_txt,
+        fichier_lemmatise = 'temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
+        cmd_sh = ["sh", "python/lemmatisation/analyze.sh", fichier_entree_txt,
                   fichier_lemmatise]  # je dois passer par un script externe car un subprocess tourne dans le vide,
         # pas trouvé pourquoi
         subprocess.run(cmd_sh)  # analyze est dans /usr/bin
@@ -49,7 +49,7 @@ def lemmatisation(fichier, moteur_xslt, langue):
         parser = etree.XMLParser(load_dtd=True,
                                  resolve_entities=True)  # inutile car les entités ont déjà été résolues
         # auparavant normalement, mais au cas où.
-        temoin_tokenise = "../temoins_tokenises_regularises/" + fichier
+        temoin_tokenise = "temoins_tokenises_regularises/" + fichier
         f = etree.parse(temoin_tokenise, parser=parser)
         root = f.getroot()
         tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
@@ -84,7 +84,7 @@ def lemmatisation(fichier, moteur_xslt, langue):
         parser = etree.XMLParser(load_dtd=True,
                                  resolve_entities=True)  # inutile car les entités ont déjà été résolues
         # auparavant normalement, mais au cas où.
-        temoin_tokenise = "../temoins_tokenises_regularises/" + fichier
+        temoin_tokenise = "temoins_tokenises_regularises/" + fichier
         f = etree.parse(temoin_tokenise, parser=parser)
         root = f.getroot()
         tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
@@ -124,14 +124,14 @@ def lemmatisation(fichier, moteur_xslt, langue):
     elif langue == "lat":  # 1) on transforme le fichier txt tokenise en txt_to_liste()
         nom_fichier_sans_rien = fichier.split(".")[0]
         ma_liste_tokenisee = txt_to_liste_latinclassique(
-            "../temoins_tokenises_regularises/txt/%s.txt" % nom_fichier_sans_rien)
+            "temoins_tokenises_regularises/txt/%s.txt" % nom_fichier_sans_rien)
         lemmatizer = BackoffLatinLemmatizer()
         ma_liste_lemmatisee = lemmatizer.lemmatize(ma_liste_tokenisee)
-        print(ma_liste_lemmatisee)
+        # print(ma_liste_lemmatisee)
         parser = etree.XMLParser(load_dtd=True,
                                  resolve_entities=True)  # inutile car les entités ont déjà été résolues
         # auparavant normalement, mais au cas où.
-        temoin_tokenise = "../temoins_tokenises_regularises/" + fichier
+        temoin_tokenise = "temoins_tokenises_regularises/" + fichier
         f = etree.parse(temoin_tokenise, parser=parser)
         root = f.getroot()
         tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
@@ -200,10 +200,10 @@ def production_doc_final(nom_fichier, moteur_xslt):
     :param fichier: le nom du fichier sans sa base
     :return: le fichier final lemmatisé
     """
-    temoin_tokenise = "../temoins_tokenises/%s" % nom_fichier
+    temoin_tokenise = "temoins_tokenises/%s" % nom_fichier
     print("Injection dans le XML...")
     param = "nom_fichier=" + nom_fichier
-    commande = "java -jar %s -xi:on %s ../xsl/lemmatisation/doc_final.xsl %s" % (moteur_xslt, temoin_tokenise, param)
+    commande = "java -jar %s -xi:on %s xsl/lemmatisation/doc_final.xsl %s" % (moteur_xslt, temoin_tokenise, param)
     subprocess.run(commande.split())
     
     print("Tokénisation et régularisation du fichier ✓\nLemmatisation du fichier ✓\nInjection dans le XML... ✓")

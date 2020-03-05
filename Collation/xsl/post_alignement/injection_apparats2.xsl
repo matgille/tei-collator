@@ -10,7 +10,7 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
 
     <xsl:param name="chapitre" select="'20'"/>
     <xsl:param name="chemin_sortie">
-        <xsl:text>../../chapitres/chapitre</xsl:text>
+        <xsl:text>chapitres/chapitre</xsl:text>
         <xsl:value-of select="$chapitre"/>
         <xsl:text>/</xsl:text>
     </xsl:param>

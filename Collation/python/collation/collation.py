@@ -13,11 +13,10 @@ from halo import Halo
 from lxml import etree
 
 
-
 def preparation_corpus(saxon):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
-        subprocess.run(["java", "-jar", saxon, "../temoins_tokenises_regularises/Sal_J.xml",
-                        "../xsl/pre_alignement/preparation_corpus.xsl"])
+        subprocess.run(["java", "-jar", saxon, "temoins_tokenises_regularises/Sal_J.xml",
+                        "xsl/pre_alignement/preparation_corpus_bis.xsl"])
     print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
 
 
@@ -30,7 +29,7 @@ def transformation_json(saxon, output_fichier_json, input_fichier_xml):
     print("Transformation en json pour alignement ✓")
 
 
-def alignement(fichier_a_collationer, saxon, chemin_xsl):
+def alignement(fichier_a_collationer, saxon, chemin_xsl, numero, chemin):
     """
         Alignement CollateX, puis regroupement des leçons communes en lieux variants
     """
@@ -53,49 +52,21 @@ def alignement(fichier_a_collationer, saxon, chemin_xsl):
             sortie_tei.close()
 
     # Export au format JSON (permet de conserver les xml:id)
-    def alignement_json():
+    def alignement_json(numero):
         with Halo(text='Alignement CollateX', spinner='dots'):
             json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
             # JSON: https://stackoverflow.com/a/29827074
             resultat_json = collate(json_str, output="json")
-            sortie_json = open("alignement_collatex.json", "w")
+            nom_fichier_sortie = "%s/alignement_collatex%s.json" % (chemin, numero)
+            sortie_json = open(nom_fichier_sortie, "w")
             sortie_json.write(resultat_json)
             sortie_json.close()
         print("Alignement CollateX ✓")
 
-    alignement_json()
-
-    # Les résultats de la collation ne sont pas directement visibles: on a la liste A puis la liste B: il faut
-    # transformer le tout pour avoir un réel alignement. Voir http://collatex.obdurodon.org/xml-json-conversion.xhtml
-    # pour la structure du résultat. Le résultat de cette dernière transformation est une liste qui comprend
-    # elle-même une liste avec l'alignement.
-
-    # Création des apparats proprement dite: on compare les lieux variants et on réduit les app.
-    with Halo(text='Création des apparats', spinner='dots'):
-        # Étape suivante: transformer le JSON en xml. Pour cela on peut utiliser dict2xml. 
-        sortie_xml = open("alignement_collatex.xml", "w+")
-        fichier_json_a_xmliser = open('alignement_collatex.json').read()
-        obj = json.loads(fichier_json_a_xmliser)
-        vers_xml = dicttoxml.dicttoxml(obj)
-        vers_xml = vers_xml.decode("utf-8")
-        sortie_xml.write(vers_xml)
-        sortie_xml.close()
-
-        chemin_regroupement = chemin_xsl + "xsl/post_alignement/regroupement.xsl"
-        chemin_xsl_apparat = chemin_xsl + "xsl/post_alignement/creation_apparat.xsl"
-        # Regroupement des lieux variants (témoin A puis témoin B puis témoin C 
-        # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
-        subprocess.run(
-            ["java", "-jar", saxon, "-o:aligne_regroupe.xml", "alignement_collatex.xml", chemin_regroupement])
-
-        # C'est à ce niveau que l'étape de correction devrait avoir lieu. Y réfléchir.    
-        # Création de l'apparat: transformation de aligne_regroupe.xml en JSON
-        subprocess.run(["java", "-jar", saxon, "-o:apparat_final.json", "aligne_regroupe.xml", chemin_xsl_apparat])
-        # Création de l'apparat: suppression de la redondance, identification des lieux variants, 
-        # regroupement des lemmes
+    alignement_json(numero)
 
 
-def apparat_final(fichier_entree):
+def apparat_final(fichier_entree, chemin):
     """
         Cette fonction permet de passer de la table d'alignement à 
         l'apparat proprement dit, avec création d'apparat s'il y a
@@ -291,46 +262,54 @@ def apparat_final(fichier_entree):
                     n = n + 1
 
         # L'apparat est produit. Écriture du fichier xml
-        sortie_xml = open("apparat_collatex.xml", "w+")
+        sortie = "%s/apparat_collatex.xml" % chemin
+        sortie_xml = open(sortie, "w+")
         output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
         sortie_xml.write(str(output))
         sortie_xml.close()
 
 
-def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie=''):
+def injection(saxon, chemin, chapitre, standalone=False, chemin_sortie='chapitres/chapitre6/'):
+    print("---- INJECTION 1 ----")
     param_chapitre = "chapitre=" + str(chapitre)  # Premier paramètre passé à la xsl: le chapitre à processer
     param_chemin_sortie = "chemin_sortie=" + str(chemin_sortie)  # Second paramètre: le chemin vers le fichier de sortie
     if not standalone:  # Si la fonction est appelée dans le cadre du processus complet (toujours question de chemin)
-        fichier_entree = "juxtaposition_orig.xml"
+        fichier_entree = "chapitres/chapitre6/juxtaposition_orig.xml"
     else:  # Si la fonction est appelée seule, le chemin est à partir du fichier python
-        fichier_entree = "../chapitres/chapitre20/xml/juxtaposition_orig.xml"
-    with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
-        #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
-        chemin_injection = chemin + "xsl/post_alignement/injection_apparats.xsl"
-        subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
-        fichiers_apparat = 'apparat_*_*.xml'
-        liste = glob.glob(fichiers_apparat)
+        fichier_entree = "chapitres/chapitre20/xml/juxtaposition_orig.xml"
+    # with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
+    #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
+    chemin_injection = "xsl/post_alignement/injection_apparats.xsl"
+    subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
 
-        # seconde étape: noeuds non textuels
-        chemin_injection2 = chemin + "xsl/post_alignement/injection_apparats2.xsl"
-        for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
-            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-            param_sigle = "sigle=" + sigle
-            subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
-            # os.remove(i)
+    # seconde étape: noeuds non textuels
+    print("\n---- INJECTION 2 ----")
+    fichiers_apparat = 'chapitres/chapitre6/apparat_*_*.xml'
+    liste = glob.glob(fichiers_apparat)
+    chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
+    for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
+        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+        param_sigle = "sigle=" + sigle
+        subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
-        #  troisième étape: ponctuation
-        chemin_injection_ponctuation = chemin + "xsl/post_alignement/injection_ponctuation.xsl"
-        fichiers_apparat = 'apparat_*_*outb.xml'
-        liste = glob.glob(fichiers_apparat)
-        for i in liste:
-            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-            param_sigle = "sigle=" + sigle
-            subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
-            # os.remove(i)
+    #  troisième étape: ponctuation
+    print("\n---- INJECTION 3 ----")
+    chemin_injection_ponctuation = "xsl/post_alignement/injection_ponctuation.xsl"
+    liste = glob.glob(fichiers_apparat)
+    for i in liste:
+        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+        param_sigle = "sigle=" + sigle
+        subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
+
+
+def fileExists(file):
+    if os.path.exists(file):
+        print("%s: check" % file)
+    else:
+        print("%s: n'est pas trouvé" % file)
 
 
 def tableau_alignement(saxon, chemin):
@@ -362,8 +341,9 @@ def nettoyage():
             elif fnmatch.fnmatch(file, '*.html') or fnmatch.fnmatch(file, '*.pdf'):
                 continue
             else:
-                new_path = 'aux/' + file
-                shutil.move(os.path.abspath(file), new_path)
+                continue
+                # new_path = 'aux/' + file
+                # shutil.move(os.path.abspath(file), new_path)
 
     print("Nettoyage du dossier ✓")
 
@@ -382,140 +362,6 @@ def txt_to_liste(filename):
     return maliste
 
 
-def lemmatisation(chemin, saxon, langue):
-    """
-    Lemmatisation du fichier XML et réinjection dans le document xml originel.
-    :param fichier: le fichier à lemmatiser
-    :param moteur_xslt: le moteur de transformation à utiliser
-    :param langue: la langue du fichier
-    :return: retourne un fichier lemmatisé
-    """
-    if langue == "castillan":
-        for fichier in os.listdir(
-                '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
-            if fnmatch.fnmatch(fichier, '*.xml'):
-                fichier_sans_extension = os.path.splitext(fichier)[0]
-                fichier_xsl = chemin + "transformation_freeling.xsl"
-                print("Lemmatisation de: " + str(fichier_sans_extension))
-                chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
-
-                fichier_entree_txt = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
-                                     '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
-                param_sortie = "sortie=" + fichier_entree_txt
-                subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl, param_sortie])
-
-                fichier_sortie = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
-                                 '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
-                cmd_sh = ["analyze.sh", fichier_entree_txt,
-                          fichier_sortie]  # je dois passer par un script externe car un subprocess tourne dans le vide,
-                # pas trouvé pourquoi
-                subprocess.run(cmd_sh)  # analyze est dans /usr/bin
-                maliste = txt_to_liste(fichier_sortie)
-                parser = etree.XMLParser(load_dtd=True,
-                                         resolve_entities=True)  # inutile car les entités ont déjà été résolues
-                # auparavant normalement, mais au cas où.
-                fichier_xml = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/" + fichier
-                # fichier_xml_sortie = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation
-                # /temoins_tokenises_regularises/test/test_" + fichier
-                f = etree.parse(fichier_xml, parser=parser)
-                root = f.getroot()
-                tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
-                groupe_words = "//tei:w"
-                tokens = root.xpath(groupe_words, namespaces=tei)
-                nombre_mots = int(root.xpath("count(//tei:w)", namespaces=tei))
-                nombre_pc = int(root.xpath("count(//tei:pc)", namespaces=tei))
-                nombre_tokens = nombre_mots + nombre_pc
-                fichier_sortie = fichier_xml
-                for mot in tokens:
-                    nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
-                    nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
-                    position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à enlever 1 quand on cherche dans la liste
-                    if position_absolue_element % round(nombre_tokens / 20) == 0:
-                        print('Réinjection dans le xml: ' + str(
-                            round(position_absolue_element / nombre_tokens * 100)) + '%',
-                              end="\r")
-                    # print("mot: " + str(mot.xpath("text()")))
-                    # print(len(maliste))
-                    # print(maliste[position_absolue_element - 2])
-                    liste_correcte = maliste[position_absolue_element - 2]  # Ça marche bien si la lemmatisation se fait
-                    # sans retokenisation. Pour l'instant, ça bloque avec les chiffre (ochenta mill est fusionné). Voir
-                    # avec les devs de Freeling.
-                    lemme_position = liste_correcte[1]
-                    pos_position = liste_correcte[2]
-                    mot.set("lemma", lemme_position)
-                    mot.set("pos", pos_position)
-                sortie_xml = open(fichier_sortie, "w+")
-                string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
-                sortie_xml.write(str(string))
-                sortie_xml.close()
-    elif langue == "latin":
-        for fichier in os.listdir(
-                '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/'):
-            if fnmatch.fnmatch(fichier, 'Rome_W.xml'):
-                fichier_sans_extension \
-                    = os.path.splitext(fichier)[0]
-                fichier_xsl = chemin + "transformation_freeling.xsl"
-                print("Lemmatisation de: " + str(fichier_sans_extension))
-                chemin_vers_fichier = "../temoins_tokenises_regularises/" + str(fichier)
-
-                fichier_entree_txt = '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation' \
-                                     '/temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
-                param_sortie = "sortie=" + fichier_entree_txt
-                subprocess.run(["java", "-jar", saxon, chemin_vers_fichier, fichier_xsl, param_sortie])
-
-                modele_latin = "/home/mgl/Bureau/programmes/pie_docs/latin/model.tar"
-
-                cmd = "pie tag <%s,lemma,pos,Person,Numb,Tense,Case,Voice,Mood> %s --device cuda:0" % (
-                    modele_latin, fichier_entree_txt)
-                subprocess.run(cmd.split())
-                fichier_seul = os.path.splitext(fichier_entree_txt)[0]
-                fichier_lemmatise = str(fichier_seul) + "-pie.txt"
-
-                maliste = txt_to_liste(fichier_lemmatise)
-                # Nettoyage de la liste
-                maliste.pop(0)  # on supprime les titres de colonnes
-
-                parser = etree.XMLParser(load_dtd=True,
-                                         resolve_entities=True)  # inutile car les entités ont déjà été résolues
-                # auparavant normalement, mais au cas où.
-                fichier_xml = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Collation/temoins_tokenises_regularises/" + fichier
-                f = etree.parse(fichier_xml, parser=parser)
-                root = f.getroot()
-                tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
-                groupe_words = "//tei:w"
-                tokens = root.xpath(groupe_words, namespaces=tei)
-                nombre_mots = int(root.xpath("count(//tei:w)", namespaces=tei))
-                nombre_pc = int(root.xpath("count(//tei:pc)", namespaces=tei))
-                nombre_tokens = nombre_mots + nombre_pc
-                fichier_sortie = fichier_xml
-                for mot in tokens:
-                    nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
-                    nombre_ponctuation_precedente = int(
-                        mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
-                    position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à enlever 1 quand on cherche dans la liste
-                    if position_absolue_element % round(nombre_tokens / 20) == 0:
-                        print('Réinjection dans le xml: ' + str(
-                            round(position_absolue_element / nombre_tokens * 100)) + '%',
-                              end="\r")
-                    liste_correcte = maliste[position_absolue_element - 2]
-                    cas = liste_correcte[1]
-                    mode = liste_correcte[2]
-                    number = liste_correcte[3]
-                    person = liste_correcte[4]
-                    temps = liste_correcte[5]
-                    pos = liste_correcte[6]
-                    lemme = liste_correcte[7]
-                    morph = "CAS=%s|MODE=%s|NOMB.=%s|PERS.=%s|TEMPS=%s" % (cas, mode, number, person, temps)
-                    mot.set("lemma", lemme)
-                    mot.set("pos", pos)
-                    mot.set("morph", morph)
-                sortie_xml = open(fichier_sortie, "w+")
-                a_ecrire = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode(
-                    'utf8')
-                sortie_xml.write(str(a_ecrire))
-                sortie_xml.close()
-
-
 def transformation_latex(saxon, fichier_xml, chemin):
     fichier_tex = fichier_xml.split('.')[0] + ".tex"
     chemin_xsl_apparat = chemin + "xsl/post_alignement/conversion_latex.xsl"
@@ -530,5 +376,3 @@ def concatenation_pdf():
     with Halo(text='Création d\'un fichier unique d\'apparat ✓', spinner='dots'):
         subprocess.run(["pdftk", "chapitres/chapitre*/*.pdf", "output", "III_3_apparat.pdf"])
     print("Création d'un fichier unique d'apparat ✓")
-
-

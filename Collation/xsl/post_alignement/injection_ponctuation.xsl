@@ -10,11 +10,11 @@ Résultat: un fichier final qui marche !-->
 
     <xsl:param name="chapitre" select="'20'"/>
     <xsl:param name="chemin_sortie">
-        <xsl:text>../../chapitres/chapitre</xsl:text>
+        <xsl:text>chapitres/chapitre</xsl:text>
         <xsl:value-of select="$chapitre"/>
         <xsl:text>/</xsl:text>
     </xsl:param>
-    <xsl:param name="chemin_sortie2" select="'../../'"/>
+    <xsl:param name="chemin_sortie2" select="''"/>
     <xsl:param name="sigle" select="'Sal_J'"/>
 
 

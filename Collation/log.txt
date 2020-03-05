@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?>collection(../../temoins_tokenises_regularises?select=*.xml)//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type='chapitre']//tei:pOui

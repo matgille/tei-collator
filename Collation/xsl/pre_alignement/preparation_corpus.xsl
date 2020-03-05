@@ -17,7 +17,7 @@
         <!--On crée un fichier où les encodages sont juxtaposés, pour après le convertir en json
         selon ce que requiert CollateX-->
         <xsl:for-each
-            select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre'][not(@subtype)]">
+            select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre']">
             <xsl:variable name="numero_chapitre" select="@n"/>
             <xsl:result-document href="../chapitres/chapitre{$numero_chapitre}/juxtaposition.xml">
                 <xsl:element name="groupe">
@@ -28,7 +28,7 @@
                         <xsl:apply-templates/>
                     </xsl:element>
                     <xsl:for-each
-                        select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[not(@xml:id = 'Sal_J')]//tei:div[@type = 'chapitre'][not(@subtype)][@n = $numero_chapitre]">
+                        select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[not(@xml:id = 'Sal_J')]//tei:div[@type = 'chapitre'][@n = $numero_chapitre]">
                         <xsl:element name="temoin">
                             <xsl:attribute name="n">
                                 <xsl:value-of select="ancestor::tei:TEI/@xml:id"/>
@@ -43,7 +43,7 @@
         veut conserver la structuration d'origine pour la réinjection: on va créer un fichier
         juxtaposition_orig qui va nous servir de fichier base pour réinjecter les informations contextuelles.-->
         <xsl:for-each
-            select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre'][not(@subtype)]">
+            select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[@xml:id = 'Sal_J']//tei:div[@type = 'chapitre']">
             <xsl:variable name="numero_chapitre" select="@n"/>
             <xsl:result-document
                 href="../chapitres/chapitre{$numero_chapitre}/juxtaposition_orig.xml">
@@ -55,7 +55,7 @@
                         <xsl:apply-templates/>
                     </xsl:element>
                     <xsl:for-each
-                        select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[not(@xml:id = 'Sal_J')]//tei:div[@type = 'chapitre'][not(@subtype)][@n = $numero_chapitre]">
+                        select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[not(@xml:id = 'Sal_J')]//tei:div[@type = 'chapitre'][@n = $numero_chapitre]">
                         <xsl:element name="temoin">
                             <xsl:attribute name="n">
                                 <xsl:value-of select="ancestor::tei:TEI/@xml:id"/>

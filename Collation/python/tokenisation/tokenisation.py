@@ -60,13 +60,13 @@ def tokenisation(saxon):
     # tei = {'tei': 'http://www.tei-c.org/ns/1.0', 'xi': 'http://www.w3.org/2001/XInclude',
     #        'xml': 'http://www.w3.org/XML/1998/namespace'}
     with Halo(text='Tokénisation du corpus parallélisé.', spinner='dots'):
-        subprocess.run(["java", "-jar", saxon, "-xi:on", "../../Dedans/XML/corpus/corpus.xml",
-                        "../xsl/pre_alignement/tokenisation.xsl"])
-        for transcription_individuelle in os.listdir("../temoins_tokenises"):
-            fichier_xml = "../temoins_tokenises/" + transcription_individuelle
+        subprocess.run(["java", "-jar", saxon, "-xi:on", "../Dedans/XML/corpus/corpus.xml",
+                        "xsl/pre_alignement/tokenisation.xsl"])
+        for transcription_individuelle in os.listdir("temoins_tokenises"):
+            fichier_xml = "temoins_tokenises/" + transcription_individuelle
             ajoutXmlId(fichier_xml, fichier_xml)
-        subprocess.run(["java", "-jar", saxon, "-xi:on", "../temoins_tokenises/Sal_J.xml",
-                        "../xsl/pre_alignement/regularisation.xsl"])
+        subprocess.run(["java", "-jar", saxon, "-xi:on", "temoins_tokenises/Sal_J.xml",
+                        "xsl/pre_alignement/regularisation.xsl"])
 
     print("Tokénisation et régularisation du corpus pour alignement ✓")
 

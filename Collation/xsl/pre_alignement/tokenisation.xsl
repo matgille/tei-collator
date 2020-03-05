@@ -229,7 +229,7 @@
         <xsl:for-each
             select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
-            <xsl:result-document href="../temoins_tokenises/{$nom_fichier}.xml">
+            <xsl:result-document href="temoins_tokenises/{$nom_fichier}.xml">
                 <xsl:apply-templates
                     select="$ResultatTroisiemePasse//tei:TEI[@xml:id = $nom_fichier]"
                     mode="quatriemePasse" xpath-default-namespace="tei"/>
