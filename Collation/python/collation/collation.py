@@ -15,8 +15,9 @@ from lxml import etree
 
 def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
-        cmd = "java -jar %s temoins_tokenises_regularises/%s.xml xsl/pre_alignement/preparation_corpus_bis.xsl " \
-              "temoin_leader=%s scinder_par=%s element_base=%s" % (saxon, temoin_leader, temoin_leader, scinder_par, element_base)
+        cmd = "java -jar %s temoins_tokenises_regularises/%s.xml xsl/pre_alignement/preparation_corpus.xsl " \
+              "temoin_leader=%s scinder_par=%s element_base=%s" % (
+              saxon, temoin_leader, temoin_leader, scinder_par, element_base)
         subprocess.run(cmd.split())
     print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
 
@@ -28,38 +29,24 @@ def transformation_json(saxon, output_fichier_json, input_fichier_xml):
                     "xsl/pre_alignement/transformation_json.xsl"])
 
 
-def alignement(fichier_a_collationer, saxon, chemin_xsl, numero, chemin):
+def alignement(fichier_a_collationer, numero, chemin, alignement='global'):
     """
         Alignement CollateX, puis regroupement des leçons communes en lieux variants
     """
 
-    try:
-        assert fichier_a_collationer.endswiths(".json")
-    except:
-        while not fichier_a_collationer.endswith('.json'):
-            fichier_a_collationer = input("Le fichier indiqué n'est pas un fichier JSON. Veuillez indiquer un fichier.")
-    entree_json0 = open(fichier_a_collationer, "r")  # ouvrir le fichier en mode lecture et le mettre dans une variable
-    entree_json1 = entree_json0.read()
-    entree_json0.close()
-
-    # Export au format TEI (plus lisible)
-    def collation_tei():
-        with Halo(text='Collation au format TEI - CollateX', spinner='dots'):
-            resultat_tei = collate(json.loads(entree_json1), output="tei")
-            sortie_tei = open("apparat_collatex_tei.xml", "w")
-            sortie_tei.write(resultat_tei)
-            sortie_tei.close()
-
+    with open(fichier_a_collationer, "r") as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
+        entree_json1 = entree_json0.read()
     # Export au format JSON (permet de conserver les xml:id)
-    def alignement_json(numero):
-        json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
-        # JSON: https://stackoverflow.com/a/29827074
+    json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
+    # JSON: https://stackoverflow.com/a/29827074
+    if alignement == 'global':
         resultat_json = collate(json_str, output="json")
-        nom_fichier_sortie = "%s/alignement_collatex%s.json" % (chemin, numero)
-        with open(nom_fichier_sortie, "w") as sortie_json:
-            sortie_json.write(resultat_json)
+    else:
+        resultat_json = collate(json_str, output="json", segmentation=False)
+    nom_fichier_sortie = "%s/alignement_collatex%s.json" % (chemin, numero)
+    with open(nom_fichier_sortie, "w") as sortie_json:
+        sortie_json.write(resultat_json)
 
-    alignement_json(numero)
 
 
 def apparat_final(fichier_entree, chemin):
@@ -305,9 +292,11 @@ def fileExists(file):
 
 
 def tableau_alignement(saxon, chemin):
-    chemin_xsl_apparat = chemin + "xsl/post_alignement/tableau_alignement.xsl"
+    xsl_apparat = "xsl/post_alignement/tableau_alignement.xsl"
     with Halo(text='Création du tableau d\'alignement', spinner='dots'):
-        subprocess.run(["java", "-jar", saxon, "-o:tableau_alignement.html", "aligne_regroupe.xml", chemin_xsl_apparat])
+        cmd = "java -jar %s -o:%s/tableau_alignement.html %s/aligne_regroupe.xml %s" % (
+        saxon, chemin, chemin, xsl_apparat)
+        subprocess.run(cmd.split())
     print("Création du tableau d\'alignement ✓")
 
 
@@ -356,8 +345,8 @@ def txt_to_liste(filename):
 
 def transformation_latex(saxon, fichier_xml, chemin):
     fichier_tex = fichier_xml.split('.')[0] + ".tex"
-    chemin_xsl_apparat = chemin + "xsl/post_alignement/conversion_latex.xsl"
-    fichier_tex_sortie = "-o:" + fichier_tex
+    chemin_xsl_apparat = "xsl/post_alignement/conversion_latex.xsl"
+    fichier_tex_sortie = "-o:%s/%s" % (chemin, fichier_tex)
     print("Création des fichiers pdf ✓")
     subprocess.run(["java", "-jar", saxon, fichier_tex_sortie, fichier_xml, chemin_xsl_apparat])
     subprocess.run(["xelatex", fichier_tex])

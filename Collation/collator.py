@@ -106,7 +106,7 @@ for i in portee:
             transformation_json(saxon, output_fichier_json, input_fichier_xml)
 
             # Alignement avec CollateX. Il en ressort du JSON, encore
-            alignement(fichier_json_complet, saxon, chemin_xsl, numero, chemin)
+            alignement(fichier_json_complet, numero, chemin, python.settings.alignement)
 
     chemin_chapitre = "divs/div%s" % i
     chemin_final = "%s/final.json" % chemin_chapitre
@@ -170,12 +170,13 @@ for i in portee:
 
     # Création du tableau d'alignement pour visualisation
     if python.settings.tableauxAlignement:
-        tableau_alignement(saxon, chemin_xsl)
+        tableau_alignement(saxon, chemin)
 
     if python.settings.latex:
         for fichier in os.listdir(chemin):
             if fnmatch.fnmatch(fichier, 'apparat_*_*out.xml'):
-                transformation_latex(saxon, fichier, chemin_xsl)
+                fichier = "%s/%s" % (chemin, fichier)
+                transformation_latex(saxon, fichier, chemin)
 
     # nettoyage()
     # On revient à la racine du projet pour finir la boucle
