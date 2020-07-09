@@ -11,14 +11,14 @@
     "element_base": "p" // y a-t-il un élément sur lequel aligner la collation ? tei:l ou tei:p par exemple. Ne pas inclure l'espace de nom
   },
   "corpus": { // état du corpus avant processage
-    "tokenized" : false,
-    "xmlIdentifiers" : false, // chaque token est-il associé à un xml:id ?
-    "lemmatized" : false
+    "tokenized" : true,
+    "xmlIdentifiers" : true, // chaque token est-il associé à son xml:id ?
+    "lemmatized" : true
   },
   "lemmatize": false, // lemmatiser avant de collationner ?
   "lang": "spa_o", // la langue, selon le standard ISO 639-3. Le latin et le castillan médiéval ne sont pas codés: utiliser lat_o et spa_o
   "sortie":{
     "tableaux_alignement": true, // créer les tableaux d'alignement
-    "LaTeX": false
+    "LaTeX": true
   }
 }

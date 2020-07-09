@@ -263,7 +263,7 @@ def injection(saxon, chemin, chapitre):
 
     # seconde étape: noeuds non textuels
     print("\n---- INJECTION 2: suppression de la redondance ----")
-    fichiers_apparat = 'divs/div6/apparat_*_*.xml'
+    fichiers_apparat = '%s/apparat_*_*.xml' % chemin
     liste = glob.glob(fichiers_apparat)
     chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
     for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
@@ -275,6 +275,7 @@ def injection(saxon, chemin, chapitre):
     #  troisième étape: ponctuation
     print("\n---- INJECTION 3: ponctuation ----")
     chemin_injection_ponctuation = "xsl/post_alignement/injection_ponctuation.xsl"
+    fichiers_apparat = '%s/apparat_*_*outb.xml' % chemin
     liste = glob.glob(fichiers_apparat)
     for i in liste:
         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
@@ -342,18 +343,3 @@ def txt_to_liste(filename):
             maliste.append(resultat)
     return maliste
 
-
-def transformation_latex(saxon, fichier_xml, chemin):
-    fichier_tex = fichier_xml.split('.')[0] + ".tex"
-    chemin_xsl_apparat = "xsl/post_alignement/conversion_latex.xsl"
-    fichier_tex_sortie = "-o:%s/%s" % (chemin, fichier_tex)
-    print("Création des fichiers pdf ✓")
-    subprocess.run(["java", "-jar", saxon, fichier_tex_sortie, fichier_xml, chemin_xsl_apparat])
-    subprocess.run(["xelatex", fichier_tex])
-    subprocess.run(["xelatex", fichier_tex])
-
-
-def concatenation_pdf():
-    with Halo(text='Création d\'un fichier unique d\'apparat ✓', spinner='dots'):
-        subprocess.run(["pdftk", "divs/div*/*.pdf", "output", "III_3_apparat.pdf"])
-    print("Création d'un fichier unique d'apparat ✓")

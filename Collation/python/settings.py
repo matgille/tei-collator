@@ -4,8 +4,7 @@ from json_minify import json_minify
 
 def parse_parameters():
     with open("parameters.json", "r") as f:
-        settings = json.loads(json_minify(f.read()))
-    return settings
+        return json.loads(json_minify(f.read()))
 
 
 settings = parse_parameters()
@@ -14,7 +13,7 @@ tokeniser = not settings['corpus']['tokenized']
 
 xmlId = not settings['corpus']['xmlIdentifiers']
 
-if not settings['corpus']['lemmatized'] and settings['lemmatize']:
+if not settings['corpus']['lemmatized'] and settings['lemmatize'] is True:
     lemmatiser = True
 else:
     lemmatiser = False

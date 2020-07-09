@@ -7,11 +7,14 @@ import time
 from python.collation.collation import *
 from python.tokenisation.tokenisation import *
 from python.lemmatisation.lemmatisation import *
+from python.sorties.sorties import *
 import python.settings
 
 # TODO: nettoyer le tout / s'occuper de la conservation des xml:id pour ne pas avoir à les régénérer
 # Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
 # conseils.
+# Todo: faire du mot à mot et s'occuper de rassembler en plus gros apparats après. Si on fait du mot à mot, l'éclatement
+# du TEI n'a plus aucun sens car il n'y a plus de risque de destructurer...
 
 
 t0 = time.time()
@@ -33,20 +36,32 @@ def isInt(value):
 
 
 if len(sys.argv) == 1:  # si il n'y a pas d'argument
-    if settings.tokeniser:
+    if python.settings.tokeniser:
         tokenisation(saxon)
-    if settings.xmlId and not settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
+    if python.settings.xmlId and not python.settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
                 temoin = "temoins_tokenises_regularises/%s" % temoin
                 ajoutXmlId(temoin, temoin)
-    if settings.lemmatiser:
+    if python.settings.lemmatiser:
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
                 temoin = "temoins_tokenises_regularises/%s" % temoin
-                lemmatisation(temoin, saxon, settings.lang)
+                python.lemmatisation(temoin, saxon, python.settings.lang)
     portee = range(3, 23)
 elif isInt(sys.argv[1]):  # Si on passe un entier, c'est un chapitre à processer
+    if python.settings.tokeniser:
+        tokenisation(saxon)
+    if python.settings.xmlId and not python.settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
+        for temoin in os.listdir('temoins_tokenises_regularises/'):
+            if temoin.endswith('.xml'):
+                temoin = "temoins_tokenises_regularises/%s" % temoin
+                ajoutXmlId(temoin, temoin)
+    if python.settings.lemmatiser:
+        for temoin in os.listdir('temoins_tokenises_regularises/'):
+            if temoin.endswith('.xml'):
+                temoin = "temoins_tokenises_regularises/%s" % temoin
+                lemmatisation(temoin, saxon, python.settings.lang)
     argument = int(sys.argv[1])
     arg_plus_1 = argument + 1
     portee = range(argument, arg_plus_1)
@@ -179,7 +194,6 @@ for i in portee:
                 transformation_latex(saxon, fichier, chemin)
 
     # nettoyage()
-    # On revient à la racine du projet pour finir la boucle
 
 t1 = time.time()
 temps_total = t1 - t0

@@ -8,6 +8,8 @@
     <!--Méthode suivie: sur suggestion de Marjorie Burghart, le "multi-pass" https://stackoverflow.com/a/8215981-->
     <!--Première Passe-->
     <!--Il serait probablement plus simple de passer par du python pour faire ça-->
+    <!--Une possibilité à envisager: on extrait paragraphe par paragraphe, 
+        on convertir en chaîne de caractère et on fait ça avec des expressions régulières-->
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="yes">
             <xsl:apply-templates select="@* | node()"/>
@@ -66,7 +68,7 @@
         </xsl:element>
     </xsl:template>-->
 
-    <!--Il faut faire la même chose avec les unclear|damage-->
+    <!--Il faut faire la même chose avec les unclear|damage|add-->
     <!--Qu'est-ce que le texte: c'est ici ce que tu va processer. Donc un élément éliminé marqué par un <del> n'est pas le texte-->
     <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">

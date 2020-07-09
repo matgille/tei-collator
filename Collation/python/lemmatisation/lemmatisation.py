@@ -31,13 +31,13 @@ def lemmatisation(fichier, moteur_xslt, langue):
     :param langue: la langue du fichier
     :return: retourne un fichier lemmatisé
     """
+    fichier = os.path.basename(fichier)
     fichier_sans_extension = os.path.splitext(fichier)[0]
     fichier_xsl = "xsl/lemmatisation/transformation_pre_lemmatisation.xsl"
     chemin_vers_fichier = "temoins_tokenises_regularises/" + str(fichier)
     fichier_entree_txt = 'temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
     param_sortie = "sortie=" + fichier_entree_txt
     subprocess.run(["java", "-jar", moteur_xslt, chemin_vers_fichier, fichier_xsl, param_sortie])
-    clear()
     print("Tokénisation et régularisation du fichier ✓\nLemmatisation...")
     if langue == "spa_o":
         fichier_lemmatise = 'temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
@@ -155,7 +155,6 @@ def lemmatisation(fichier, moteur_xslt, langue):
         'utf8')
     sortie_xml.write(str(a_ecrire))
     sortie_xml.close()
-    clear()
     print("Tokénisation et régularisation du fichier ✓\nLemmatisation du fichier ✓")
 
 
