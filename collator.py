@@ -51,7 +51,7 @@ if len(sys.argv) == 1:  # si il n'y a pas d'argument
     portee = range(3, 23)
 elif isInt(sys.argv[1]):  # Si on passe un entier, c'est un chapitre à processer
     if python.settings.tokeniser:
-        tokenisation(saxon)
+        tokenisation(saxon, python.settings.corpus_path)
     if python.settings.xmlId and not python.settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):

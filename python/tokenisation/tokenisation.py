@@ -37,7 +37,7 @@ def ajoutXmlId(fichier_entree, fichier_sortie):
         sortie_xml.write(str(string))
 
 
-def tokenisation(saxon):
+def tokenisation(saxon, path):
     # for fichier in os.listdir(
     #         '/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/castillan/'):
     #     print(fichier)
@@ -59,7 +59,7 @@ def tokenisation(saxon):
     # tei = {'tei': 'http://www.tei-c.org/ns/1.0', 'xi': 'http://www.w3.org/2001/XInclude',
     #        'xml': 'http://www.w3.org/XML/1998/namespace'}
     with Halo(text='Tokénisation du corpus parallélisé.', spinner='dots'):
-        subprocess.run(["java", "-jar", saxon, "-xi:on", "../Dedans/XML/corpus/corpus.xml",
+        subprocess.run(["java", "-jar", saxon, "-xi:on", path,
                         "xsl/pre_alignement/tokenisation.xsl"])
         for transcription_individuelle in os.listdir("temoins_tokenises"):
             fichier_xml = "temoins_tokenises/" + transcription_individuelle
