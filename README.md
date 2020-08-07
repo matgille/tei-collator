@@ -28,8 +28,15 @@ Les étiquettes de parties du discours sont les suivantes:
 - CATTEX pour le latin médiéval;
 - EAGLES pour le castillan médiéval. Attention, EAGLES propose un jeu d'étiquettes qui fusionne parties du discours et morphologie. 
 
+## Ce que permet ce programme
 
++ La collation automatisée de documents structurés en TEI *et pré-traités*. Un paramétrage permet d'indiquer la structure des documents, et les divisions à comparer (`tei:div[@type='chapitre']` par exemple, ou `tei:p`). Un pré-alignement est nécessaire: un travail de mise en regard de chaque structure, à l'aide d'identifiant concordants (pour l'instant, `@n`, mais cela est voué à être modifié) permet la collation paragraphe par paragraphe. 
++ La création de tableaux d'alignements division par division
 
+## Ce que ne permet pas ce programme
+
++ Une analyse globale de la différence entre 2+ témoins non structurés. 
++ La production d'un document complet en sortie (pour l'instant, on divise la sortie division par division, chapitre, acte, scène, ou autre, mais ce sera amené à changer).
 
 ## *Caveat*
 
@@ -37,6 +44,7 @@ La tokénisation est ici propre au castillan médiéval, et fonctionne avec le l
 écrire des règles différentes. En ce qui concerne les éléments à prendre en compte lors de cette tokénisation (tei:hi qui peuvent être à cheval sur un token par exemple, ou tei:pb), les règles portent
 sur mon propre corpus et devront aussi être modifiées. Ces règles n'affectent pas le fonctionnement du script sur
 un encodage purement structurel.
+
 
 ## Projets similaires
 Ce projet est fortement inspiré du projet [Falcon](https://github.com/CondorCompPhil/falcon) (Jean-Baptiste Camps, Lucence Ing et Elena Spadini), notamment pour la possibilité
