@@ -33,11 +33,13 @@ def alignement(fichier_a_collationer, numero, chemin, alignement='global'):
     """
         Alignement CollateX, puis regroupement des leçons communes en lieux variants
     """
-
     with open(fichier_a_collationer, "r") as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
         entree_json1 = entree_json0.read()
     # Export au format JSON (permet de conserver les xml:id)
-    json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
+    try:
+        json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
+    except Exception as e:
+        print("error in json [%s]: \n %s" % (fichier_a_collationer, e))
     # JSON: https://stackoverflow.com/a/29827074
     if alignement == 'global':
         resultat_json = collate(json_str, output="json")
@@ -283,6 +285,19 @@ def injection(saxon, chemin, chapitre):
         param_sigle = "sigle=" + sigle
         subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
+
+
+    #  quatrième étape: gestion des lacunes
+    print("\n---- INJECTION 4: lacunes ----")
+    chemin_injection_ponctuation = "xsl/post_alignement/gestion_lacunes.xsl"
+    fichiers_apparat = '%s/apparat_*_*out.xml' % chemin
+    liste = glob.glob(fichiers_apparat)
+    for i in liste:
+        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+        param_sigle = "sigle=" + sigle
+        subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
+    print("Création des balises de lacunes ✓")
 
 
 def fileExists(file):
