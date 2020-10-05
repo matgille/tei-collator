@@ -20,7 +20,8 @@
             }</xsl:text>
     </xsl:template>
 
-    <xsl:template match="temoin">
+    <xsl:template match="temoin[child::tei:*]">
+        <!--Any empty div won't be processed: there -->
         <xsl:text>{
     "id":"</xsl:text>
         <xsl:value-of select="@n"/>
@@ -54,6 +55,27 @@
                 <xsl:text>,</xsl:text>
             </xsl:if>
         </xsl:for-each>
+        <xsl:text>]}</xsl:text>
+        <xsl:if test="following::temoin">
+            <xsl:text>,</xsl:text>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="temoin[not(child::tei:*)]">
+        <!--Any empty div won't be processed: there -->
+        <xsl:text>{
+    "id":"</xsl:text>
+        <xsl:value-of select="@n"/>
+        <xsl:text>",
+        "tokens" : [</xsl:text>
+        <xsl:text>{"t": "empty"</xsl:text>
+        <xsl:if test="@lemma">
+            <xsl:text>,</xsl:text>
+            <xsl:text>"n": "ø" </xsl:text>
+        </xsl:if>
+        <xsl:text>,</xsl:text>
+        <xsl:text>"xml:id" : "none</xsl:text>
+        <xsl:text>"}</xsl:text>
         <xsl:text>]}</xsl:text>
         <xsl:if test="following::temoin">
             <xsl:text>,</xsl:text>

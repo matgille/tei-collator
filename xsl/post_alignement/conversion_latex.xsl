@@ -441,6 +441,14 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         </xsl:text>
     </xsl:template>
 
+    <xsl:template match="tei:fw"/>
+
+    <xsl:template match="tei:witEnd">
+        <xsl:text>\footnote{Le témoin </xsl:text>
+        <xsl:value-of select="substring-after(parent::tei:rdg/@wit, '_')"/>
+        <xsl:text> s'arrête ici.}</xsl:text>
+    </xsl:template>
+
     <xsl:template match="text()">
         <xsl:variable name="remplacement1" select="replace(., '&amp;', '\\&amp;')"/>
         <xsl:value-of select="$remplacement1"/>

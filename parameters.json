@@ -1,5 +1,6 @@
 {// Cette feuille de configuration est copiee de la méthode de Enrique Manjavacas et de Thibault Clérice pour leur projet Pie
   "structure": "tei:teiCorpus/tei:TEI/tei:text/tei:div/tei:div/tei:div/tei:div/tei:p", // comment est structuré le xml: le dernier élément indiqué est celui de la collation
+  "chemin_vers_TEI": "/tei:teiCorpus/tei:teiCorpus[@xml:id='castB']/tei:TEI", // le chemin vers chaque fichier individuel - vérifier que le ns xml:id fonctionne
   "localisation_fichiers": "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml",
   "tei:teiCorpus": true, // les fichiers sont-ils inclus dans un tei:teiCorpus ?
   "punctuation": true, // faut-il collationer la ponctuation ?
@@ -14,8 +15,9 @@
     "tokenized" : false,
     "xmlIdentifiers" : false, // chaque token est-il associé à son xml:id ?
     "lemmatized" : false
-  },
+  },// ajouter une option autodetect ? 
   "lemmatize": true, // lemmatiser avant de collationner ?
+  "process_number": 4, // combien de processus en parallèle pour la lemmatisation (doit être inférieur ou égal au nombre de coeurs du processeur) ?
   "lang": "spa_o", // la langue, selon le standard ISO 639-3. Le latin et le castillan médiéval ne sont pas codés: utiliser lat_o et spa_o
   "sortie":{
     "tableaux_alignement": true, // créer les tableaux d'alignement

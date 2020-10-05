@@ -14,7 +14,10 @@ plus suppression de la redondance-->
     <!--ÀF: trouver une façon de gérer les omissions du témoin base-->
     <!--Question importante sur l'injection: pour un sic par exemple dans un lieu variant, 
     vaut-il mieux créer un apparat enfant du <sic> ou re-créer des <sic> dans les <rdg> ? La seconde
-    option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir-->
+    option est meilleure du point de vue de la représentation du texte, mais elle est la plus risquée. Á voir
+    C'est la première solution qui est choisie, la moins bonne du point de du sémantique. Le problème est que
+    si l'on a deux témoins avec la même leçon, et une balise qui ne s'applique qu'à un, il faudrait changer, modifier les apparats
+    en fonction.-->
     <xsl:param name="chemin_sortie"/>
     <xsl:param name="chapitre" select="20"/>
 

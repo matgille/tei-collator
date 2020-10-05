@@ -180,8 +180,8 @@ def apparat_final(fichier_entree, chemin):
                         # Si le lieu variant n'existe pas dans la liste, 
                         # créer un item de dictionnaire
                         if lecon_depart not in liste_lecons:
-                            dict_sortie[lecon_depart] = [id_token, temoin]
-                            # dict_sortie[lecon_depart] = [id_token, temoin, lemme, pos]
+                            # dict_sortie[lecon_depart] = [id_token, temoin]
+                            dict_sortie[lecon_depart] = [id_token, temoin, lemme, pos]
 
                             # Ajouter le lieu variant dans la liste.
                             liste_lecons.append(lecon_depart)
@@ -190,14 +190,14 @@ def apparat_final(fichier_entree, chemin):
                         else:
                             temoin1 = dict_sortie.get(lecon_depart)[1]
                             token1 = dict_sortie.get(lecon_depart)[0]
-                            # lemme1 = dict_sortie.get(lecon_depart)[2]
-                            # pos1 = dict_sortie.get(lecon_depart)[3]
+                            lemme1 = dict_sortie.get(lecon_depart)[2]
+                            pos1 = dict_sortie.get(lecon_depart)[3]
                             token2 = token1 + "_" + id_token
                             temoin2 = temoin1 + " " + temoin
-                            # lemme2 = lemme1 + "_" + lemme
-                            # pos2 = pos1 + " " + pos
-                            # dict_sortie[lecon_depart] = [token2, temoin2, lemme2, pos2]
-                            dict_sortie[lecon_depart] = [token2, temoin2]
+                            lemme2 = lemme1 + "_" + lemme
+                            pos2 = pos1 + " " + pos
+                            # dict_sortie[lecon_depart] = [token2, temoin2]
+                            dict_sortie[lecon_depart] = [token2, temoin2, lemme2, pos2]
 
                             # Mise à jour la liste
                             liste_lecons.append(lecon_depart)
@@ -207,6 +207,9 @@ def apparat_final(fichier_entree, chemin):
                     # Ici il faut se rappeler qu'il y a une différence entre les formes
                     if not comparaison_lemme:  # si il y a une différence de lemmes seulement: "vraie variante"
                         type_apparat = "variante"
+                    ### TODO: ajouter une règle sur les noms propres. Si lemmes différent, mais pos = NP, alors variante
+                    ### d'entité nommée. Ça ne changera probablement rien à la fin mais l'encodage est plus fin comme ça.
+                    ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
                     elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
                         type_apparat = "personne_genre"
                     elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
@@ -215,16 +218,16 @@ def apparat_final(fichier_entree, chemin):
                             type_apparat = "indetermine"
                         else:  # si on a un lemme et un PoS identiques, la variante est graphique
                             type_apparat = "graphique"
+
                     app.set("type", type_apparat)
 
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
             for key in dict_sortie:
                 lecon = str(key)
-                xml_id = dict_sortie.get(key)[0]
-                temoin = dict_sortie.get(key)[1]
-                # lemmes = dict_sortie.get(key)[2] # si on veut ajouter les informations grammaticales à l'output
-                # pos = dict_sortie.get(key)[3] # idem
+                xml_id, temoin, lemmes, pos = dict_sortie.get(key)[0], dict_sortie.get(key)[1], dict_sortie.get(key)[2], dict_sortie.get(key)[3]
                 rdg = etree.SubElement(app, tei + "rdg")
+                rdg.set("lemma", lemmes)
+                rdg.set("pos", pos)
                 rdg.set("wit", temoin)
                 rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)  # ensemble des id des tokens, pour la
                 # suppression de la redondance plus tard

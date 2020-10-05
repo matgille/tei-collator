@@ -44,12 +44,19 @@ if len(sys.argv) == 1:  # si il n'y a pas d'argument
                 temoin = "temoins_tokenises_regularises/%s" % temoin
                 ajoutXmlId(temoin, temoin)
     if python.settings.lemmatiser:
+        print("Lemmatisation du corpus...")
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
-                temoin = "temoins_tokenises_regularises/%s" % temoin
-                python.lemmatisation(temoin, saxon, python.settings.lang)
-    portee = range(3, 23)
+                temoin = "temoins_tokenises_regularises/%s" % temoinz
+                try:
+                    lemmatisation(temoin, saxon, python.settings.lang)
+                except Exception as exception:
+                    print("Error: %s \n %s" % (temoin, exception))
+    portee = range(1, 23)
+
+    
 elif isInt(sys.argv[1]):  # Si on passe un entier, c'est un chapitre à processer
+    print("%s is int" % sys.argv[1])
     if python.settings.tokeniser:
         tokenisation(saxon, python.settings.corpus_path)
     if python.settings.xmlId and not python.settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
@@ -58,17 +65,26 @@ elif isInt(sys.argv[1]):  # Si on passe un entier, c'est un chapitre à processe
                 temoin = "temoins_tokenises_regularises/%s" % temoin
                 ajoutXmlId(temoin, temoin)
     if python.settings.lemmatiser:
+        print("Lemmatisation du corpus...")
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
                 temoin = "temoins_tokenises_regularises/%s" % temoin
-                lemmatisation(temoin, saxon, python.settings.lang)
+                try:
+                    lemmatisation(temoin, saxon, python.settings.lang)
+                except Exception as exception:
+                    print("Error: %s \n %s" % (temoin, exception))
     argument = int(sys.argv[1])
     arg_plus_1 = argument + 1
     portee = range(argument, arg_plus_1)
 elif type(sys.argv[1]) is str:
+    print("%s is str" % sys.argv[1])
     argument = sys.argv[1]
     if argument == '--tokenisation' or argument == '-t':
         tokenisation(saxon)
+        exit(0)
+    elif argument == '-pt':
+        print("check")
+        tokenisation_python(python.settings.corpus_path, python.settings.files_path)
         exit(0)
     elif argument == '--preparation' or argument == '-p':
         preparation_corpus(saxon)
@@ -93,7 +109,7 @@ elif type(sys.argv[1]) is str:
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.
 
 
-chemin_xsl = ""
+
 
 # tokenisation(saxon) désactivé pour l'instant (risque de perte de l'annotation grammaticale)
 
@@ -103,13 +119,13 @@ preparation_corpus(saxon, python.settings.temoin_leader, python.settings.scinder
 
 # Création des fichiers d'apparat
 # with Halo(text='Alignement automatique par chapitre', spinner='dots'):
-
+# Les xsl permettent de créer autant de fichiers xml à processer que de divisions (ici, tei:p1)
 for i in portee:
     start_time = time.time()
     chemin = "divs/div" + str(i)
     print("Traitement de la division " + str(i))
     for fichier_xml in os.listdir(chemin):
-        pattern = re.compile("juxtaposition_[1-9].*xml")
+        pattern = re.compile("juxtaposition_[1-9]{1,2}.*xml")
         if pattern.match(fichier_xml):
             fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
             numero = fichier_sans_extension.split("_")[1]
@@ -130,7 +146,7 @@ for i in portee:
         final_dict = {'table': [], 'witnesses': []}
         n = 0
         for k in os.listdir(chemin_chapitre):
-            pattern = re.compile("alignement_collatex[1-9].*")
+            pattern = re.compile("alignement_collatex[1-9]{1,2}.*")
             if pattern.match(k):  # pour chaque fichier créé qui correspond à chaque paragraphe
                 n += 1
         for l in range(1, n + 1):
@@ -160,7 +176,7 @@ for i in portee:
                 vers_xml = vers_xml.decode("utf-8")
             sortie_xml.write(vers_xml)
 
-        chemin_xsl = ""
+        
         chemin_regroupement = "xsl/post_alignement/regroupement.xsl"
         # Regroupement des lieux variants (témoin A puis témoin B puis témoin C
         # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
@@ -189,7 +205,7 @@ for i in portee:
 
     if python.settings.latex:
         for fichier in os.listdir(chemin):
-            if fnmatch.fnmatch(fichier, 'apparat_*_*out.xml'):
+            if fnmatch.fnmatch(fichier, 'apparat_*_*final.xml'):
                 fichier = "%s/%s" % (chemin, fichier)
                 transformation_latex(saxon, fichier, chemin)
 

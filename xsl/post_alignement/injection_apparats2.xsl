@@ -2,6 +2,7 @@
 <!--Deuxième phase de l'injection: restauration des noeuds non textuels dans les apparats-->
 <!--À nouveau on a un travail de comparaison ici, mais cette fois avec les fichiers de transcription
 tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
+<!--À faire: les tei:pb ne sont pas bien réinjectés...-->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
@@ -29,6 +30,8 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
             <xsl:apply-templates/>
         </xsl:result-document>
     </xsl:template>
+    
+    
 
     <xsl:template match="tei:w">
         <xsl:variable name="sigle_ms" select="ancestor::tei:TEI/@xml:id"/>

@@ -9,33 +9,35 @@ import shutil
 
 
 
-def adding_number(input_file):
+def entity_removal(string):
+    pattern = re.compile(r"&([^<>;]*);")
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "¢ð¢%sð¢ð" % match.group(1))
+    return string
+
+def entity_adding(string):
+    pattern = re.compile(r"¢ð¢([^<>ð¢ð]*)ð¢ð")
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "&%s;" % match.group(1))
+    return string
+
+
+def main_with_entities(input_file, dtd):
+    filename = input_file.split("/")[-1]
+    filename_without_entities = "%sno_entities_%s" % (output_folder, filename)
+
+    # first, we deactivate the entities with a string replacement function
+    with open(input_file, "r") as file:
+        data = file.read()
+        data = entity_removal(data)
+        with open(filename_without_entities, "w+") as file2:
+            file2.write(data)
+
     parser = etree.XMLParser(load_dtd=True,
-                             resolve_entities=True)  # inutile car les entités ont déjà été résolues
-    # auparavant normalement, mais au cas où.
-    f = etree.parse(input_file, parser=parser)
-    root = f.getroot()
-    tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
-    groupe_w = "//tei:w"
-    words = root.xpath(groupe_w, namespaces=tei)
-    n = 1
-    for word in words:
-        word.set("n", str(n))
-        n += 1
-
-    with open("/home/mgl/Bureau/These/Communications_articles_JE/Communication_desabreviator/entities/Sev_Z_word_count_no_e.xml", "w+") as sortie_xml:
-
-        output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode(
-            'utf8')
-        sortie_xml.write(str(output))
-
-
-def main(input_file, punctuation):
-    dtd = etree.DTD(file="/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/schemas/Sev_Z.dtd")  # read DTD
-    parser = etree.XMLParser(load_dtd=True,
-                             resolve_entities=True)  # inutile car les entités ont déjà été résolues
-    # auparavant normalement, mais au cas où.
-    f = etree.parse(input_file, parser=parser)
+                         resolve_entities=True)
+    f = etree.parse(filename_without_entities, parser=parser)
     root = f.getroot()
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
     groupe_p = "//tei:p[@n][node()]"
@@ -50,14 +52,18 @@ def main(input_file, punctuation):
             print("Exception for paragraph %s: \n %s" % (p, traceback.format_exc()))
             n = n + 1
             continue
-    xml_production(output_dict, input_file)
+
+    xml_production(output_dict, input_file, filename_without_entities)
     print("number of errors: %s of %s paragraphs" % (n, len(paragraphs)))
-    adding_number("/home/mgl/Bureau/These/Communications_articles_JE/Communication_desabreviator/no_entities_Sev_Z.xml")
+    filename_with_entities = "%swith_entities_%s" % (output_folder, filename)
+    with_entities(filename_without_entities, filename_with_entities, dtd)
+    filename_without_entities_with_n = "%sno_entities_with_n_%s" % (output_folder, filename)
+    adding_number(filename_without_entities, filename_without_entities_with_n)
     return n
 
 
-def xml_production(output_dict, input_file):
-    # shutil.copy(file, "~/Bureau/tests/sev_z.xml")
+
+def xml_production(output_dict, input_file, output_file):
     parser = etree.XMLParser(load_dtd=True,
                              resolve_entities=True)  # inutile car les entités ont déjà été résolues
     # auparavant normalement, mais au cas où.
@@ -74,9 +80,28 @@ def xml_production(output_dict, input_file):
             print("Exception: \n %s" % e)
             continue
 
-    output_file = "/home/mgl/Bureau/These/Communications_articles_JE/Communication_desabreviator/no_entities_%s" % input_file.split("/")[-1]
     print(output_file)
     with open(output_file, "w+") as sortie_xml:
+        output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode(
+            'utf8')
+        sortie_xml.write(str(output))
+
+def adding_number(input_file, output_file):
+    parser = etree.XMLParser(load_dtd=True,
+                             resolve_entities=True)  # inutile car les entités ont déjà été résolues
+    # auparavant normalement, mais au cas où.
+    f = etree.parse(input_file, parser=parser)
+    root = f.getroot()
+    tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
+    groupe_w = "//tei:w"
+    words = root.xpath(groupe_w, namespaces=tei)
+    n = 1
+    for word in words:
+        word.set("n", str(n))
+        n += 1
+
+    with open(output_file, "w+") as sortie_xml:
+
         output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode(
             'utf8')
         sortie_xml.write(str(output))
@@ -98,7 +123,6 @@ def debugging(string, step, witness):
     xml_output_file = "/home/mgl/Bureau/These/Communications_articles_JE/Communication_desabreviator/debug/%s/%s_output.xml" % (witness, str(step))
     txt_output_file = "/home/mgl/Bureau/These/Communications_articles_JE/Communication_desabreviator/debug/%s/%s_output.txt" % (witness, str(step))
 
-    orig_file = "orig.xml"
 
     with open(txt_output_file, "w+") as sortie_txt:
         sortie_txt.write(string)
@@ -632,17 +656,108 @@ def multiple_elements_management(string):
 
 
     string = string.replace("<w><space/>", "<space/>")
+
+
+    pattern = re.compile(r"<seg([^<>]*)>([^<>]*)</w>")
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "<seg%s><w>%s</w>" % (match.group(1), match.group(2)))
+
+
+    pattern = re.compile(r"([^<>]*)</title>:([^<>]*)</w>")
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "%s</w></title><pc>:</pc><w>%s</w>" % (match.group(1), match.group(2)))
+
+
+    pattern = re.compile(r"([^<>]*)<space/>([^<>]*)")
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "%s</w><space/><w>%s" % (match.group(1), match.group(2)))
+
+
+    pattern = re.compile(r"</note>([%s])" % punctuation)
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "</note><pc>%s</pc>" % match.group(1))
+
+
+    pattern = re.compile(r"([^<>]*(?<![<>]))<milestone([^<>]*)\/>")
+    # a milestone that is preceded by any non [<>] character
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "%s</w><milestone%s/>" % (match.group(1), match.group(2)))
+
+
+    pattern = re.compile(r"</seg>([^<>]*)</w>")
+    # a milestone that is preceded by any non [<>] character
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "</seg><w>%s</w>" % (match.group(1)))
+
+
+    pattern = re.compile(r"([^<>]*(?<![<>]))<seg")
+    # a milestone that is preceded by any non [<>] character
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "%s</w><seg" % (match.group(1)))
+
+
+    pattern = re.compile(r"</w>([^<>]*)</w>")
+    # a milestone that is preceded by any non [<>] character
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "</w><w>%s</w>" % (match.group(1)))
+
+
+    pattern = re.compile(r"</w>([^<>]*)<lb break=\"n\"")
+    # a milestone that is preceded by any non [<>] character
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "</w><w>%s<lb break=\"n\"" % (match.group(1)))
+
+
+    pattern = re.compile(r"<mod([^<>]*)><\/w><w><add([^<>]*)>([^<>]*)<\/add><\/w><w><\/mod>")
+    # a milestone that is preceded by any non [<>] character
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "<mod%s><add%s>%s</add></mod>" % (match.group(1), match.group(2), match.group(3)))
+
+    string = string.replace("ð¢ð<foreign>¢ð¢", "ð¢ð</w><foreign><w>¢ð¢")
+    string = string.replace("<lb break=\"y\"/><w></p>", "<lb break=\"y\"/></p>")
+
+    string = string.replace("</seg>.</w>", "</seg><pc>.</pc>")
+    string = string.replace("/w>:</w>", "/w><w>:</w>")
+    string = string.replace("</title></w>", "</w></title>")
+    string = string.replace("<space/><w><seg", "<space/><seg")
+    string = string.replace("<choice></w><w><sic>", "<choice><sic>")
+
+
+
+
+    ########################################################
+
     pattern2 = re.compile("</w></w>")
     while re.search(pattern2, string) is not None:
         string = string.replace("</w></w>", "</w>")
-
-
-    string = string.replace("/w>:</w>", "/w><w>:</w>")
-    string = string.replace("</title></w>", "</w></title>")
-
-    ########################################################
+    pattern2 = re.compile("<w><w>")
+    while re.search(pattern2, string) is not None:
+        string = string.replace("<w><w>", "<w>")
+    pattern2 = re.compile("<w></w>")
+    while re.search(pattern2, string) is not None:
+        string = string.replace("<w></w>", "")
     return string
     ########################################################
+
+def with_entities(input_file, output_file, dtd):
+    with open(input_file, "r") as file:
+        data = file.read()
+        data = data.replace("<?xml version='1.0' encoding='utf-8'?>", "<?xml version='1.0' encoding='utf-8'?>\n%s" % dtd)
+        data = data.replace("ð¢ð¢ð¢", ";&").replace("¢ð¢", "&").replace("ð¢ð", ";")
+    with open(output_file, "w+") as output_document:
+        output_document.write(data)
+    adding_number(output_file, output_file)
+
 
 
 
@@ -679,20 +794,13 @@ def linebreaks_corr(string):
         string = string.replace(match.group(0), "%s" % match.group(1))
 
 
-    string = string.replace("</choice></w><lb break=\"n\"", "</choice><lb break=\"n\"")
+    pattern = re.compile(r"([^<>]*)</persName>([^<>]*)")
+    matched = re.finditer(pattern, string)
+    for match in matched:
+        string = string.replace(match.group(0), "%s</w></persName><w>%s" % (match.group(1), match.group(2)))
 
-    #
-    # pattern = re.compile(r"<([^<>w]*)><choice")
-    # matched = re.finditer(pattern, string)
-    # for match in matched:
-    #     string = string.replace(match.group(0), "<%s><w><choice" % match.group(1))
-    # string = string.replace("<w><w><choice", "<w><choice")
-    #
-    #
-    # pattern = re.compile(r"<(lb break=\"n\"[^<>]*)/><w><choice")
-    # matched = re.finditer(pattern, string)
-    # for match in matched:
-    #     string = string.replace(match.group(0), "<%s/><choice" % match.group(1))
+
+    string = string.replace("</choice></w><lb break=\"n\"", "</choice><lb break=\"n\"")
 
     return string
 
@@ -703,6 +811,11 @@ def namespace_adding(string):
         string = string.replace(match.group(0), "<%s namespace=\"http://www.tei-c.org/ns/1.0\">" % (match.group(1)))
     return string
 
+def element_inversion(elements, string):
+    for element in elements:
+        string = string.replace("<w><%s>" % element, "<%s><w>" % element)
+        string = string.replace("</%s></w>" % element,"</w></%s>" % element)
+    return string
 
 
 def transformation_string(test_string, punctuation, att_n, witness):
@@ -729,6 +842,7 @@ def transformation_string(test_string, punctuation, att_n, witness):
     output_string = multiple_w_removal(output_string)
     output_string = choice_management(output_string)
     output_string = foreign_management(output_string)
+    output_string = element_inversion(["quote"], output_string)
     output_string = multiple_elements_management(output_string)
     # output_string = namespace_adding(output_string)
     column_number = 767
@@ -741,10 +855,20 @@ def transformation_string(test_string, punctuation, att_n, witness):
 if __name__ == '__main__':
     output_dict = {}
     punctuation = "\.¿?!;,"
+    dtd_z = "<!DOCTYPE TEI SYSTEM \"/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/schemas/Sev_Z.dtd\">"
+    dtd_j = "<!DOCTYPE TEI SYSTEM \"/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/schemas/Sal_J.dtd\">"
+    dtd_q = "<!DOCTYPE TEI SYSTEM \"/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/schemas/Esc_Q.dtd\">"
     wit_z = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Sev_Z.xml"
     wit_j = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Sal_J.xml"
-    z_errs = main(wit_z, punctuation)
-    # j_errs = main(wit_j, punctuation)
+    wit_q = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/temoins/castillan/Esc_Q.xml"
+    output_folder = "/home/mgl/Bureau/These/Communications_articles_JE/Communication_desabreviator/output/"
 
-    # print("j errs: %s" % j_errs)
+    #q_errs = main_with_entities(wit_q, dtd_q)
+    z_errs = main_with_entities(wit_z, dtd_z)
+    # j_errs = main_with_entities(wit_j, dtd_j)
+
+    #print("j errs: %s" % j_errs)
     print("z errs: %s" % z_errs)
+    #print("q errs: %s" % q_errs)
+
+

@@ -47,7 +47,7 @@ un encodage purement structurel.
 
 
 ## Projets similaires
-Ce projet est fortement inspiré du projet [Falcon](https://github.com/CondorCompPhil/falcon) (Jean-Baptiste Camps, Lucence Ing et Elena Spadini), notamment pour la possibilité
+Ce projet est fortement inspiré du projet [Falcon](https://github.com/CondorCompPhil/falcon) (Jean-Baptiste Camps, Lucence Ing et Elena Spadini), pour son *workflow*, ainsi que pour la possibilité
 de lemmatiser avec plusieurs outils, freeling ou pie, et sur le typage des variantes. 
 
 

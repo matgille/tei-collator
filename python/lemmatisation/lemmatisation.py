@@ -38,7 +38,6 @@ def lemmatisation(fichier, moteur_xslt, langue):
     fichier_entree_txt = 'temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
     param_sortie = "sortie=" + fichier_entree_txt
     subprocess.run(["java", "-jar", moteur_xslt, chemin_vers_fichier, fichier_xsl, param_sortie])
-    print("Tokénisation et régularisation du fichier ✓\nLemmatisation...")
     if langue == "spa_o":
         fichier_lemmatise = 'temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
         cmd_sh = ["sh", "python/lemmatisation/analyze.sh", fichier_entree_txt,
@@ -61,14 +60,25 @@ def lemmatisation(fichier, moteur_xslt, langue):
             nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
             nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
             position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à
-            liste_correcte = maliste[position_absolue_element - 2]  # Ça marche bien si la lemmatisation se fait
+            try:
+                liste_correcte = maliste[position_absolue_element - 2]  # Ça marche bien si la lemmatisation se fait
+            except Exception as ecxp:
+                print("Error in line %s: \n %s" % (position_absolue_element, ecxp))
+                exit(1)
             # sans retokenisation. Pour l'instant, ça bloque avec les chiffre (ochenta mill est fusionné). Voir
             # avec les devs de Freeling.
             n += 1
             lemme_position = liste_correcte[1]
             pos_position = liste_correcte[2]
-            mot.set("lemma", lemme_position)
-            mot.set("pos", pos_position)
+
+            if mot.xpath("@lemma") and mot.xpath("@pos"): # si l'analyse est déjà présente (cas des lemmes
+                # mal analysés par Freeling et donc corrigés à la main en amont), ne rien faire
+                pass
+            elif mot.xpath("@lemma") and not mot.xpath("@pos"):
+                mot.set("pos", pos_position)
+            else:
+                mot.set("lemma", lemme_position)
+                mot.set("pos", pos_position)
 
     elif langue == "lat_o":
         modele_latin = "model.tar"
@@ -155,7 +165,7 @@ def lemmatisation(fichier, moteur_xslt, langue):
         'utf8')
     sortie_xml.write(str(a_ecrire))
     sortie_xml.close()
-    print("Tokénisation et régularisation du fichier ✓\nLemmatisation du fichier ✓")
+    print("%s ✓" % fichier)
 
 
 def txt_to_liste(filename):

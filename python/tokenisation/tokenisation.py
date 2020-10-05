@@ -5,6 +5,7 @@ import os
 import subprocess
 import xml.etree.ElementTree as ET
 from lxml import etree
+import re
 
 
 def generateur_lettre_initiale(size=1, chars=string.ascii_lowercase):  # éviter les nombres en premier caractère de
@@ -97,3 +98,125 @@ def tokenisation(saxon, path):
 #         with open(fichier_sortie, "w+") as sortie_xml:
 #             chaine = etree.tostring(fichier, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
 #             sortie_xml.write(str(chaine))
+
+
+def space_tokenisation(string):
+    result = re.split("([,.:;\s])", string)
+    result = [item for item in result if item != " "]
+    return result
+
+def ajout_pc(string):
+    result = "<pc>%s</pc>" % string
+    return result
+
+def ajout_w(string):
+    result = "<w>%s</w>" % string
+    return result
+
+
+
+def tokenisation_python(general_path, files_Xpath):
+    # Problem now: the comments in the searched nodes create an issue
+    """
+    Fonction de tokénisation qui n'a pas recours au XSL
+    :general_path: le chemin vers le fichier tei maître
+    :files_Xpath: le chemin xpath vers chacun des fichiers TEI en cas de tei:teiCorpus
+    :return: les fichiers xml tokénisés.
+    """
+    tei = {'tei': 'http://www.tei-c.org/ns/1.0', 'xi':'http://www.w3.org/2001/XInclude'}
+    parser = etree.XMLParser(remove_comments=True)
+    f = etree.parse(general_path, parser=parser)
+    f.xinclude() # résoud les inclusions XInclude.
+    root = f.getroot()
+    print(files_Xpath)
+    for tei_file in root.xpath(files_Xpath, namespaces=tei):
+        parsed_file = tei_file.xpath("descendant::tei:body/descendant::tei:head|descendant::tei:body/descendant::tei:p", namespaces=tei) # on va charger chaque fichier xml
+        ET.register_namespace('', "http://www.tei-c.org/ns/1.0")
+        for element in parsed_file:
+            element_info = {}
+            element_info[element.tag] = element.attrib
+            print(element_info)
+            pattern = re.compile("\s+$")
+            pattern2 = re.compile("\s+")
+            for k in element_info:
+                attributes = []
+                for x in element_info[k]:
+                    attributes.append("%s=\"%s\"" % (x, element_info[k][x]))
+            if " ".join(attributes) != "":
+                joined_attributes = " %s" % " ".join(attributes)
+            else:
+                joined_attributes = ""
+            print(" ".join(attributes) == "")
+            pattern3 = re.compile("^<%s xmlns=\"http://www.tei-c.org/ns/1.0\"%s>" % (element.tag.split("}")[-1], joined_attributes))
+            pattern4 = re.compile("</%s>" % element.tag.split("}")[-1])
+            prep = etree.tostring(element, encoding='utf8', method='xml').decode('utf8').replace("<?xml version=\'1.0\' encoding=\'utf8\'?>", "").replace("\n", "")
+            prep = "%s" % pattern.sub("", prep)
+            input_element = prep.replace("\n", "\s")
+            input_element = pattern.sub("", input_element)
+            input_element = pattern2.sub(" ", input_element)
+            input_element = pattern3.sub("", input_element)
+            input_element = pattern4.sub("", input_element)
+            input_element = input_element.replace(r"> <", "><")
+            # input_element = re.split("(?<!<[cp]b)\s", input_element)
+            print(input_element)
+            dict0 = {}
+            try:
+                pattern_between_quotes = re.finditer(">(.*?)<", input_element)
+                for match in pattern_between_quotes:
+                    dict0[match.span()] = match.group(1)
+                pattern_between_quotes = [item for item in pattern_between_quotes]
+            except:
+                pattern_between_quotes = []
+            try:
+                beginning_pattern = re.search(r"^(.*?)<", input_element)
+                beginning_pattern_span = beginning_pattern.span()
+                beginning_pattern = beginning_pattern.group(1)
+                dict0[beginning_pattern_span] = beginning_pattern
+            except:
+                beginning_pattern = "none"
+            try:
+                ending_pattern = re.search(r">([^>]*)$", input_element)
+                ending_pattern_span = ending_pattern.span()
+                ending_pattern = ending_pattern.group(1)
+                dict0[ending_pattern_span] = ending_pattern
+            except:
+                ending_pattern = "none"
+            pattern_between_quotes.insert(0, beginning_pattern)
+            pattern_between_quotes.append(ending_pattern)
+            newlist = [space_tokenisation(item) for item in pattern_between_quotes]
+            liste1 = []
+            for i in newlist:
+                for j in i:
+                    liste1.append(j)
+
+            liste3 = []
+            for key in dict0:
+                liste3.append([key, dict0[key]])
+            liste3.sort(reverse=True,key = lambda x: x[0])
+
+            for idx, val in enumerate(liste3):
+                liste4 = []
+                val[1].replace("&amp;", "&")
+                for token in re.split("([,.:;!?¿\s])", val[1]):
+                    if re.match("[,.:;!?¿]", token):
+                        liste4.append(ajout_pc(token))
+                    elif re.match("\s", token):
+                        pass
+                    else:
+                        liste4.append(ajout_w(token))
+                liste3[idx] = [val[0], ["".join(liste4)]]
+            input_element = list(input_element)
+            for i in liste3:
+                input_element[i[0][0]:i[0][1]] = i[1]
+            for idx, val in enumerate(input_element):
+                if len(val) > 1:
+                    input_element[idx] = ">%s<" % val
+            input_element = "".join(input_element).replace("<w></w>", "")
+            input_element = input_element.replace("--><", "-->")
+            input_element = input_element.replace(">w", "><w")
+            input_element = re.sub("^>", "", input_element)
+            input_element = re.sub("<$", "", input_element)
+            element = element.tag.split("}")[1]
+            input_element = "<%s>%s</%s>" % (element, input_element, element)
+            print(input_element)
+            ET.fromstring(input_element)

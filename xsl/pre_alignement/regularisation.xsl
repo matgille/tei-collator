@@ -44,9 +44,9 @@
         <xsl:value-of select="tei:corr"/>
     </xsl:template>
 
-    <xsl:template match="tei:add">
+  <!--  <xsl:template match="tei:add">
         <xsl:value-of select="."/>
-    </xsl:template>
+    </xsl:template>-->
 
     <xsl:template match="tei:lb | tei:pb | tei:cb | tei:note | tei:fw | tei:del"/>
 

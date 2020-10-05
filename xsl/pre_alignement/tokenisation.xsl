@@ -6,6 +6,7 @@
     <xsl:strip-space elements="*"/>
     <!--Première phase de la tokénisation: -->
     <!--Méthode suivie: sur suggestion de Marjorie Burghart, le "multi-pass" https://stackoverflow.com/a/8215981-->
+    <!--Problèmes à régler: tei:cb suivi de tei:lb ne tokénise pas comme il faut.-->
     <!--Première Passe-->
     <!--Il serait probablement plus simple de passer par du python pour faire ça-->
     <!--Une possibilité à envisager: on extrait paragraphe par paragraphe, 
@@ -70,6 +71,7 @@
 
     <!--Il faut faire la même chose avec les unclear|damage|add-->
     <!--Qu'est-ce que le texte: c'est ici ce que tu va processer. Donc un élément éliminé marqué par un <del> n'est pas le texte-->
+    <!--Meilleure idée: plutôt que les supprimer, les traiter comme une note (pas de tokénisation donc)-->
     <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
