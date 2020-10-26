@@ -5,8 +5,9 @@ Résultat: un fichier final qui marche !-->
 
 <!--TODO: ajouter une règle pour choper les notes de type général !-->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
-    exclude-result-prefixes="xs" version="2.0">
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="xs"
+    version="2.0">
     <xsl:output method="xml"/>
     <xsl:strip-space elements="*"/>
 
@@ -27,7 +28,8 @@ Résultat: un fichier final qui marche !-->
     </xsl:template>
 
     <xsl:template match="/">
-        <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}_out.xml">
+        <xsl:result-document
+            href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}_out.xml">
             <xsl:apply-templates/>
         </xsl:result-document>
     </xsl:template>
@@ -47,7 +49,8 @@ Résultat: un fichier final qui marche !-->
         <!--Attention ici, on romp l'universalisation du code-->
         <xsl:variable name="paragraphe" select="ancestor::tei:p/@n"/>
         <!--Attention ici, on romp l'universalisation du code-->
-        <xsl:variable name="temoins">../../temoins_tokenises?select=*.xml</xsl:variable>
+        <xsl:variable name="temoins"
+            >../../temoins_tokenises?select=*.xml</xsl:variable>
         <xsl:variable name="temoin_tokenise"
             select="concat('../../temoins_tokenises/', $sigle, '.xml')"/>
 
@@ -69,19 +72,6 @@ Résultat: un fichier final qui marche !-->
                 />
             </xsl:otherwise>
         </xsl:choose>
-        <!--Gestion des notes générales, qui ont vocation à se retrouver dans tous les documents de sortie-->
-        <!--Ça marche mais c'est beaucoup trop long !-->
-
-       <!-- <xsl:for-each select="collection($temoins)">
-            <xsl:if
-                test="descendant::tei:p[@n = $paragraphe]//tei:w[contains($xml_id, @xml:id)]/following::*[1][self::tei:note[@type = 'general']]">
-                <xsl:copy-of
-                    select="descendant::tei:p[@n = $paragraphe]//tei:w[contains($xml_id, @xml:id)]/following::*[1][self::tei:note[@type = 'general']]"
-                />
-            </xsl:if>
-        </xsl:for-each>-->
-        <!--Gestion des notes générales-->
-
     </xsl:template>
     <!--On prend chaque token, et si un élément de ponctuation suit, on copie le token et la ponctuation-->
 
@@ -93,7 +83,8 @@ Résultat: un fichier final qui marche !-->
     <!--On concentre les balises qui se retrouvent à entourer un lieu variant, comme un tei:sic alors qu'elles devraient
         porter sur le témoin base. 
         Vérifier que ça ne casse rien  + mettre à part ? -->
-    <xsl:template match="tei:*[not(self::tei:p)][count(child::node()) = 1][child::tei:app]">
+    <xsl:template
+        match="tei:*[not(self::tei:p)][count(child::node()) = 1][child::tei:app]">
         <xsl:element name="app" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="type">
                 <xsl:value-of select="tei:app/@type"/>
@@ -101,14 +92,18 @@ Résultat: un fichier final qui marche !-->
             <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
                 <xsl:attribute name="wit">
                     <xsl:value-of
-                        select="descendant::tei:rdg[contains(@wit, concat('#', $sigle))]/@wit"/>
+                        select="descendant::tei:rdg[contains(@wit, concat('#', $sigle))]/@wit"
+                    />
                 </xsl:attribute>
-                <xsl:element name="{name(.)}" namespace="http://www.tei-c.org/ns/1.0">
+                <xsl:element name="{name(.)}"
+                    namespace="http://www.tei-c.org/ns/1.0">
                     <xsl:copy-of
-                        select="descendant::tei:rdg[contains(@wit, concat('#', $sigle))]/child::*"/>
+                        select="descendant::tei:rdg[contains(@wit, concat('#', $sigle))]/child::*"
+                    />
                 </xsl:element>
             </xsl:element>
-            <xsl:for-each select="descendant::tei:rdg[not(contains(@wit, concat('#', $sigle)))]">
+            <xsl:for-each
+                select="descendant::tei:rdg[not(contains(@wit, concat('#', $sigle)))]">
                 <xsl:copy-of select="."/>
             </xsl:for-each>
         </xsl:element>

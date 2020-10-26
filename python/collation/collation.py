@@ -348,6 +348,7 @@ def nettoyage():
     print("Nettoyage du dossier ✓")
 
 
+
 def txt_to_liste(filename):
     '''
         Transforme le fichier txt produit par Freeling en liste de listes pour processage ultérieur.

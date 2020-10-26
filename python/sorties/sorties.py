@@ -4,6 +4,8 @@ import re
 import subprocess
 
 
+
+
 def transformation_latex(saxon, fichier_xml, chemin):
     fichier_tex = "%s.tex" % fichier_xml.split('.')[0]
     fichier_tex_seul = fichier_tex.split("/")[-1]
