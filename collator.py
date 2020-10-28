@@ -3,6 +3,7 @@ import fnmatch
 import os
 import sys
 import time
+import operator
 
 from python.collation.collation import *
 from python.tokenisation.tokenisation import *
@@ -22,9 +23,86 @@ t0 = time.time()
 saxon = "saxon9he.jar"
 current_dir = os.getcwd()
 
-
 # S'il y a un argument qui est une cdc, un fichier à traiter, passer directement à l'alignement
 # le nom du script est le premier argument
+
+def injections_element(temoin, n, tei_elements, position):
+    """
+    Cette fonction permet la réinjection des notes de type général dans tous les autres témoins.
+    :param temoin: le témoin sur lequel appliquer les injections
+    :param div: la division courante
+    :param tei_elements: l'élément tei à injecter.
+    :param position: Possibilités: "before" (le point d'ancrage est avant un tei:w, exemple: tei:milestone)
+    ou "after" (le point d'ancrage se trouve après le tei:w, exemple, tei:note)
+    :return: None
+    """
+    print(f'\n \n Inserting {tei_elements}')
+
+    if position == "before":
+        context_element = "following" # on va chercher le tei:w suivant
+        sign = operator.sub # et on injectera donc avant ce tei:w (index(tei:w) - 1)
+    else:
+        context_element = "preceding" # on va chercher le tei:w précédent
+        sign = operator.add # et on injectera donc après ce tei:w (index(tei:w) + 1)
+
+
+    final_notes_list = []
+    final_w_list = []
+    final_witness_list = []
+    for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/*final.xml"):
+        f = etree.parse(file)
+        tei_namespace = 'http://www.tei-c.org/ns/1.0'
+        NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+
+        # On va d'abord récuperer et aligner chaque élément tei:note, l'xml:id du tei:w qui précède et le témoin concerné
+        notes_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}', namespaces=NSMAP1)
+        nombre_de_notes = len(notes_list)
+        w_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/{context_element}::tei:w[1]/@xml:id', namespaces=NSMAP1)
+        temoin_id = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/ancestor::tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)
+        if temoin_id:
+            temoin_id = "_".join(temoin_id[0].split("_")[0:2])
+            final_witness_list.extend([temoin_id for x in range(nombre_de_notes)]) # https://stackoverflow.com/a/4654446
+        final_w_list.extend(w_list)
+        final_notes_list.extend(notes_list)
+    print(f'{final_notes_list}\n{final_w_list}\n{final_witness_list}')
+    final_zip =  list(zip(final_notes_list, final_witness_list))
+    # On produit un dictionnaire de la forme :
+    # {
+    # 'kNMdVRz': (<Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9ac8>, 'Sev_R'),
+    # 'oqcqYPq': (<Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9c08>, 'Sal_J')
+    # }
+    notes_dict =  dict(zip(final_w_list, final_zip))
+    print(f'notes_dict => {notes_dict}')
+
+    # Puis on va parcourir le dictionnaire et insérer toutes les notes dans le témoin traité.
+    current_xml_file = etree.parse(temoin)
+    temoin_id_courant = "_".join(current_xml_file.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[0:2])
+    for key, value in notes_dict.items():
+        temoin_de_la_note = value[1]
+        tei_note_elem = value[0]
+        tei_note_elem.set("corresp", f'#{temoin_de_la_note}') # on indique de quel témoin provient la note
+        # On passe si le témoin de la réinjection est le même que le témoin de la note
+        if temoin_de_la_note == temoin_id_courant:
+            pass
+        else:
+            try:
+                word_to_change = current_xml_file.xpath(f'//tei:w[@xml:id=\'{key}\']', namespaces=NSMAP1)[0]
+                item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
+                # -element-after-another-element
+                print(sign)
+                index = sign(item_element.index(word_to_change), 1)# https://stackoverflow.com/a/54559513
+                print(f'index => {index}')
+                if index == -1:
+                    index = 0
+                item_element.insert(index, tei_note_elem)
+                print(f'Injection de {tei_elements}')
+            except IndexError as e:
+                print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection: \n {e}")
+    with open(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/apparat_{temoin_id_courant}_{n}_final.xml", "w") as output_file:
+        print("Outputting...")
+        output_file.write(etree.tostring(current_xml_file).decode())
+
+
 
 
 def isInt(value):
@@ -47,14 +125,14 @@ if len(sys.argv) == 1:  # si il n'y a pas d'argument
         print("Lemmatisation du corpus...")
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
-                temoin = "temoins_tokenises_regularises/%s" % temoinz
+                temoin = "temoins_tokenises_regularises/%s" % temoin
                 try:
                     lemmatisation(temoin, saxon, python.settings.lang)
                 except Exception as exception:
                     print("Error: %s \n %s" % (temoin, exception))
     portee = range(1, 23)
 
-    
+
 elif isInt(sys.argv[1]):  # Si on passe un entier, c'est un chapitre à processer
     print("%s is int" % sys.argv[1])
     if python.settings.tokeniser:
@@ -108,12 +186,6 @@ elif type(sys.argv[1]) is str:
         exit(0)
 # Sinon, enclencher tout le processus de transformation, alignement, apparation.
 
-
-
-
-# tokenisation(saxon) désactivé pour l'instant (risque de perte de l'annotation grammaticale)
-
-# On lemmatise ici.
 
 preparation_corpus(saxon, python.settings.temoin_leader, python.settings.scinder_par, python.settings.element_base)
 
@@ -176,7 +248,7 @@ for i in portee:
                 vers_xml = vers_xml.decode("utf-8")
             sortie_xml.write(vers_xml)
 
-        
+
         chemin_regroupement = "xsl/post_alignement/regroupement.xsl"
         # Regroupement des lieux variants (témoin A puis témoin B puis témoin C
         # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
@@ -193,11 +265,20 @@ for i in portee:
         # Création de l'apparat: suppression de la redondance, identification des lieux variants,
         # regroupement des lemmes
 
+
     apparat_final('%s/apparat_final.json' % chemin, chemin)
     print("Création des apparats ✓")
 
     # Réinjection des apparats.
     injection(saxon, chemin, i)
+
+    fichiers_apparat = '%s/apparat_*_*final.xml' % chemin
+    liste = glob.glob(fichiers_apparat)
+    for fichier_xml in liste:
+        print(f' fichier_xml => {fichier_xml}')
+        injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@type=\'general\']', "after")
+        injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@subtype=\'variante\']', "after")
+        injections_element(fichier_xml, int(sys.argv[1]), 'tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]', "before")
 
     # Création du tableau d'alignement pour visualisation
     if python.settings.tableauxAlignement:
