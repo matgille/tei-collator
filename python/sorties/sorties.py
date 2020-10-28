@@ -1,7 +1,12 @@
 import os
 from halo import Halo
 import re
+import glob
 import subprocess
+from lxml import etree
+import xml.etree.ElementTree as ET
+
+
 
 
 def transformation_latex(saxon, fichier_xml, chemin):

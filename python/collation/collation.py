@@ -17,7 +17,7 @@ def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
         cmd = "java -jar %s temoins_tokenises_regularises/%s.xml xsl/pre_alignement/preparation_corpus.xsl " \
               "temoin_leader=%s scinder_par=%s element_base=%s" % (
-              saxon, temoin_leader, temoin_leader, scinder_par, element_base)
+                  saxon, temoin_leader, temoin_leader, scinder_par, element_base)
         subprocess.run(cmd.split())
     print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
 
@@ -33,7 +33,8 @@ def alignement(fichier_a_collationer, numero, chemin, alignement='global'):
     """
         Alignement CollateX, puis regroupement des leçons communes en lieux variants
     """
-    with open(fichier_a_collationer, "r") as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
+    with open(fichier_a_collationer,
+              "r") as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
         entree_json1 = entree_json0.read()
     # Export au format JSON (permet de conserver les xml:id)
     try:
@@ -48,7 +49,6 @@ def alignement(fichier_a_collationer, numero, chemin, alignement='global'):
     nom_fichier_sortie = "%s/alignement_collatex%s.json" % (chemin, numero)
     with open(nom_fichier_sortie, "w") as sortie_json:
         sortie_json.write(resultat_json)
-
 
 
 def apparat_final(fichier_entree, chemin):
@@ -115,123 +115,112 @@ def apparat_final(fichier_entree, chemin):
 
     with open(fichier_entree, 'r+') as fichier:
         liste_dict = json.load(fichier)
-
         tei_namespace = "http://www.tei-c.org/ns/1.0"
         tei = "{%s}" % tei_namespace
         NSMAP0 = {None: tei_namespace}  # the default namespace (no prefix)
-        NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
         root = etree.Element(tei + "root", nsmap=NSMAP0)  # https://lxml.de/tutorial.html#namespaces
         #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml
         for dic in liste_dict:
+            apparat = True
             dict_sortie = {}
             liste_lecons = []
 
             # Étape 1: déterminer si il y a variation ou pas
-            for key in dic:
-                id_token = dic.get(key)[0]
-                lecon_depart = dic.get(key)[1]
-                temoin = dic.get(key)[2]
+            for key, value in dic.items():
+                id_token, lecon_depart, temoin = value[0], value[1], value[2]
                 liste_lecons.append(lecon_depart)
 
-            result = False;
             if len(liste_lecons) > 0:
                 # Comparer chaque lecon à la première
-                result = all(elem == liste_lecons[0] for elem in liste_lecons)
-
+                identite = all(elem == liste_lecons[0] for elem in liste_lecons)
                 # Première étape. Si tous les lieux variants sont égaux 
                 # entre eux,ne pas créer d'apparat mais imprimer 
                 # directement le texte    
-                if result:
-                    myElement = root.find('app', NSMAP0)
-                    if myElement is None:
-                        root.text = lecon_depart
+                app = etree.SubElement(root, tei + "app")
+                if identite:
+                    apparat = False
+                else:
+                    pass
+
+                # La liste créée va permettre de vérifier si une leçon identique
+                # a déjà été traitée auparavant. On la réinitialise
+                # car on l'a déjà utilisée pour vérifier l'égalité entre leçons
+                # dans le lieu variant précédent
+                liste_lecons = []
+                liste_lemme = []
+                liste_pos = []
+                for key, value in dic.items():
+                    id_token, lecon_depart, temoin, lemme, pos = value[0], value[1], value[2], value[3], value[4]
+                    # attention à bien faire la comparaison SSI le lemme/pos existe
+                    # ajouter le lemme à la liste
+                    liste_lemme.append(lemme)
+                    liste_pos.append(pos)
+
+                    # Si le lieu variant n'existe pas dans la liste,
+                    # créer un item de dictionnaire
+                    if lecon_depart not in liste_lecons:
+                        # dict_sortie[lecon_depart] = [id_token, temoin]
+                        dict_sortie[lecon_depart] = [id_token, temoin, lemme, pos]
+
+                        # Ajouter le lieu variant dans la liste.
+                        liste_lecons.append(lecon_depart)
+
+                    # Si le lieu variant a déjà été rencontré
                     else:
-                        # root.xpath va sortir une liste: il faut aller chercher les items 
-                        # individuels de cette liste, même si il n'y en n'a qu'un
-                        dernier_app = root.xpath('tei:app[last()]', namespaces=NSMAP1)
-                        for i in dernier_app:
-                            i.tail = lecon_depart
+                        temoin1 = dict_sortie.get(lecon_depart)[1]
+                        token1 = dict_sortie.get(lecon_depart)[0]
+                        lemme1 = dict_sortie.get(lecon_depart)[2]
+                        pos1 = dict_sortie.get(lecon_depart)[3]
+                        token2 = token1 + "_" + id_token
+                        temoin2 = temoin1 + " " + temoin
+                        lemme2 = lemme1 + "_" + lemme
+                        pos2 = pos1 + " " + pos
+                        dict_sortie[lecon_depart] = [token2, temoin2, lemme2, pos2]
 
+                        # Mise à jour la liste
+                        liste_lecons.append(lecon_depart)
 
-                else:  # Si les leçons sont différentes: étape 2
-
-                    app = etree.SubElement(root, tei + "app")
-
-                    # La liste créée va permettre de vérifier si une leçon identique
-                    # a déjà été traitée auparavant. On la réinitialise
-                    # car on l'a déjà utilisée pour vérifier l'égalité entre leçons
-                    # dans le lieu variant précédent
-                    liste_lecons = []
-                    liste_lemme = []
-                    liste_pos = []
-                    for key in dic:
-                        id_token = dic.get(key)[0]
-                        lecon_depart = dic.get(key)[1]
-                        temoin = dic.get(key)[2]
-                        lemme = dic.get(key)[3]  # attention à bien faire la comparaison SSI le lemme/pos existe
-                        pos = dic.get(key)[4]  # idem
-
-                        # ajouter le lemme à la liste
-                        # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante grapique.
-                        # comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
-                        liste_lemme.append(lemme)
-                        liste_pos.append(pos)
-
-                        # Si le lieu variant n'existe pas dans la liste, 
-                        # créer un item de dictionnaire
-                        if lecon_depart not in liste_lecons:
-                            # dict_sortie[lecon_depart] = [id_token, temoin]
-                            dict_sortie[lecon_depart] = [id_token, temoin, lemme, pos]
-
-                            # Ajouter le lieu variant dans la liste.
-                            liste_lecons.append(lecon_depart)
-
-                        # Si le lieu variant a déjà été rencontré
-                        else:
-                            temoin1 = dict_sortie.get(lecon_depart)[1]
-                            token1 = dict_sortie.get(lecon_depart)[0]
-                            lemme1 = dict_sortie.get(lecon_depart)[2]
-                            pos1 = dict_sortie.get(lecon_depart)[3]
-                            token2 = token1 + "_" + id_token
-                            temoin2 = temoin1 + " " + temoin
-                            lemme2 = lemme1 + "_" + lemme
-                            pos2 = pos1 + " " + pos
-                            # dict_sortie[lecon_depart] = [token2, temoin2]
-                            dict_sortie[lecon_depart] = [token2, temoin2, lemme2, pos2]
-
-                            # Mise à jour la liste
-                            liste_lecons.append(lecon_depart)
-
-                    comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
-                    comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
-                    # Ici il faut se rappeler qu'il y a une différence entre les formes
-                    if not comparaison_lemme:  # si il y a une différence de lemmes seulement: "vraie variante"
-                        type_apparat = "variante"
-                    ### TODO: ajouter une règle sur les noms propres. Si lemmes différent, mais pos = NP, alors variante
-                    ### d'entité nommée. Ça ne changera probablement rien à la fin mais l'encodage est plus fin comme ça.
-                    ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
-                    elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
-                        type_apparat = "personne_genre"
-                    elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
-                        if liste_lemme[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
-                            # indéterminée
-                            type_apparat = "indetermine"
-                        else:  # si on a un lemme et un PoS identiques, la variante est graphique
-                            type_apparat = "graphique"
-
+                comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
+                comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
+                # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante grapique.
+                # Ici il faut se rappeler qu'il y a une différence entre les formes
+                if not comparaison_lemme:  # si il y a une différence de lemmes seulement: "vraie variante"
+                    type_apparat = "variante"
+                ### TODO: ajouter une règle sur les noms propres. Si lemmes différent, mais pos = NP, alors variante
+                ### d'entité nommée. Ça ne changera probablement rien à la fin mais l'encodage est plus fin comme ça.
+                ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
+                elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
+                    type_apparat = "personne_genre"
+                elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
+                    if liste_lemme[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
+                        # indéterminée
+                        type_apparat = "indetermine"
+                    else:  # si on a un lemme et un PoS identiques, la variante est graphique
+                        type_apparat = "graphique"
+                if not apparat:
+                    app.set("type", "not_apparat")
+                else:
                     app.set("type", type_apparat)
-
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
-            for key in dict_sortie:
-                lecon = str(key)
-                xml_id, temoin, lemmes, pos = dict_sortie.get(key)[0], dict_sortie.get(key)[1], dict_sortie.get(key)[2], dict_sortie.get(key)[3]
-                rdg = etree.SubElement(app, tei + "rdg")
-                rdg.set("lemma", lemmes)
-                rdg.set("pos", pos)
-                rdg.set("wit", temoin)
-                rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)  # ensemble des id des tokens, pour la
-                # suppression de la redondance plus tard
-                # Re-créer les noeuds tei:w
+            temoins_complets = " ".join([f'#{fichier.split(".xml")[0].split("/")[-1]}' for fichier in glob.glob("temoins_tokenises_regularises/*.xml")])
+            for key, value in dict_sortie.items():
+                if not apparat:
+                    lecon = str(key)
+                    xml_id = value[0]
+                    rdg = etree.SubElement(app, tei + "rdg")
+                    # on indique que tous les témoins proposent la leçon
+                    rdg.set("wit", temoins_complets)
+                    rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)
+                else:
+                    lecon = str(key)
+                    xml_id, temoin, lemmes, pos = value[0], value[1], value[2], value[3]
+                    rdg = etree.SubElement(app, tei + "rdg")
+                    rdg.set("lemma", lemmes)
+                    rdg.set("pos", pos)
+                    rdg.set("wit", temoin)
+                    rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)  # ensemble des id des tokens, pour la
+                    # suppression de la redondance plus tard
+                    # Re-créer les noeuds tei:w
                 liste_w = lecon.split()
                 liste_id = xml_id.split('_')
                 n = 0
@@ -257,6 +246,15 @@ def apparat_final(fichier_entree, chemin):
 
 
 def injection(saxon, chemin, chapitre):
+    """
+    Fonction qui réinjecte les apparats dans chaque transcription individuelle.
+    :param saxon: le moteur saxon
+    :param chemin:  le chemin du dossier courant
+    :param chapitre: le chapitre courant
+    :return: None
+    TODO: il faudrait passer à du 100% python, pour être plus clair, c'est un peu
+    l'usine à gaz là.
+    """
     print("---- INJECTION 1: apparats ----")
     param_chapitre = "chapitre=" + str(chapitre)  # Premier paramètre passé à la xsl: le chapitre à processer
     param_chemin_sortie = "chemin_sortie=%s/" % chemin  # Second paramètre: le chemin vers le fichier de sortie
@@ -272,6 +270,19 @@ def injection(saxon, chemin, chapitre):
     liste = glob.glob(fichiers_apparat)
     chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
     for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
+        if re.match(r'.*[0-9].xml',  i):
+            print(i)
+            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+            param_sigle = "sigle=" + sigle
+            subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+
+
+    print("\n---- INJECTION 2bis: suppression de la redondance ----")
+    chemin_injection2 = "xsl/post_alignement/injection_apparats3.xsl"
+    fichiers_apparat = '%s/apparat_*_*outb.xml' % chemin
+    liste = glob.glob(fichiers_apparat)
+    for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                 + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
         param_sigle = "sigle=" + sigle
@@ -280,7 +291,7 @@ def injection(saxon, chemin, chapitre):
     #  troisième étape: ponctuation
     print("\n---- INJECTION 3: ponctuation ----")
     chemin_injection_ponctuation = "xsl/post_alignement/injection_ponctuation.xsl"
-    fichiers_apparat = '%s/apparat_*_*outb.xml' % chemin
+    fichiers_apparat = '%s/apparat_*_*outc.xml' % chemin
     liste = glob.glob(fichiers_apparat)
     for i in liste:
         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
@@ -288,7 +299,6 @@ def injection(saxon, chemin, chapitre):
         param_sigle = "sigle=" + sigle
         subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
-
 
     #  quatrième étape: gestion des lacunes
     print("\n---- INJECTION 4: lacunes ----")
@@ -314,7 +324,7 @@ def tableau_alignement(saxon, chemin):
     xsl_apparat = "xsl/post_alignement/tableau_alignement.xsl"
     with Halo(text='Création du tableau d\'alignement', spinner='dots'):
         cmd = "java -jar %s -o:%s/tableau_alignement.html %s/aligne_regroupe.xml %s" % (
-        saxon, chemin, chemin, xsl_apparat)
+            saxon, chemin, chemin, xsl_apparat)
         subprocess.run(cmd.split())
     print("Création du tableau d\'alignement ✓")
 
@@ -360,4 +370,3 @@ def txt_to_liste(filename):
             resultat = re.split(r'\s+', line)
             maliste.append(resultat)
     return maliste
-
