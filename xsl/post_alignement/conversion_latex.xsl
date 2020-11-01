@@ -350,6 +350,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
     <xsl:template match="tei:app[@type = 'graphique']">
+        <!--Ajouter un test sur la présence d'une note-->
         <xsl:text> </xsl:text>
         <!--Afficher ici la lecture du témoin courant, voir plus bas-->
         <xsl:variable name="temoin_courant">
@@ -361,8 +362,13 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
             </xsl:analyze-string>
         </xsl:variable>
         <xsl:apply-templates
-            select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"
-        />
+            select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
+        <xsl:if
+            test="descendant::tei:note[not(ancestor::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)])]">
+            <xsl:apply-templates
+                select="descendant::tei:note[not(ancestor::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)])]"
+            />
+        </xsl:if>
     </xsl:template>
 
     <xsl:template match="tei:milestone">

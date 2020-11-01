@@ -7,8 +7,9 @@ import shutil
 import subprocess
 import xml.etree.ElementTree as ET
 import glob
+import operator
 import dicttoxml
-from collatex import *
+import collatex
 from halo import Halo
 from lxml import etree
 
@@ -40,13 +41,15 @@ def alignement(fichier_a_collationer, numero, chemin, alignement='global'):
     try:
         json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
     except Exception as e:
-        print("error in json [%s]: \n %s" % (fichier_a_collationer, e))
+        print(f"error in json [{fichier_a_collationer}]: \n {e}")
     # JSON: https://stackoverflow.com/a/29827074
     if alignement == 'global':
-        resultat_json = collate(json_str, output="json")
+        resultat_json = collatex.collate(json_str, output="json", segmentation=True)
     else:
-        resultat_json = collate(json_str, output="json", segmentation=False)
-    nom_fichier_sortie = "%s/alignement_collatex%s.json" % (chemin, numero)
+        resultat_json = collatex.collate(json_str, output="json", segmentation=False)
+        # segmentation=False permet une collation au mot-à-mot:
+        # http://interedition.github.io/collatex/pythonport.html
+    nom_fichier_sortie = f"{chemin}/alignement_collatex{numero}.json"
     with open(nom_fichier_sortie, "w") as sortie_json:
         sortie_json.write(resultat_json)
 
@@ -243,6 +246,87 @@ def apparat_final(fichier_entree, chemin):
         with open(sortie, "w+") as sortie_xml:
             output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
             sortie_xml.write(str(output))
+
+
+def injections_element(temoin, n, tei_elements, position):
+    """
+    Cette fonction permet la réinjection d'éléments présents dans un témoin dans tous les autres témoins.
+    Il s'appuie pour ce faire sur le tei:w qui suit ou précède l'élément ciblé, en fonction
+    de cet élément.
+    :param temoin: le témoin sur lequel appliquer les injections
+    :param div: la division courante
+    :param tei_elements: l'élément tei à injecter.
+    :param position: Possibilités: "before" (le point d'ancrage est avant un tei:w, exemple: tei:milestone)
+    ou "after" (le point d'ancrage se trouve après le tei:w, exemple, tei:note)
+    :return: None
+    """
+    print(f'\n \n Inserting {tei_elements}')
+
+    if position == "before":
+        following_or_preceding = "following" # on va chercher le tei:w suivant
+        sign = operator.sub # et on injectera donc avant ce tei:w (index(tei:w) - 1)
+    else:
+        following_or_preceding = "preceding" # on va chercher le tei:w précédent
+        sign = operator.add # et on injectera donc après ce tei:w (index(tei:w) + 1)
+
+
+    final_notes_list = []
+    final_w_list = []
+    final_witness_list = []
+    for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/*final.xml"):
+        f = etree.parse(file)
+        tei_namespace = 'http://www.tei-c.org/ns/1.0'
+        NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+
+        # On va d'abord récuperer et aligner chaque élément tei:note, l'xml:id du tei:w qui précède et le témoin concerné
+        notes_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}', namespaces=NSMAP1)
+        nombre_de_notes = len(notes_list)
+        w_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/{following_or_preceding}::tei:w[1]/@xml:id', namespaces=NSMAP1)
+        temoin_id = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/ancestor::tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)
+        if temoin_id:
+            temoin_id = "_".join(temoin_id[0].split("_")[0:2])
+            final_witness_list.extend([temoin_id for x in range(nombre_de_notes)]) # https://stackoverflow.com/a/4654446
+        final_w_list.extend(w_list)
+        final_notes_list.extend(notes_list)
+    notes_tuples =  list(zip(final_w_list, final_notes_list, final_witness_list))
+    # On produit une liste de tuples de la forme :
+    # [
+    # ('kNMdVRz', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9ac8>, 'Sev_R'),
+    # ('oqcqYPq', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9c08>, 'Sal_J')
+    # ]
+    print(notes_tuples)
+
+    # Puis on va parcourir le dictionnaire et insérer toutes les notes dans le témoin traité.
+    current_xml_file = etree.parse(temoin)
+    temoin_id_courant = "_".join(current_xml_file.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[0:2])
+    for item in notes_tuples:
+        key, element, temoin_de_l_element = item[0], item[1], item[2]
+        element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient la note
+        # On passe si le témoin de la réinjection est le même que le témoin de la note
+        if temoin_de_l_element == temoin_id_courant:
+            pass
+        else:
+            # try:
+            print(f"témoin: {temoin_id_courant}; id: {key}")
+            word_to_change = current_xml_file.xpath(f'//tei:w[@xml:id=\'{key}\']', namespaces=NSMAP1)[0]
+            item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
+            # -element-after-another-element
+            print(sign)
+            index = sign(item_element.index(word_to_change), 1)# https://stackoverflow.com/a/54559513
+            print(f'index => {index}')
+            if index == -1:
+                index = 0
+            # On va tester la présence de l'élément à l'emplacement de l'injection
+            test_existence = current_xml_file.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}[{following_or_preceding}::tei:w[@xml:id = \'{key}\']]', namespaces=NSMAP1)
+            print(f'{test_existence}\n length: {len(test_existence)}')
+            if len(test_existence) == 0:
+                item_element.insert(index, element)
+                print(f'Injection de {tei_elements}')
+            # except IndexError as e:
+                # print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection: \n {e}")
+    with open(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/apparat_{temoin_id_courant}_{n}_final.xml", "w") as output_file:
+        print("Outputting...")
+        output_file.write(etree.tostring(current_xml_file).decode())
 
 
 def injection(saxon, chemin, chapitre):

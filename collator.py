@@ -3,13 +3,25 @@ import fnmatch
 import os
 import sys
 import time
+import re
+import json
+import random
+import string
+from halo import Halo
+import xml.etree.ElementTree as ET
+from lxml import etree
+import shutil
+import subprocess
+import glob
 import operator
+import dicttoxml
+import collatex
 
-from python.collation.collation import *
-from python.tokenisation.tokenisation import *
-from python.lemmatisation.lemmatisation import *
-from python.sorties.sorties import *
-import python.settings
+import python.collation.collation as collation
+import python.tokenisation.tokenisation as tokenisation
+import python.lemmatisation.lemmatisation as lemmatisation
+import python.sorties.sorties as sorties
+import python.settings as settings
 
 # TODO: nettoyer le tout / s'occuper de la conservation des xml:id pour ne pas avoir à les régénérer
 # Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
@@ -17,281 +29,149 @@ import python.settings
 # Todo: faire du mot à mot et s'occuper de rassembler en plus gros apparats après. Si on fait du mot à mot, l'éclatement
 # du TEI n'a plus aucun sens car il n'y a plus de risque de destructurer...
 
+def main():
+    t0 = time.time()
 
-t0 = time.time()
+    saxon = "saxon9he.jar"
+    current_dir = os.getcwd()
 
-saxon = "saxon9he.jar"
-current_dir = os.getcwd()
-
-# S'il y a un argument qui est une cdc, un fichier à traiter, passer directement à l'alignement
-# le nom du script est le premier argument
-
-def injections_element(temoin, n, tei_elements, position):
-    """
-    Cette fonction permet la réinjection des notes de type général dans tous les autres témoins.
-    :param temoin: le témoin sur lequel appliquer les injections
-    :param div: la division courante
-    :param tei_elements: l'élément tei à injecter.
-    :param position: Possibilités: "before" (le point d'ancrage est avant un tei:w, exemple: tei:milestone)
-    ou "after" (le point d'ancrage se trouve après le tei:w, exemple, tei:note)
-    :return: None
-    """
-    print(f'\n \n Inserting {tei_elements}')
-
-    if position == "before":
-        context_element = "following" # on va chercher le tei:w suivant
-        sign = operator.sub # et on injectera donc avant ce tei:w (index(tei:w) - 1)
-    else:
-        context_element = "preceding" # on va chercher le tei:w précédent
-        sign = operator.add # et on injectera donc après ce tei:w (index(tei:w) + 1)
-
-
-    final_notes_list = []
-    final_w_list = []
-    final_witness_list = []
-    for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/*final.xml"):
-        f = etree.parse(file)
-        tei_namespace = 'http://www.tei-c.org/ns/1.0'
-        NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
-
-        # On va d'abord récuperer et aligner chaque élément tei:note, l'xml:id du tei:w qui précède et le témoin concerné
-        notes_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}', namespaces=NSMAP1)
-        nombre_de_notes = len(notes_list)
-        w_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/{context_element}::tei:w[1]/@xml:id', namespaces=NSMAP1)
-        temoin_id = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/ancestor::tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)
-        if temoin_id:
-            temoin_id = "_".join(temoin_id[0].split("_")[0:2])
-            final_witness_list.extend([temoin_id for x in range(nombre_de_notes)]) # https://stackoverflow.com/a/4654446
-        final_w_list.extend(w_list)
-        final_notes_list.extend(notes_list)
-    print(f'{final_notes_list}\n{final_w_list}\n{final_witness_list}')
-    final_zip =  list(zip(final_notes_list, final_witness_list))
-    # On produit un dictionnaire de la forme :
-    # {
-    # 'kNMdVRz': (<Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9ac8>, 'Sev_R'),
-    # 'oqcqYPq': (<Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9c08>, 'Sal_J')
-    # }
-    notes_dict =  dict(zip(final_w_list, final_zip))
-    print(f'notes_dict => {notes_dict}')
-
-    # Puis on va parcourir le dictionnaire et insérer toutes les notes dans le témoin traité.
-    current_xml_file = etree.parse(temoin)
-    temoin_id_courant = "_".join(current_xml_file.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[0:2])
-    for key, value in notes_dict.items():
-        temoin_de_la_note = value[1]
-        tei_note_elem = value[0]
-        tei_note_elem.set("corresp", f'#{temoin_de_la_note}') # on indique de quel témoin provient la note
-        # On passe si le témoin de la réinjection est le même que le témoin de la note
-        if temoin_de_la_note == temoin_id_courant:
-            pass
-        else:
-            try:
-                word_to_change = current_xml_file.xpath(f'//tei:w[@xml:id=\'{key}\']', namespaces=NSMAP1)[0]
-                item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
-                # -element-after-another-element
-                print(sign)
-                index = sign(item_element.index(word_to_change), 1)# https://stackoverflow.com/a/54559513
-                print(f'index => {index}')
-                if index == -1:
-                    index = 0
-                item_element.insert(index, tei_note_elem)
-                print(f'Injection de {tei_elements}')
-            except IndexError as e:
-                print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection: \n {e}")
-    with open(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/apparat_{temoin_id_courant}_{n}_final.xml", "w") as output_file:
-        print("Outputting...")
-        output_file.write(etree.tostring(current_xml_file).decode())
+    # S'il y a un argument qui est une cdc, un fichier à traiter, passer directement à l'alignement
+    # le nom du script est le premier argument
 
 
 
 
-def isInt(value):
-    try:
-        int(value)
-        return True
-    except ValueError:
-        return False
 
-
-if len(sys.argv) == 1:  # si il n'y a pas d'argument
-    if python.settings.tokeniser:
-        tokenisation(saxon)
-    if python.settings.xmlId and not python.settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
+    if settings.tokeniser:
+        tokenisation.tokenisation(saxon, settings.corpus_path)
+    if settings.xmlId and not settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
-                temoin = "temoins_tokenises_regularises/%s" % temoin
-                ajoutXmlId(temoin, temoin)
-    if python.settings.lemmatiser:
+                temoin = f"temoins_tokenises_regularises/{temoin}"
+                tokenisation.ajoutXmlId(temoin, temoin)
+    if settings.lemmatiser:
         print("Lemmatisation du corpus...")
         for temoin in os.listdir('temoins_tokenises_regularises/'):
             if temoin.endswith('.xml'):
-                temoin = "temoins_tokenises_regularises/%s" % temoin
+                temoin = f"temoins_tokenises_regularises/{temoin}"
                 try:
-                    lemmatisation(temoin, saxon, python.settings.lang)
+                    lemmatisation.lemmatisation(temoin, saxon, settings.lang)
                 except Exception as exception:
-                    print("Error: %s \n %s" % (temoin, exception))
-    portee = range(1, 23)
-
-
-elif isInt(sys.argv[1]):  # Si on passe un entier, c'est un chapitre à processer
-    print("%s is int" % sys.argv[1])
-    if python.settings.tokeniser:
-        tokenisation(saxon, python.settings.corpus_path)
-    if python.settings.xmlId and not python.settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
-        for temoin in os.listdir('temoins_tokenises_regularises/'):
-            if temoin.endswith('.xml'):
-                temoin = "temoins_tokenises_regularises/%s" % temoin
-                ajoutXmlId(temoin, temoin)
-    if python.settings.lemmatiser:
-        print("Lemmatisation du corpus...")
-        for temoin in os.listdir('temoins_tokenises_regularises/'):
-            if temoin.endswith('.xml'):
-                temoin = "temoins_tokenises_regularises/%s" % temoin
-                try:
-                    lemmatisation(temoin, saxon, python.settings.lang)
-                except Exception as exception:
-                    print("Error: %s \n %s" % (temoin, exception))
+                    print(f"Error: {temoin} \n {exception}")
     argument = int(sys.argv[1])
     arg_plus_1 = argument + 1
     portee = range(argument, arg_plus_1)
-elif type(sys.argv[1]) is str:
-    print("%s is str" % sys.argv[1])
-    argument = sys.argv[1]
-    if argument == '--tokenisation' or argument == '-t':
-        tokenisation(saxon)
-        exit(0)
-    elif argument == '-pt':
-        print("check")
-        tokenisation_python(python.settings.corpus_path, python.settings.files_path)
-        exit(0)
-    elif argument == '--preparation' or argument == '-p':
-        preparation_corpus(saxon)
-        exit(0)
-    elif argument == '--nettoyage' or argument == '-n':
-        nettoyage()
-        exit(0)
-    elif argument == '--injection' or argument == '-i':
-        chemin_sortie = 'divs/div' + str(sys.argv[2]) + "/xml/"
-        injection(saxon, '', int(sys.argv[2]), True, chemin_sortie)
-        exit(0)
-    elif argument == '--lemmatisation' or argument == '-l':
-        chemin = 'xsl/pre_alignement/'
-        for temoin in os.listdir('temoins_tokenises_regularises/'):
-            if temoin.endswith('.xml'):
-                temoin = "temoins_tokenises_regularises/%s" % temoin
-                lemmatisation(temoin, saxon, python.settings.lang)
-        t1 = time.time()
-        temps_total = t1 - t0
-        print(temps_total)
-        exit(0)
-# Sinon, enclencher tout le processus de transformation, alignement, apparation.
 
 
-preparation_corpus(saxon, python.settings.temoin_leader, python.settings.scinder_par, python.settings.element_base)
+    collation.preparation_corpus(saxon, settings.temoin_leader, settings.scinder_par, settings.element_base)
 
-# Création des fichiers d'apparat
-# with Halo(text='Alignement automatique par chapitre', spinner='dots'):
-# Les xsl permettent de créer autant de fichiers xml à processer que de divisions (ici, tei:p1)
-for i in portee:
-    start_time = time.time()
-    chemin = "divs/div" + str(i)
-    print("Traitement de la division " + str(i))
-    for fichier_xml in os.listdir(chemin):
-        pattern = re.compile("juxtaposition_[1-9]{1,2}.*xml")
-        if pattern.match(fichier_xml):
-            fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
-            numero = fichier_sans_extension.split("_")[1]
-            fichier_json = "%s.json" % fichier_sans_extension
-            fichier_json_complet = "%s/%s" % (chemin, fichier_json)
-            output_fichier_json = "-o:%s/%s" % (chemin, fichier_json)
-            input_fichier_xml = "%s/%s" % (chemin, fichier_xml)
-            # Étape avant la collation: transformation en json selon la structure voulue par CollateX
-            transformation_json(saxon, output_fichier_json, input_fichier_xml)
+    # Création des fichiers d'apparat
+    # Les xsl permettent de créer autant de fichiers xml à processer que de divisions (ici, tei:p):
+    # cela permet d'éviter d'avoir un apparat qui court sur deux divisions distinctes
+    for i in portee:
+        start_time = time.time()
+        chemin = "divs/div" + str(i)
+        print(f"Traitement de la division {str(i)}")
+        for fichier_xml in os.listdir(chemin):
+            pattern = re.compile("juxtaposition_[1-9]{1,2}.*xml")
+            if pattern.match(fichier_xml):
+                fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
+                numero = fichier_sans_extension.split("_")[1]
+                fichier_json = f"{fichier_sans_extension}.json"
+                fichier_json_complet = f"{chemin}/{fichier_json}"
+                output_fichier_json = f"-o:{chemin}/{fichier_json}"
+                input_fichier_xml = f"{chemin}/{fichier_xml}"
+                # Étape avant la collation: transformation en json selon la structure voulue par CollateX
+                collation.transformation_json(saxon, output_fichier_json, input_fichier_xml)
 
-            # Alignement avec CollateX. Il en ressort du JSON, encore
-            alignement(fichier_json_complet, numero, chemin, python.settings.alignement)
+                # Alignement avec CollateX. Il en ressort du JSON, encore
+                collation.alignement(fichier_json_complet, numero, chemin, settings.alignement)
 
-    chemin_chapitre = "divs/div%s" % i
-    chemin_final = "%s/final.json" % chemin_chapitre
-    with open(chemin_final, "w") as final:  # ici on prend tous les json d'alignement et on les fonde en un gros
-        # fichier json
-        final_dict = {'table': [], 'witnesses': []}
-        n = 0
-        for k in os.listdir(chemin_chapitre):
-            pattern = re.compile("alignement_collatex[1-9]{1,2}.*")
-            if pattern.match(k):  # pour chaque fichier créé qui correspond à chaque paragraphe
-                n += 1
-        for l in range(1, n + 1):
-            fichier = "%s/alignement_collatex%s.json" % (chemin_chapitre, l)
-            with open(fichier, 'r') as file:
-                dict0 = json.loads(file.read())  # on charge le fichier comme un dictionnaire
-                n = len(dict0['table'])  # n est le nombre de témoins
-                for j in range(n):  # pour chaque témoin
-                    witness = dict0['witnesses'][j]
-                    if len(final_dict['witnesses']) != n:  # tant que la liste des témoins n'est pas complète
-                        final_dict['witnesses'].append(witness)
-                    if len(final_dict['table']) != n:  #
-                        liste_vide = []
-                        final_dict['table'].append(liste_vide)
-                    for element in dict0['table'][j]:
-                        final_dict['table'][j].append(element)
-        json.dump(final_dict, final)
+        chemin_chapitre = f"divs/div{i}"
+        chemin_final = f"{chemin_chapitre}/final.json"
+        with open(chemin_final, "w") as final:  # ici on prend tous les json d'alignement et on les fonde en un gros
+            # fichier json
+            final_dict = {'table': [], 'witnesses': []}
+            n = 0
+            for fichier in os.listdir(chemin_chapitre):
+                pattern = re.compile("alignement_collatex[1-9]{1,2}.*")
+                if pattern.match(fichier):  # pour chaque fichier créé qui correspond à chaque paragraphe
+                    n += 1
+            for l in range(1, n + 1):
+                fichier = f"{chemin_chapitre}/alignement_collatex{l}.json"
+                with open(fichier, 'r') as file:
+                    dict0 = json.loads(file.read())  # on charge le fichier comme un dictionnaire
+                    n = len(dict0['table'])  # n est le nombre de témoins
+                    for j in range(n):  # pour chaque témoin
+                        witness = dict0['witnesses'][j]
+                        if len(final_dict['witnesses']) != n:  # tant que la liste des témoins n'est pas complète
+                            final_dict['witnesses'].append(witness)
+                        if len(final_dict['table']) != n:  #
+                            liste_vide = []
+                            final_dict['table'].append(liste_vide)
+                        for element in dict0['table'][j]:
+                            final_dict['table'][j].append(element)
+            json.dump(final_dict, final)
 
-    # On compare les lieux variants et on en déduit les <app>
-    with Halo(text='Création des apparats', spinner='dots'):
-        # Étape suivante: transformer le JSON en xml. Pour cela on peut utiliser dict2xml.
-        chemin_alignement = "%s/alignement_collatex.xml" % chemin_chapitre
-        with open(chemin_alignement, "w+") as sortie_xml:
-            with open(chemin_final, 'r') as fichier_json_a_xmliser:
-                obj = json.loads(fichier_json_a_xmliser.read())
-                vers_xml = dicttoxml.dicttoxml(obj)
-                vers_xml = vers_xml.decode("utf-8")
-            sortie_xml.write(vers_xml)
-
-
-        chemin_regroupement = "xsl/post_alignement/regroupement.xsl"
-        # Regroupement des lieux variants (témoin A puis témoin B puis témoin C
-        # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
-        cmd = "java -jar %s -o:%s/aligne_regroupe.xml %s/alignement_collatex.xml %s" % (
-        saxon, chemin_chapitre, chemin_chapitre, chemin_regroupement)
-        subprocess.run(cmd.split())
-
-        # C'est à ce niveau que l'étape de correction devrait avoir lieu. Y réfléchir.
-        # Création de l'apparat: transformation de aligne_regroupe.xml en JSON
-        chemin_xsl_apparat = "xsl/post_alignement/creation_apparat.xsl"
-        cmd = "java -jar %s -o:%s/apparat_final.json %s/aligne_regroupe.xml %s" % (
-        saxon, chemin_chapitre, chemin_chapitre, chemin_xsl_apparat)
-        subprocess.run(cmd.split())
-        # Création de l'apparat: suppression de la redondance, identification des lieux variants,
-        # regroupement des lemmes
+        # On compare les lieux variants et on en déduit les <app>
+        with Halo(text='Création des apparats', spinner='dots'):
+            # Étape suivante: transformer le JSON en xml. Pour cela on peut utiliser dict2xml.
+            chemin_alignement = f"{chemin_chapitre}/alignement_collatex.xml"
+            with open(chemin_alignement, "w+") as sortie_xml:
+                with open(chemin_final, 'r') as fichier_json_a_xmliser:
+                    obj = json.loads(fichier_json_a_xmliser.read())
+                    vers_xml = dicttoxml.dicttoxml(obj)
+                    vers_xml = vers_xml.decode("utf-8")
+                sortie_xml.write(vers_xml)
 
 
-    apparat_final('%s/apparat_final.json' % chemin, chemin)
-    print("Création des apparats ✓")
+            chemin_regroupement = "xsl/post_alignement/regroupement.xsl"
+            # Regroupement des lieux variants (témoin A puis témoin B puis témoin C
+            # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
+            cmd = f"java -jar {saxon} -o:{chemin_chapitre}/aligne_regroupe.xml {chemin_chapitre}/alignement_collatex.xml " \
+                  f"{chemin_regroupement}"
+            subprocess.run(cmd.split())
 
-    # Réinjection des apparats.
-    injection(saxon, chemin, i)
+            # C'est à ce niveau que l'étape de correction devrait avoir lieu. Y réfléchir.
+            # Création de l'apparat: transformation de aligne_regroupe.xml en JSON
+            chemin_xsl_apparat = "xsl/post_alignement/creation_apparat.xsl"
+            cmd = f"java -jar {saxon} -o:{chemin_chapitre}/apparat_final.json {chemin_chapitre}/aligne_regroupe.xml " \
+                  f"{chemin_xsl_apparat}"
+            subprocess.run(cmd.split())
+            # Création de l'apparat: suppression de la redondance, identification des lieux variants,
+            # regroupement des lemmes
 
-    fichiers_apparat = '%s/apparat_*_*final.xml' % chemin
-    liste = glob.glob(fichiers_apparat)
-    for fichier_xml in liste:
-        print(f' fichier_xml => {fichier_xml}')
-        injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@type=\'general\']', "after")
-        injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@subtype=\'variante\']', "after")
-        injections_element(fichier_xml, int(sys.argv[1]), 'tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]', "before")
 
-    # Création du tableau d'alignement pour visualisation
-    if python.settings.tableauxAlignement:
-        tableau_alignement(saxon, chemin)
+        collation.apparat_final(f'{chemin}/apparat_final.json', chemin)
+        print("Création des apparats ✓")
 
-    if python.settings.latex:
-        for fichier in os.listdir(chemin):
-            if fnmatch.fnmatch(fichier, 'apparat_*_*final.xml'):
-                fichier = "%s/%s" % (chemin, fichier)
-                transformation_latex(saxon, fichier, chemin)
+        # Réinjection des apparats.
+        collation.injection(saxon, chemin, i)
 
-    # nettoyage()
+        fichiers_apparat = f'{chemin}/apparat_*_*final.xml'
+        liste = glob.glob(fichiers_apparat)
+        for fichier_xml in liste:
+            print(f' fichier_xml => {fichier_xml}')
+            collation.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@type=\'general\']', "after")
+            collation.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@subtype=\'variante\']', "after")
+            collation.injections_element(fichier_xml, int(sys.argv[1]), 'tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]', "before")
 
-t1 = time.time()
-temps_total = t1 - t0
-print("Fait en %s secondes. \n" % (round(temps_total)))
+        # Création du tableau d'alignement pour visualisation
+        if settings.tableauxAlignement:
+            sorties.tableau_alignement(saxon, chemin)
+
+        if settings.latex:
+            for fichier in os.listdir(chemin):
+                if fnmatch.fnmatch(fichier, 'apparat_*_*final.xml'):
+                    fichier = f"{chemin}/{fichier}" % (chemin, fichier)
+                    sorties.transformation_latex(saxon, fichier, chemin)
+
+        # nettoyage()
+
+    t1 = time.time()
+    temps_total = t1 - t0
+    print(f"Fait en {round(temps_total)} secondes. \n")
+
+
+if __name__ == "__main__":
+    main()
