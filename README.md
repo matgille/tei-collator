@@ -54,7 +54,7 @@ sur mon propre corpus et devront aussi être modifiées. Ces règles n'affectent
 un encodage purement structurel.
 
 
-## Projets similaires
+## Projets sur lequel s'appuie `tei_collator`
 Ce projet est fortement inspiré du projet [Falcon](https://github.com/CondorCompPhil/falcon) (Jean-Baptiste Camps, 
 Lucence Ing et Elena Spadini), pour la méthode de collation (alignement, typage des variantes), ainsi que pour la 
 possibilité de lemmatiser avec plusieurs outils, freeling ou pie, et sur le typage des variantes. La différence 
