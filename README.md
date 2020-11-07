@@ -56,10 +56,11 @@ un encodage purement structurel.
 
 ## Projets sur lequel s'appuie `tei_collator`
 Ce projet est fortement inspiré du projet [Falcon](https://github.com/CondorCompPhil/falcon) (Jean-Baptiste Camps, 
-Lucence Ing et Elena Spadini), pour la méthode de collation (alignement, typage des variantes), ainsi que pour la 
-possibilité de lemmatiser avec plusieurs outils, freeling ou pie, et sur le typage des variantes. La différence 
-principale réside dans le travail sur la réinjection des apparats dans les documents XML-TEI originel, entres autres
-informations (notes par exemple), dans le but de garder la structure originelle de chaque document représentant le texte
+Lucence Ing et Elena Spadini), pour la méthode de collation (lemmatisation, alignement sur les lemmes, typage des 
+variantes), ainsi que pour la possibilité de lemmatiser avec plusieurs outils, freeling ou pie, et sur le typage des 
+variantes. La différence principale réside dans le travail sur la réinjection des apparats dans les documents XML-TEI
+originels, entres autres informations (notes par exemple), dans le but de garder la structure originelle de chaque 
+document représentant le texte
 d'un témoin. 
 
 
