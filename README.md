@@ -67,7 +67,9 @@ Zenodo. http://doi.org/10.5281/zenodo.2554847 _Check the latest version here:_[Z
 Pour Freeling ([site](http://nlp.lsi.upc.edu/freeling/)): 
 * Lluís Padró and Evgeny Stanilovsky. *FreeLing 3.0: Towards Wider Multilinguality*. Proceedings of the Language Resources and Evaluation Conference (LREC 2012) ELRA. Istanbul, Turkey. May, 2012.
 
-
+Pour Falcon: 
+* Jean Baptiste Camps et Elena Spadini,  CondorCompPhil /
+falcon (For Alignment, Lemmatization and CollatioN). [dépôt git](https://github.com/CondorCompPhil/falcon)
 
 ## Licence
 
