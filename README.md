@@ -84,7 +84,7 @@ Resources and Evaluation Conference (LREC 2012) ELRA. Istanbul, Turkey. May, 201
 
 Pour Falcon:
 * Camps, Jean-Baptiste, Lucence Ing, et Elena Spadini. « Collating Medieval Vernacular Texts: Aligning Witnesses, 
-Classifying Variants », 2019. https://dh-abstracts.library.cmu.edu/works/10074.
+Classifying Variants », 2019. [Abstract](https://dev.clariah.nl/files/dh2019/boa/0882.html).
  
 * Jean Baptiste Camps, Lucence Ing et Elena Spadini,  '**CondorCompPhil/falcon** (For Alignment, Lemmatization and 
 CollatioN)', [dépôt git](https://github.com/CondorCompPhil/falcon), 2018-2019.
