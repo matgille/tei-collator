@@ -6,6 +6,7 @@ import random
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
+from lxml import etree
 import glob
 import operator
 import dicttoxml
@@ -221,7 +222,7 @@ def apparat_final(fichier_entree, chemin):
                     rdg.set("lemma", lemmes)
                     rdg.set("pos", pos)
                     rdg.set("wit", temoin)
-                    rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)  # ensemble des id des tokens, pour la
+                    rdg.set("{http://www.w3.org/XML/1998/namespace}id", f'{xml_id}')  # ensemble des id des tokens, pour la
                     # suppression de la redondance plus tard
                     # Re-créer les noeuds tei:w
                 liste_w = lecon.split()
@@ -248,155 +249,6 @@ def apparat_final(fichier_entree, chemin):
             sortie_xml.write(str(output))
 
 
-def injections_element(temoin, n, tei_elements, position):
-    """
-    Cette fonction permet la réinjection d'éléments présents dans un témoin dans tous les autres témoins.
-    Il s'appuie pour ce faire sur le tei:w qui suit ou précède l'élément ciblé, en fonction
-    de cet élément.
-    :param temoin: le témoin sur lequel appliquer les injections
-    :param div: la division courante
-    :param tei_elements: l'élément tei à injecter.
-    :param position: Possibilités: "before" (le point d'ancrage est avant un tei:w, exemple: tei:milestone)
-    ou "after" (le point d'ancrage se trouve après le tei:w, exemple, tei:note)
-    :return: None
-    """
-    print(f'\n \n Inserting {tei_elements}')
-
-    if position == "before":
-        following_or_preceding = "following" # on va chercher le tei:w suivant
-        sign = operator.sub # et on injectera donc avant ce tei:w (index(tei:w) - 1)
-    else:
-        following_or_preceding = "preceding" # on va chercher le tei:w précédent
-        sign = operator.add # et on injectera donc après ce tei:w (index(tei:w) + 1)
-
-
-    final_notes_list = []
-    final_w_list = []
-    final_witness_list = []
-    for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/*final.xml"):
-        f = etree.parse(file)
-        tei_namespace = 'http://www.tei-c.org/ns/1.0'
-        NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
-
-        # On va d'abord récuperer et aligner chaque élément tei:note, l'xml:id du tei:w qui précède et le témoin concerné
-        notes_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}', namespaces=NSMAP1)
-        nombre_de_notes = len(notes_list)
-        w_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/{following_or_preceding}::tei:w[1]/@xml:id', namespaces=NSMAP1)
-        temoin_id = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/ancestor::tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)
-        if temoin_id:
-            temoin_id = "_".join(temoin_id[0].split("_")[0:2])
-            final_witness_list.extend([temoin_id for x in range(nombre_de_notes)]) # https://stackoverflow.com/a/4654446
-        final_w_list.extend(w_list)
-        final_notes_list.extend(notes_list)
-    notes_tuples =  list(zip(final_w_list, final_notes_list, final_witness_list))
-    # On produit une liste de tuples de la forme :
-    # [
-    # ('kNMdVRz', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9ac8>, 'Sev_R'),
-    # ('oqcqYPq', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9c08>, 'Sal_J')
-    # ]
-    print(notes_tuples)
-
-    # Puis on va parcourir le dictionnaire et insérer toutes les notes dans le témoin traité.
-    current_xml_file = etree.parse(temoin)
-    temoin_id_courant = "_".join(current_xml_file.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[0:2])
-    for item in notes_tuples:
-        key, element, temoin_de_l_element = item[0], item[1], item[2]
-        element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient la note
-        # On passe si le témoin de la réinjection est le même que le témoin de la note
-        if temoin_de_l_element == temoin_id_courant:
-            pass
-        else:
-            # try:
-            print(f"témoin: {temoin_id_courant}; id: {key}")
-            word_to_change = current_xml_file.xpath(f'//tei:w[@xml:id=\'{key}\']', namespaces=NSMAP1)[0]
-            item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
-            # -element-after-another-element
-            print(sign)
-            index = sign(item_element.index(word_to_change), 1)# https://stackoverflow.com/a/54559513
-            print(f'index => {index}')
-            if index == -1:
-                index = 0
-            # On va tester la présence de l'élément à l'emplacement de l'injection
-            test_existence = current_xml_file.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}[{following_or_preceding}::tei:w[@xml:id = \'{key}\']]', namespaces=NSMAP1)
-            print(f'{test_existence}\n length: {len(test_existence)}')
-            if len(test_existence) == 0:
-                item_element.insert(index, element)
-                print(f'Injection de {tei_elements}')
-            # except IndexError as e:
-                # print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection: \n {e}")
-    with open(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/apparat_{temoin_id_courant}_{n}_final.xml", "w") as output_file:
-        print("Outputting...")
-        output_file.write(etree.tostring(current_xml_file).decode())
-
-
-def injection(saxon, chemin, chapitre):
-    """
-    Fonction qui réinjecte les apparats dans chaque transcription individuelle.
-    :param saxon: le moteur saxon
-    :param chemin:  le chemin du dossier courant
-    :param chapitre: le chapitre courant
-    :return: None
-    TODO: il faudrait passer à du 100% python, pour être plus clair, c'est un peu
-    l'usine à gaz là.
-    """
-    print("---- INJECTION 1: apparats ----")
-    param_chapitre = "chapitre=" + str(chapitre)  # Premier paramètre passé à la xsl: le chapitre à processer
-    param_chemin_sortie = "chemin_sortie=%s/" % chemin  # Second paramètre: le chemin vers le fichier de sortie
-    fichier_entree = "%s/juxtaposition_orig.xml" % chemin
-    # with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
-    #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
-    chemin_injection = "xsl/post_alignement/injection_apparats.xsl"
-    subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
-
-    # seconde étape: noeuds non textuels
-    print("\n---- INJECTION 2: suppression de la redondance ----")
-    fichiers_apparat = '%s/apparat_*_*.xml' % chemin
-    liste = glob.glob(fichiers_apparat)
-    chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
-    for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
-        if re.match(r'.*[0-9].xml',  i):
-            print(i)
-            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-            param_sigle = "sigle=" + sigle
-            subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
-
-
-    print("\n---- INJECTION 2bis: suppression de la redondance ----")
-    chemin_injection2 = "xsl/post_alignement/injection_apparats3.xsl"
-    fichiers_apparat = '%s/apparat_*_*outb.xml' % chemin
-    liste = glob.glob(fichiers_apparat)
-    for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
-        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-        param_sigle = "sigle=" + sigle
-        subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
-
-    #  troisième étape: ponctuation
-    print("\n---- INJECTION 3: ponctuation ----")
-    chemin_injection_ponctuation = "xsl/post_alignement/injection_ponctuation.xsl"
-    fichiers_apparat = '%s/apparat_*_*outc.xml' % chemin
-    liste = glob.glob(fichiers_apparat)
-    for i in liste:
-        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-        param_sigle = "sigle=" + sigle
-        subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
-    print("Injection des apparats dans chaque transcription individuelle ✓")
-
-    #  quatrième étape: gestion des lacunes
-    print("\n---- INJECTION 4: lacunes ----")
-    chemin_injection_ponctuation = "xsl/post_alignement/gestion_lacunes.xsl"
-    fichiers_apparat = '%s/apparat_*_*out.xml' % chemin
-    liste = glob.glob(fichiers_apparat)
-    for i in liste:
-        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-        param_sigle = "sigle=" + sigle
-        subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
-    print("Création des balises de lacunes ✓")
-
-
 def fileExists(file):
     if os.path.exists(file):
         print("%s: check" % file)
@@ -407,8 +259,7 @@ def fileExists(file):
 def tableau_alignement(saxon, chemin):
     xsl_apparat = "xsl/post_alignement/tableau_alignement.xsl"
     with Halo(text='Création du tableau d\'alignement', spinner='dots'):
-        cmd = "java -jar %s -o:%s/tableau_alignement.html %s/aligne_regroupe.xml %s" % (
-            saxon, chemin, chemin, xsl_apparat)
+        cmd = f"java -jar {saxon} -o:{chemin}/tableau_alignement.html {chemin}/aligne_regroupe.xml {xsl_apparat}"
         subprocess.run(cmd.split())
     print("Création du tableau d\'alignement ✓")
 

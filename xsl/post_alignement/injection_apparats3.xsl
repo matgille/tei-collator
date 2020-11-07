@@ -46,7 +46,7 @@
         <xsl:apply-templates select="descendant::tei:w"/>
     </xsl:template>
 
-    <!--Ici on rétablit les identifiants des tei:w qu'on avait perdus précédemment, en reprenant le fichier apparat_X_X.xml.-->
+    <!--Ici on rétablit les tei:w/@xml:id qu'on avait perdus précédemment, en reprenant le fichier apparat_X_X.xml.-->
     <xsl:template match="tei:w">
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
@@ -70,7 +70,7 @@
                     </xsl:choose>
                 </xsl:attribute>
             </xsl:if>
-            <xsl:value-of select="."/>
+            <xsl:copy-of select="node()"/>
         </xsl:element>
     </xsl:template>
 

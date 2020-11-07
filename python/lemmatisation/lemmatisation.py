@@ -57,13 +57,16 @@ def lemmatisation(fichier, moteur_xslt, langue):
         fichier_lemmatise = temoin_tokenise
         n = 1
         for mot in tokens:
-            nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
-            nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))
-            position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente  # attention à
+            nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w)", namespaces=tei))
+            nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc)", namespaces=tei))
+            position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente
+            # -2 car les index commencent à 0 dans les deux cas.
             try:
-                liste_correcte = maliste[position_absolue_element - 2]  # Ça marche bien si la lemmatisation se fait
+                liste_correcte = maliste[position_absolue_element]  # Ça marche bien si la lemmatisation se fait
             except Exception as ecxp:
-                print("Error in line %s: \n %s" % (position_absolue_element, ecxp))
+                xml_id = mot.xpath("@xml:id", namespaces=tei)[0]
+                print(f"Error in file {fichier}, token {xml_id}: \n {ecxp}. \n Last token of the file must be a "
+                      f"punctuation mark.")
                 exit(1)
             # sans retokenisation. Pour l'instant, ça bloque avec les chiffre (ochenta mill est fusionné). Voir
             # avec les devs de Freeling.
@@ -82,8 +85,7 @@ def lemmatisation(fichier, moteur_xslt, langue):
 
     elif langue == "lat_o":
         modele_latin = "model.tar"
-        cmd = "pie tag <%s,lemma,pos,Person,Numb,Tense,Case,Mood> %s" % (
-            modele_latin, fichier_entree_txt)
+        cmd = f"pie tag <{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood> {fichier_entree_txt}"
         subprocess.run(cmd.split())
         fichier_seul = os.path.splitext(fichier_entree_txt)[0]
         fichier_lemmatise = str(fichier_seul) + "-pie.txt"
@@ -94,7 +96,7 @@ def lemmatisation(fichier, moteur_xslt, langue):
         parser = etree.XMLParser(load_dtd=True,
                                  resolve_entities=True)  # inutile car les entités ont déjà été résolues
         # auparavant normalement, mais au cas où.
-        temoin_tokenise = "temoins_tokenises_regularises/" + fichier
+        temoin_tokenise = f"temoins_tokenises_regularises/{fichier}"
         f = etree.parse(temoin_tokenise, parser=parser)
         root = f.getroot()
         tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
@@ -119,7 +121,7 @@ def lemmatisation(fichier, moteur_xslt, langue):
             lemme = liste_correcte[6]
             pos = liste_correcte[7]
             # on nettoie la morphologie pour supprimer les entrées vides
-            morph = "CAS=%s|MODE=%s|NOMB.=%s|PERS.=%s|TEMPS=%s" % (cas, mode, number, person, temps)
+            morph = f"CAS={cas}|MODE={mode}|NOMB.={number}|PERS.={person}|TEMPS={temps}"
             morph = re.sub("((?!\|).)*?_(?=\|)", "", morph)  # on supprime les traits non renseignés du milieu
             morph = re.sub("^\|*", "", morph)  # on supprime les pipes qui commencent la valeur
             morph = re.sub("(\|)+", "|", morph)  # on supprime les pipes suivis

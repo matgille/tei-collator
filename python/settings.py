@@ -2,32 +2,35 @@ import json
 from json_minify import json_minify
 
 
-def parse_parameters():
-    with open("parameters.json", "r") as f:
-        return json.loads(json_minify(f.read()))
+class parameters_importing:
+    def __init__(self, file):
+        """
+        On initialise l'instance avec les paramètres qui sont dans le fichier json indiqué.
+        :param file:
+        """
+        with open(file, "r") as f:
+            self.settings = json.loads(json_minify(f.read()))
+        self.tokeniser =  not self.settings['corpus']['tokenized']
+        self.xmlId = not self.settings['corpus']['xmlIdentifiers']
+        if not self.settings['corpus']['lemmatized'] and self.settings['lemmatize'] is True:
+            self.lemmatiser = True
+        else:
+            self.lemmatiser = False
+        self.temoin_leader = self.settings['fichier_leader'].split(".")[0]
+        self.element_base = self.settings['scission']['element_base']
+        self.scinder_par = self.settings['scission']['scinder_par']
+        self.corpus_path = self.settings['localisation_fichiers']
+        self.files_path = self.settings['chemin_vers_TEI']
+        self.alignement = self.settings['alignement']
+        self.path = self.settings['structure']
+        self.lang = self.settings['lang']
+        self.teiCorpus = self.settings['tei:teiCorpus']
+        self.tableauxAlignement = self.settings['sortie']['tableaux_alignement']
+        self.latex = self.settings['sortie']['LaTeX']
 
-
-settings = parse_parameters()
-
-tokeniser = not settings['corpus']['tokenized']
-
-xmlId = not settings['corpus']['xmlIdentifiers']
-
-if not settings['corpus']['lemmatized'] and settings['lemmatize'] is True:
-    lemmatiser = True
-else:
-    lemmatiser = False
-
-temoin_leader = settings['fichier_leader'].split(".")[0]
-element_base = settings['scission']['element_base']
-scinder_par = settings['scission']['scinder_par']
-
-corpus_path = settings['localisation_fichiers']
-files_path = settings['chemin_vers_TEI']
-
-alignement = settings['alignement']
-path = settings['structure']
-lang = settings['lang']
-teiCorpus = settings['tei:teiCorpus']
-tableauxAlignement = settings['sortie']['tableaux_alignement']
-latex = settings['sortie']['LaTeX']
+    def __str__(self):
+        """
+        Imprimer les paramètres.
+        :return:
+        """
+        return json.dumps(self.settings, indent=4, sort_keys=True)

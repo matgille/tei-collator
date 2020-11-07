@@ -21,7 +21,8 @@ import python.collation.collation as collation
 import python.tokenisation.tokenisation as tokenisation
 import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
-import python.settings as settings
+import python.injection.injection as injection
+import python.settings
 
 # TODO: nettoyer le tout / s'occuper de la conservation des xml:id pour ne pas avoir à les régénérer
 # Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
@@ -39,8 +40,7 @@ def main():
     # le nom du script est le premier argument
 
 
-
-
+    settings = python.settings.parameters_importing("sans_lemmatisation.json")
 
     if settings.tokeniser:
         tokenisation.tokenisation(saxon, settings.corpus_path)
@@ -146,24 +146,24 @@ def main():
         print("Création des apparats ✓")
 
         # Réinjection des apparats.
-        collation.injection(saxon, chemin, i)
+        injection.injection(saxon, chemin, i)
 
         fichiers_apparat = f'{chemin}/apparat_*_*final.xml'
         liste = glob.glob(fichiers_apparat)
         for fichier_xml in liste:
             print(f' fichier_xml => {fichier_xml}')
-            collation.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@type=\'general\']', "after")
-            collation.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@subtype=\'variante\']', "after")
-            collation.injections_element(fichier_xml, int(sys.argv[1]), 'tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]', "before")
+            injection.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@type=\'general\']', "after")
+            injection.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@subtype=\'variante\']', "after")
+            injection.injections_element(fichier_xml, int(sys.argv[1]), 'tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]', "before")
 
         # Création du tableau d'alignement pour visualisation
         if settings.tableauxAlignement:
-            sorties.tableau_alignement(saxon, chemin)
+            collation.tableau_alignement(saxon, chemin)
 
         if settings.latex:
             for fichier in os.listdir(chemin):
                 if fnmatch.fnmatch(fichier, 'apparat_*_*final.xml'):
-                    fichier = f"{chemin}/{fichier}" % (chemin, fichier)
+                    fichier = f"{chemin}/{fichier}"
                     sorties.transformation_latex(saxon, fichier, chemin)
 
         # nettoyage()

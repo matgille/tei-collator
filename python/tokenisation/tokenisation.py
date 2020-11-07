@@ -30,8 +30,13 @@ def ajoutXmlId(fichier_entree, fichier_sortie):
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
     f = etree.parse(fichier_entree)
     root = f.getroot()
-    tokens = root.xpath("//tei:w", namespaces=tei)
-    for w in tokens:
+    liste_elements_vides = root.xpath("//tei:*[not(child::tei:*)]", namespaces=tei)
+    # on va marquer les balises autofermantes pour être sûr de les injecter correctement après.
+    for element in liste_elements_vides:
+        element.set("{http://www.w3.org/XML/1998/namespace}id", generateur_id())
+
+    liste_w = root.xpath("//tei:w", namespaces=tei)
+    for w in liste_w:
         w.set("{http://www.w3.org/XML/1998/namespace}id", generateur_id())
     with open(fichier_sortie, "w+") as sortie_xml:
         string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
