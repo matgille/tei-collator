@@ -82,7 +82,10 @@ Pour Freeling ([site](http://nlp.lsi.upc.edu/freeling/)):
 * Lluís Padró and Evgeny Stanilovsky. *FreeLing 3.0: Towards Wider Multilinguality*. Proceedings of the Language 
 Resources and Evaluation Conference (LREC 2012) ELRA. Istanbul, Turkey. May, 2012.
 
-Pour Falcon: 
+Pour Falcon:
+* Camps, Jean-Baptiste, Lucence Ing, et Elena Spadini. « Collating Medieval Vernacular Texts: Aligning Witnesses, 
+Classifying Variants », 2019. https://dh-abstracts.library.cmu.edu/works/10074.
+ 
 * Jean Baptiste Camps, Lucence Ing et Elena Spadini,  '**CondorCompPhil/falcon** (For Alignment, Lemmatization and 
 CollatioN)', [dépôt git](https://github.com/CondorCompPhil/falcon), 2018-2019.
 
