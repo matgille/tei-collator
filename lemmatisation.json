@@ -11,6 +11,9 @@
     "scinder_par": "chapitre", // doit correspondre au type de la division base: tei:div[@type='chapitre']
     "element_base": "p" // y a-t-il un élément sur lequel aligner la collation ? tei:l ou tei:p par exemple. Ne pas inclure l'espace de nom
   },
+  "reinjection": {"tei:note[@type='general']": "after", // quels éléments réinjecter, et leur position par rapport au tei:w ancre
+                  "tei:note[@type='particulier'][@subtype='variante']":"after",
+                  "tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, 'Sev_Z')]]": "before"},
   "corpus": { // état du corpus avant processage
     "tokenized" : false,
     "xmlIdentifiers" : false, // chaque token est-il associé à son xml:id ?

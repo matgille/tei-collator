@@ -5,7 +5,27 @@ import glob
 import operator
 import traceback
 
+
+def injection_en_masse(chapitre, element_tei, position, liste_temoins):
+    """
+    Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier.
+    :param chapitre: le chapitre à processer
+    :param element_tei: les éléments à réinjecter
+    :param position: la position: va-t-on chercher un point d'ancrage avant ou après l'élément ? (pour un tei:milestone,
+    ce sera après, puisqu'un milestone a des chances de se trouver au début d'un tei:p, contrairement à une note)
+    :param liste_temoins: la liste des témoins
+    :return: None
+    """
+    fichiers_out = (injections_element(fichier_xml, chapitre, element_tei,
+                                                 position) for fichier_xml in liste_temoins)
+
+    for xml_element in fichiers_out:
+        with open(xml_element[1], "w") as output_file:
+            output_file.write(etree.tostring(xml_element[0]).decode())
+
+
 def injections_element(temoin, n, tei_elements, position):
+    # TODO gérer les omissions et les cas où deux éléments se trouveraient avant ou après le même mot
     """
     Cette fonction permet la réinjection d'éléments présents dans un témoin dans tous les autres témoins.
     Il s'appuie pour ce faire sur le tei:w qui suit ou précède l'élément ciblé, en fonction
@@ -61,12 +81,13 @@ def injections_element(temoin, n, tei_elements, position):
     print(len(notes_tuples))
     for item in notes_tuples:
         id_item, element, temoin_de_l_element = item[0], item[1], item[2]
-        if element.xpath("@injected='injected'"):
+        if element.xpath("@injected='injected'"): # on évite ainsi de réinjecter des éléments déjà injectés
+            # quand on passe au témoin suivant.
             pass
         else:
             print(f'Élément à injecter : {etree.tostring(element)}')
             element.set("injected", "injected") # il faudra nettoyer ça à la fin de la boucle.
-            element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient la note.
+            element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient l'élément.
             # Il y a un bug ici: puisque l'on modifie à la volée les textes, à chaque fois qu'on change de témoin
             # ça pose problème et le témoin dans le corresp est faux, ce qui
             # va biaiser la suite du processus... Il faut que cette fonction produise un nouveau document de sortie
@@ -92,7 +113,7 @@ def injections_element(temoin, n, tei_elements, position):
                     else:
                         print(f'On n\'injecte pas l\'élément {etree.tostring(element)} dans {temoin}')
                 except Exception as e:
-                    print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection:"
+                    print(f"Il y a un problème (omission?) dans {temoin.split('/')[-1]} qui empêche l'injection:"
                           f"\n {traceback.format_exc()}")
     print("--- Injection terminée ---")
     return current_xml_file, temoin
@@ -157,7 +178,7 @@ def injection(saxon, chemin, chapitre):
     # with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
     #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
     chemin_injection = "xsl/post_alignement/injection_apparats.xsl"
-    subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
+    ### subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
 
     # seconde étape: noeuds non textuels
     print("\n---- INJECTION 2: suppression de la redondance ----")
@@ -170,7 +191,7 @@ def injection(saxon, chemin, chapitre):
             sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle
-            subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+            ### subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
 
     print("\n---- INJECTION 2bis: suppression de la redondance ----")
@@ -181,7 +202,7 @@ def injection(saxon, chemin, chapitre):
         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                 + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
         param_sigle = "sigle=" + sigle
-        subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+        ### subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
     #  troisième étape: ponctuation
     print("\n---- INJECTION 3: ponctuation ----")
@@ -192,7 +213,7 @@ def injection(saxon, chemin, chapitre):
         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                 + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
         param_sigle = "sigle=" + sigle
-        subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
+        ### subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
 
     #  quatrième étape: gestion des lacunes
@@ -207,20 +228,3 @@ def injection(saxon, chemin, chapitre):
         subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Création des balises de lacunes ✓")
 
-
-def injection_en_masse(chapitre, element_tei, position, liste_temoins):
-    """
-    Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier.
-    :param chapitre: le chapitre à processer
-    :param element_tei: les éléments à réinjecter
-    :param position: la position: va-t-on chercher un point d'ancrage avant ou après l'élément ? (pour un tei:milestone,
-    ce sera après, puisqu'un milestone a des chances de se trouver au début d'un tei:p, contrairement à une note)
-    :param liste_temoins: la liste des témoins
-    :return: None
-    """
-    fichiers_out = (injections_element(fichier_xml, chapitre, element_tei,
-                                                 position) for fichier_xml in liste_temoins)
-
-    for xml_element in fichiers_out:
-        with open(xml_element[1], "w") as output_file:
-            output_file.write(etree.tostring(xml_element[0]).decode())

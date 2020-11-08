@@ -16,6 +16,7 @@ class parameters_importing:
             self.lemmatiser = True
         else:
             self.lemmatiser = False
+        self.reinjection = self.settings['reinjection']
         self.temoin_leader = self.settings['fichier_leader'].split(".")[0]
         self.element_base = self.settings['scission']['element_base']
         self.scinder_par = self.settings['scission']['scinder_par']

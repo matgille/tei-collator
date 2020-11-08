@@ -68,7 +68,7 @@ def main():
     portee = range(argument, arg_plus_1)
 
 
-    collation.preparation_corpus(saxon, settings.temoin_leader, settings.scinder_par, settings.element_base)
+    ### collation.preparation_corpus(saxon, settings.temoin_leader, settings.scinder_par, settings.element_base)
 
     # Création des fichiers d'apparat
     # Les xsl permettent de créer autant de fichiers xml à processer que de divisions (ici, tei:p):
@@ -87,10 +87,10 @@ def main():
                 output_fichier_json = f"-o:{chemin}/{fichier_json}"
                 input_fichier_xml = f"{chemin}/{fichier_xml}"
                 # Étape avant la collation: transformation en json selon la structure voulue par CollateX
-                collation.transformation_json(saxon, output_fichier_json, input_fichier_xml)
+                ### collation.transformation_json(saxon, output_fichier_json, input_fichier_xml)
 
                 # Alignement avec CollateX. Il en ressort du JSON, encore
-                collation.alignement(fichier_json_complet, numero, chemin, settings.alignement)
+                ### collation.alignement(fichier_json_complet, numero, chemin, settings.alignement)
 
         chemin_chapitre = f"divs/div{i}"
         chemin_final = f"{chemin_chapitre}/final.json"
@@ -127,7 +127,7 @@ def main():
                     obj = json.loads(fichier_json_a_xmliser.read())
                     vers_xml = dicttoxml.dicttoxml(obj)
                     vers_xml = vers_xml.decode("utf-8")
-                sortie_xml.write(vers_xml)
+                ### sortie_xml.write(vers_xml)
 
 
             chemin_regroupement = "xsl/post_alignement/regroupement.xsl"
@@ -135,19 +135,19 @@ def main():
             # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
             cmd = f"java -jar {saxon} -o:{chemin_chapitre}/aligne_regroupe.xml {chemin_chapitre}/alignement_collatex.xml " \
                   f"{chemin_regroupement}"
-            subprocess.run(cmd.split())
+            ### subprocess.run(cmd.split())
 
             # C'est à ce niveau que l'étape de correction devrait avoir lieu. Y réfléchir.
             # Création de l'apparat: transformation de aligne_regroupe.xml en JSON
             chemin_xsl_apparat = "xsl/post_alignement/creation_apparat.xsl"
             cmd = f"java -jar {saxon} -o:{chemin_chapitre}/apparat_final.json {chemin_chapitre}/aligne_regroupe.xml " \
                   f"{chemin_xsl_apparat}"
-            subprocess.run(cmd.split())
+            ### subprocess.run(cmd.split())
             # Création de l'apparat: suppression de la redondance, identification des lieux variants,
             # regroupement des lemmes
 
 
-        collation.apparat_final(f'{chemin}/apparat_final.json', chemin)
+        ### collation.apparat_final(f'{chemin}/apparat_final.json', chemin)
         print("Création des apparats ✓")
 
         # Réinjection des apparats.
@@ -155,10 +155,9 @@ def main():
 
 
         liste_fichiers_in = glob.glob(f'{chemin}/apparat_*_*final.xml')
-        for item in [("tei:note[@type=\'general\']", "after"),
-                     ("tei:note[@type=\'particulier\'][@subtype='variante']","after"),
-                     ('tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]', "before")]:
-            injection.injection_en_masse(chapitre=sys.argv[1], element_tei=item[0], position=item[1],
+        # Ici on indique les différents éléments à réinjecter.
+        for element, position in settings.reinjection.items():
+            injection.injection_en_masse(chapitre=sys.argv[1], element_tei=element, position=position,
                                          liste_temoins=liste_fichiers_in)
 
 
