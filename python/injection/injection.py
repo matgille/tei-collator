@@ -3,6 +3,7 @@ import re
 from lxml import etree
 import glob
 import operator
+import traceback
 
 def injections_element(temoin, n, tei_elements, position):
     """
@@ -14,9 +15,9 @@ def injections_element(temoin, n, tei_elements, position):
     :param tei_elements: l'élément tei à injecter.
     :param position: Possibilités: "before" (le point d'ancrage est avant un tei:w, exemple: tei:milestone)
     ou "after" (le point d'ancrage se trouve après le tei:w, exemple, tei:note)
-    :return: None
+    :return: Un tuple comprenant l'objet lxml final et le nom du fichier à écrire correspondant.
     """
-    print(f'\n \n Inserting {tei_elements}')
+    print(f'\nInserting {tei_elements} into {temoin}')
 
     if position == "before":
         following_or_preceding = "following" # on va chercher le tei:w suivant
@@ -50,42 +51,48 @@ def injections_element(temoin, n, tei_elements, position):
     # ('kNMdVRz', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9ac8>, 'Sev_R'),
     # ('oqcqYPq', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9c08>, 'Sal_J')
     # ]
-    print(notes_tuples)
-
+    print(f'{len(notes_tuples)} to insert.')
+    for i in notes_tuples:
+        print(f'{etree.tostring(i[1])} is {position} w[@xml:id=\'{i[0]}\']')
     # Puis on va parcourir le dictionnaire et insérer toutes les notes dans le témoin traité.
     current_xml_file = etree.parse(temoin)
     temoin_id_courant = "_".join(current_xml_file.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[0:2])
+    print("--- Injection ---")
+    print(len(notes_tuples))
     for item in notes_tuples:
         id_item, element, temoin_de_l_element = item[0], item[1], item[2]
-        element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient la note
+        print(f'Élément à injecter : {etree.tostring(element)}')
+        element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient la note.
+        # Il y a un bug ici: puisque l'on modifie à la volée les textes, à chaque fois qu'on change de témoin
+        # ça pose problème et le témoin dans le corresp est faux, ce qui
+        # va biaiser la suite du processus... Il faut que cette fonction produise un nouveau document de sortie
         # On passe si le témoin de la réinjection est le même que le témoin de la note
         if temoin_de_l_element == temoin_id_courant:
             pass
         else:
             try:
-                print(f"témoin: {temoin_id_courant}; id: {id_item}\n"
-                      f"contenu de l'élément: {etree.tostring(element)}")
+                # print(f"témoin: {temoin_id_courant}; id: {id_item}\n"
+                      # f"contenu de l'élément: {etree.tostring(element)}")
                 word_to_change = current_xml_file.xpath(f'//tei:w[@xml:id=\'{id_item}\']', namespaces=NSMAP1)[0]
                 item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
                 # -element-after-another-element
-                print(sign)
+                # print(sign)
                 index = sign(item_element.index(word_to_change), 1)# https://stackoverflow.com/a/54559513
-                print(f'index => {index}')
+                # print(f'index => {index}')
                 if index == -1:
                     index = 0
                 # On va tester la présence de l'élément à l'emplacement de l'injection
                 test_existence = current_xml_file.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}[{following_or_preceding}::tei:w[@xml:id = \'{id_item}\']]', namespaces=NSMAP1)
-                print(f'{test_existence}\n length: {len(test_existence)}')
                 if len(test_existence) == 0:
                     item_element.insert(index, element)
-                    print(f'Injection de {tei_elements}')
                 else:
-                    print(f'On n\'injecte pas l\'élément {etree.tostring(element)}')
+                    print(f'On n\'injecte pas l\'élément {etree.tostring(element)} dans {temoin}')
             except Exception as e:
-                print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection: \n {e}")
-    with open(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/apparat_{temoin_id_courant}_{n}_final.xml", "w") as output_file:
-        print("Outputting...")
-        output_file.write(etree.tostring(current_xml_file).decode())
+                print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection:"
+                      f"\n {traceback.format_exc()}")
+    print("--- Injection terminée ---")
+    return current_xml_file, temoin
+
 
 
 def injection_python(chemin, chapitre):

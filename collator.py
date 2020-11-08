@@ -43,6 +43,11 @@ def main():
     settings = python.settings.parameters_importing("sans_lemmatisation.json")
 
     if settings.tokeniser:
+        reponse = input("Vous êtes en train de réécrire les fichiers et de relancer la lemmatisation. Continuer ? [o/n]\n")
+        if reponse == "o":
+            pass
+        else:
+            exit(0)
         tokenisation.tokenisation(saxon, settings.corpus_path)
     if settings.xmlId and not settings.tokeniser:  # si le corpus est tokénisé mais sans xml:id
         for temoin in os.listdir('temoins_tokenises_regularises/'):
@@ -148,13 +153,41 @@ def main():
         # Réinjection des apparats.
         injection.injection(saxon, chemin, i)
 
-        fichiers_apparat = f'{chemin}/apparat_*_*final.xml'
-        liste = glob.glob(fichiers_apparat)
-        for fichier_xml in liste:
-            print(f' fichier_xml => {fichier_xml}')
-            injection.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@type=\'general\']', "after")
-            injection.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@subtype=\'variante\']', "after")
-            injection.injections_element(fichier_xml, int(sys.argv[1]), 'tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]', "before")
+
+        liste_fichiers_in = glob.glob(f'{chemin}/apparat_*_*final.xml')
+
+
+        # On ne met à jour les fichiers xml qu'une fois toutes les injections terminées, pour éviter les
+        # perturbations. Intégrer la boucle à la fonction pour le code soit plus clair.
+        fichiers_out = (injection.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@type=\'general\']',
+                                                           "after") for fichier_xml in liste_fichiers_in)
+        for xml_element in fichiers_out:
+            with open(xml_element[1], "w") as output_file:
+                output_file.write(etree.tostring(xml_element[0]).decode())
+
+
+        fichiers_out = [injection.injections_element(fichier_xml, int(sys.argv[1]),
+                                                           "tei:note[@type=\'particulier\'][@subtype='variante']",
+                                                           "after") for fichier_xml in liste_fichiers_in]
+
+        for xml_element in fichiers_out:
+            with open(xml_element[1], "w") as output_file:
+                output_file.write(etree.tostring(xml_element[0]).decode())
+
+        fichiers_out = (injection.injections_element(fichier_xml, int(sys.argv[1]),
+                                             'tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]',
+                                             "before") for fichier_xml in liste_fichiers_in)
+        print(type(fichiers_out))
+        # Chaque item du générateur est un tuple comprenant l'objet xml et le nom du fichier dans lequel il doit
+        # être écrit.
+        for item in fichiers_out:
+            with open(item[1], "w") as output_file:
+                output_file.write(etree.tostring(item[0]).decode())
+
+
+
+
+
 
         # Création du tableau d'alignement pour visualisation
         if settings.tableauxAlignement:

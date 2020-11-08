@@ -17,18 +17,17 @@ from lxml import etree
 
 def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
-        cmd = "java -jar %s temoins_tokenises_regularises/%s.xml xsl/pre_alignement/preparation_corpus.xsl " \
-              "temoin_leader=%s scinder_par=%s element_base=%s" % (
-                  saxon, temoin_leader, temoin_leader, scinder_par, element_base)
+        cmd = f'java -jar {saxon} temoins_tokenises_regularises/{temoin_leader}.xml xsl/pre_alignement/preparation_corpus.xsl ' \
+              f'temoin_leader={temoin_leader} scinder_par={scinder_par} element_base={element_base}'
         subprocess.run(cmd.split())
-    print("Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n")
+    print('Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n')
 
 
 # Étape avant la collation: transformation en json selon la structure voulue par CollateX.
 # Voir https://collatex.net/doc/#json-input
 def transformation_json(saxon, output_fichier_json, input_fichier_xml):
-    subprocess.run(["java", "-jar", saxon, output_fichier_json, input_fichier_xml,
-                    "xsl/pre_alignement/transformation_json.xsl"])
+    subprocess.run(['java', '-jar', saxon, output_fichier_json, input_fichier_xml,
+                    'xsl/pre_alignement/transformation_json.xsl'])
 
 
 def alignement(fichier_a_collationer, numero, chemin, alignement='global'):
@@ -36,22 +35,22 @@ def alignement(fichier_a_collationer, numero, chemin, alignement='global'):
         Alignement CollateX, puis regroupement des leçons communes en lieux variants
     """
     with open(fichier_a_collationer,
-              "r") as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
+              'r') as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
         entree_json1 = entree_json0.read()
     # Export au format JSON (permet de conserver les xml:id)
     try:
         json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
     except Exception as e:
-        print(f"error in json [{fichier_a_collationer}]: \n {e}")
+        print(f'error in json [{fichier_a_collationer}]: \n {e}')
     # JSON: https://stackoverflow.com/a/29827074
     if alignement == 'global':
-        resultat_json = collatex.collate(json_str, output="json", segmentation=True)
+        resultat_json = collatex.collate(json_str, output='json', segmentation=True)
     else:
-        resultat_json = collatex.collate(json_str, output="json", segmentation=False)
+        resultat_json = collatex.collate(json_str, output='json', segmentation=False)
         # segmentation=False permet une collation au mot-à-mot:
         # http://interedition.github.io/collatex/pythonport.html
-    nom_fichier_sortie = f"{chemin}/alignement_collatex{numero}.json"
-    with open(nom_fichier_sortie, "w") as sortie_json:
+    nom_fichier_sortie = f'{chemin}/alignement_collatex{numero}.json'
+    with open(nom_fichier_sortie, 'w') as sortie_json:
         sortie_json.write(resultat_json)
 
 
@@ -66,20 +65,20 @@ def apparat_final(fichier_entree, chemin):
         
          liste_dict = 
             [{
-                "0" : ["", "", "Phil_J", "LEMMA", "POS"],
-                "1" : ["a0a6f5ec2-a98u9ds98yh", "Ca iiii", "Mad_G", "LEMMA", "POS"],
-                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "Ca iiii", "Phil_Z", "LEMMA", "POS"]
+                '0" : ["", "", "Phil_J", "LEMMA", "POS'],
+                '1" : ["a0a6f5ec2-a98u9ds98yh", "Ca iiii", "Mad_G", "LEMMA", "POS'],
+                '2" : ["a0a9f5dsc2-a9sdnjxcznk", "Ca iiii", "Phil_Z", "LEMMA", "POS']
                 }, {
-                "0" : ["a4d2587a-a98u98yh", "do", "Phil_J", "LEMMA", "POS"],
-                "1" : ["a0a6f5ec2-a98u9ds98yh", "do", "Mad_G", "LEMMA", "POS"],
-                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "donde", "Phil_Z", "LEMMA", "POS"],
-                "3" : ["prout-cacau98yh", "onde", "Phil_K", "LEMMA", "POS"],
-                "4" : ["a4sde2587a-a9fu98yh", "donde", "Phil_U", "LEMMA", "POS"],
-                "5" : ["a4sd88888e2587a-a999999h", "do", "Phil_M", "LEMMA", "POS"]
+                '0" : ["a4d2587a-a98u98yh", "do", "Phil_J", "LEMMA", "POS'],
+                '1" : ["a0a6f5ec2-a98u9ds98yh", "do", "Mad_G", "LEMMA", "POS'],
+                '2" : ["a0a9f5dsc2-a9sdnjxcznk", "donde", "Phil_Z", "LEMMA", "POS'],
+                '3" : ["prout-cacau98yh", "onde", "Phil_K", "LEMMA", "POS'],
+                '4" : ["a4sde2587a-a9fu98yh", "donde", "Phil_U", "LEMMA", "POS'],
+                '5" : ["a4sd88888e2587a-a999999h", "do", "Phil_M", "LEMMA", "POS']
                 }, {
-                "0" : ["a4d2587a-a98u98yh", "muesstra", "Phil_J", "LEMMA", "POS"],
-                "1" : ["a0a6f5ec2-a98u9ds98yh", "muestra", "Mad_G", "LEMMA", "POS"],
-                "2" : ["a0a9f5dsc2-a9sdnjxcznk", "prueua", "Phil_Z", "LEMMA", "POS"]
+                '0" : ["a4d2587a-a98u98yh", "muesstra", "Phil_J", "LEMMA", "POS'],
+                '1" : ["a0a6f5ec2-a98u9ds98yh", "muestra", "Mad_G", "LEMMA", "POS'],
+                '2" : ["a0a9f5dsc2-a9sdnjxcznk", "prueua", "Phil_Z", "LEMMA", "POS']
             }]
         
         Fonctionnement de la fonction: 
@@ -98,7 +97,7 @@ def apparat_final(fichier_entree, chemin):
             dans la liste liste_lecons. 
                 - Si elle n'est pas présente, on l'ajoute à la liste, et on crée un item
                 dans le dictionnaire de sortie dict_sortie. Cet item est organisé de la façon suivante:
-                    "lieu_variant": ["témoin(s)", "id_token(s)", "lemme", "pos"]
+                    'lieu_variant": ["témoin(s)", "id_token(s)", "lemme", "pos']
                     On le voit, la valeur correspondant à chaque clé est une liste.
                 - Si la chaîne existe déjà dans la liste liste_lecons, c'est qu'elle est aussi dans le 
                 dictionnaire de sortie: on va donc modifier la valeur de l'item dont la clé est cette chaîne, 
@@ -119,10 +118,10 @@ def apparat_final(fichier_entree, chemin):
 
     with open(fichier_entree, 'r+') as fichier:
         liste_dict = json.load(fichier)
-        tei_namespace = "http://www.tei-c.org/ns/1.0"
-        tei = "{%s}" % tei_namespace
+        tei_namespace = 'http://www.tei-c.org/ns/1.0'
+        tei = '{%s}' % tei_namespace
         NSMAP0 = {None: tei_namespace}  # the default namespace (no prefix)
-        root = etree.Element(tei + "root", nsmap=NSMAP0)  # https://lxml.de/tutorial.html#namespaces
+        root = etree.Element(tei + 'root', nsmap=NSMAP0)  # https://lxml.de/tutorial.html#namespaces
         #  https://stackoverflow.com/questions/7703018/how-to-write-namespaced-element-attributes-with-lxml
         for dic in liste_dict:
             apparat = True
@@ -140,7 +139,7 @@ def apparat_final(fichier_entree, chemin):
                 # Première étape. Si tous les lieux variants sont égaux 
                 # entre eux,ne pas créer d'apparat mais imprimer 
                 # directement le texte    
-                app = etree.SubElement(root, tei + "app")
+                app = etree.SubElement(root, tei + 'app')
                 if identite:
                     apparat = False
                 else:
@@ -175,10 +174,10 @@ def apparat_final(fichier_entree, chemin):
                         token1 = dict_sortie.get(lecon_depart)[0]
                         lemme1 = dict_sortie.get(lecon_depart)[2]
                         pos1 = dict_sortie.get(lecon_depart)[3]
-                        token2 = token1 + "_" + id_token
-                        temoin2 = temoin1 + " " + temoin
-                        lemme2 = lemme1 + "_" + lemme
-                        pos2 = pos1 + " " + pos
+                        token2 = token1 + '_' + id_token
+                        temoin2 = temoin1 + ' ' + temoin
+                        lemme2 = lemme1 + '_' + lemme
+                        pos2 = pos1 + ' ' + pos
                         dict_sortie[lecon_depart] = [token2, temoin2, lemme2, pos2]
 
                         # Mise à jour la liste
@@ -188,85 +187,85 @@ def apparat_final(fichier_entree, chemin):
                 comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
                 # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante grapique.
                 # Ici il faut se rappeler qu'il y a une différence entre les formes
-                if not comparaison_lemme:  # si il y a une différence de lemmes seulement: "vraie variante"
-                    type_apparat = "variante"
+                if not comparaison_lemme:  # si il y a une différence de lemmes seulement: 'vraie variante'
+                    type_apparat = 'variante'
                 ### TODO: ajouter une règle sur les noms propres. Si lemmes différent, mais pos = NP, alors variante
                 ### d'entité nommée. Ça ne changera probablement rien à la fin mais l'encodage est plus fin comme ça.
                 ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
                 elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
-                    type_apparat = "personne_genre"
+                    type_apparat = 'personne_genre'
                 elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
                     if liste_lemme[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
                         # indéterminée
-                        type_apparat = "indetermine"
+                        type_apparat = 'indetermine'
                     else:  # si on a un lemme et un PoS identiques, la variante est graphique
-                        type_apparat = "graphique"
+                        type_apparat = 'graphique'
                 if not apparat:
-                    app.set("type", "not_apparat")
+                    app.set('type', 'not_apparat')
                 else:
-                    app.set("type", type_apparat)
+                    app.set('type', type_apparat)
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
             temoins_complets = " ".join([f'#{fichier.split(".xml")[0].split("/")[-1]}' for fichier in glob.glob("temoins_tokenises_regularises/*.xml")])
             for key, value in dict_sortie.items():
                 if not apparat:
                     lecon = str(key)
                     xml_id = value[0]
-                    rdg = etree.SubElement(app, tei + "rdg")
+                    rdg = etree.SubElement(app, tei + 'rdg')
                     # on indique que tous les témoins proposent la leçon
-                    rdg.set("wit", temoins_complets)
-                    rdg.set("{http://www.w3.org/XML/1998/namespace}id", xml_id)
+                    rdg.set('wit', temoins_complets)
+                    rdg.set('{http://www.w3.org/XML/1998/namespace}id', xml_id)
                 else:
                     lecon = str(key)
                     xml_id, temoin, lemmes, pos = value[0], value[1], value[2], value[3]
-                    rdg = etree.SubElement(app, tei + "rdg")
-                    rdg.set("lemma", lemmes)
-                    rdg.set("pos", pos)
-                    rdg.set("wit", temoin)
-                    rdg.set("{http://www.w3.org/XML/1998/namespace}id", f'{xml_id}')  # ensemble des id des tokens, pour la
+                    rdg = etree.SubElement(app, tei + 'rdg')
+                    rdg.set('lemma', lemmes)
+                    rdg.set('pos', pos)
+                    rdg.set('wit', temoin)
+                    rdg.set('{http://www.w3.org/XML/1998/namespace}id', f'{xml_id}')  # ensemble des id des tokens, pour la
                     # suppression de la redondance plus tard
                     # Re-créer les noeuds tei:w
                 liste_w = lecon.split()
                 liste_id = xml_id.split('_')
                 n = 0
                 for mot in liste_w:
-                    nombre_temoins = temoin.count("#")
+                    nombre_temoins = temoin.count('#')
                     nombre_mots = len(liste_w)
                     position_mot = liste_w.index(mot)
                     position_finale = (nombre_temoins * (position_mot + 1))
                     position_initiale = position_finale - nombre_temoins
-                    xml_id_courant = "_".join(liste_id[n::nombre_mots])  # on va distribuer les xml:id:
+                    xml_id_courant = '_'.join(liste_id[n::nombre_mots])  # on va distribuer les xml:id:
                     # abcd > ac, db pour 2 témoins qui lisent la même chose (ab et cd sont les identifiants des deux
                     # tokens identiques, donc il faut distribuer pour identifier le premier token, puis le second)
-                    word = etree.SubElement(rdg, tei + "w")
-                    word.set("{http://www.w3.org/XML/1998/namespace}id", xml_id_courant)
+                    word = etree.SubElement(rdg, tei + 'w')
+                    word.set('{http://www.w3.org/XML/1998/namespace}id', xml_id_courant)
                     word.text = mot
                     n = n + 1
 
         # L'apparat est produit. Écriture du fichier xml
-        sortie = "%s/apparat_collatex.xml" % chemin
-        with open(sortie, "w+") as sortie_xml:
+        sortie = '%s/apparat_collatex.xml' % chemin
+        with open(sortie, 'w+') as sortie_xml:
             output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
             sortie_xml.write(str(output))
 
 
 def fileExists(file):
     if os.path.exists(file):
-        print("%s: check" % file)
+        print('%s: check' % file)
     else:
-        print("%s: n'est pas trouvé" % file)
+        print('%s: n\'est pas trouvé' % file)
 
 
 def tableau_alignement(saxon, chemin):
-    xsl_apparat = "xsl/post_alignement/tableau_alignement.xsl"
+    xsl_apparat = 'xsl/post_alignement/tableau_alignement.xsl'
     with Halo(text='Création du tableau d\'alignement', spinner='dots'):
-        cmd = f"java -jar {saxon} -o:{chemin}/tableau_alignement.html {chemin}/aligne_regroupe.xml {xsl_apparat}"
+        cmd = f'java -jar {saxon} -o:{chemin}/tableau_alignement.html {chemin}/aligne_regroupe.xml {xsl_apparat}'
         subprocess.run(cmd.split())
-    print("Création du tableau d\'alignement ✓")
+    print('Création du tableau d\'alignement ✓')
 
 
 def nettoyage():
     # TODO: ranger les fichiers dans des dossiers
-    with Halo(text="Nettoyage du dossier", spinner='dots'):
+    with Halo(text='Nettoyage du dossier', spinner='dots'):
         for i in ['tex', 'xml', 'aux', 'json']:
             if not os.path.exists(i):
                 os.makedirs(i)
@@ -290,7 +289,7 @@ def nettoyage():
                 # new_path = 'aux/' + file
                 # shutil.move(os.path.abspath(file), new_path)
 
-    print("Nettoyage du dossier ✓")
+    print('Nettoyage du dossier ✓')
 
 
 def txt_to_liste(filename):
