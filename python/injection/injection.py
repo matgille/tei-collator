@@ -61,35 +61,39 @@ def injections_element(temoin, n, tei_elements, position):
     print(len(notes_tuples))
     for item in notes_tuples:
         id_item, element, temoin_de_l_element = item[0], item[1], item[2]
-        print(f'Élément à injecter : {etree.tostring(element)}')
-        element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient la note.
-        # Il y a un bug ici: puisque l'on modifie à la volée les textes, à chaque fois qu'on change de témoin
-        # ça pose problème et le témoin dans le corresp est faux, ce qui
-        # va biaiser la suite du processus... Il faut que cette fonction produise un nouveau document de sortie
-        # On passe si le témoin de la réinjection est le même que le témoin de la note
-        if temoin_de_l_element == temoin_id_courant:
+        if element.xpath("@injected='injected'"):
             pass
         else:
-            try:
-                # print(f"témoin: {temoin_id_courant}; id: {id_item}\n"
-                      # f"contenu de l'élément: {etree.tostring(element)}")
-                word_to_change = current_xml_file.xpath(f'//tei:w[@xml:id=\'{id_item}\']', namespaces=NSMAP1)[0]
-                item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
-                # -element-after-another-element
-                # print(sign)
-                index = sign(item_element.index(word_to_change), 1)# https://stackoverflow.com/a/54559513
-                # print(f'index => {index}')
-                if index == -1:
-                    index = 0
-                # On va tester la présence de l'élément à l'emplacement de l'injection
-                test_existence = current_xml_file.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}[{following_or_preceding}::tei:w[@xml:id = \'{id_item}\']]', namespaces=NSMAP1)
-                if len(test_existence) == 0:
-                    item_element.insert(index, element)
-                else:
-                    print(f'On n\'injecte pas l\'élément {etree.tostring(element)} dans {temoin}')
-            except Exception as e:
-                print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection:"
-                      f"\n {traceback.format_exc()}")
+            print(f'Élément à injecter : {etree.tostring(element)}')
+            element.set("injected", "injected") # il faudra nettoyer ça à la fin de la boucle.
+            element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient la note.
+            # Il y a un bug ici: puisque l'on modifie à la volée les textes, à chaque fois qu'on change de témoin
+            # ça pose problème et le témoin dans le corresp est faux, ce qui
+            # va biaiser la suite du processus... Il faut que cette fonction produise un nouveau document de sortie
+            # On passe si le témoin de la réinjection est le même que le témoin de la note
+            if temoin_de_l_element == temoin_id_courant:
+                pass
+            else:
+                try:
+                    # print(f"témoin: {temoin_id_courant}; id: {id_item}\n"
+                          # f"contenu de l'élément: {etree.tostring(element)}")
+                    word_to_change = current_xml_file.xpath(f'//tei:w[@xml:id=\'{id_item}\']', namespaces=NSMAP1)[0]
+                    item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
+                    # -element-after-another-element
+                    # print(sign)
+                    index = sign(item_element.index(word_to_change), 1)# https://stackoverflow.com/a/54559513
+                    # print(f'index => {index}')
+                    if index == -1:
+                        index = 0
+                    # On va tester la présence de l'élément à l'emplacement de l'injection
+                    test_existence = current_xml_file.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}[{following_or_preceding}::tei:w[@xml:id = \'{id_item}\']]', namespaces=NSMAP1)
+                    if len(test_existence) == 0:
+                        item_element.insert(index, element)
+                    else:
+                        print(f'On n\'injecte pas l\'élément {etree.tostring(element)} dans {temoin}')
+                except Exception as e:
+                    print(f"Il y a une omission dans {temoin.split('/')[-1]} qui empêche l'injection:"
+                          f"\n {traceback.format_exc()}")
     print("--- Injection terminée ---")
     return current_xml_file, temoin
 
@@ -203,3 +207,20 @@ def injection(saxon, chemin, chapitre):
         subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Création des balises de lacunes ✓")
 
+
+def injection_en_masse(chapitre, element_tei, position, liste_temoins):
+    """
+    Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier.
+    :param chapitre: le chapitre à processer
+    :param element_tei: les éléments à réinjecter
+    :param position: la position: va-t-on chercher un point d'ancrage avant ou après l'élément ? (pour un tei:milestone,
+    ce sera après, puisqu'un milestone a des chances de se trouver au début d'un tei:p, contrairement à une note)
+    :param liste_temoins: la liste des témoins
+    :return: None
+    """
+    fichiers_out = (injections_element(fichier_xml, chapitre, element_tei,
+                                                 position) for fichier_xml in liste_temoins)
+
+    for xml_element in fichiers_out:
+        with open(xml_element[1], "w") as output_file:
+            output_file.write(etree.tostring(xml_element[0]).decode())

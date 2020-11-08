@@ -155,34 +155,13 @@ def main():
 
 
         liste_fichiers_in = glob.glob(f'{chemin}/apparat_*_*final.xml')
+        for item in [("tei:note[@type=\'general\']", "after"),
+                     ("tei:note[@type=\'particulier\'][@subtype='variante']","after"),
+                     ('tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]', "before")]:
+            injection.injection_en_masse(chapitre=sys.argv[1], element_tei=item[0], position=item[1],
+                                         liste_temoins=liste_fichiers_in)
 
 
-        # On ne met à jour les fichiers xml qu'une fois toutes les injections terminées, pour éviter les
-        # perturbations. Intégrer la boucle à la fonction pour le code soit plus clair.
-        fichiers_out = (injection.injections_element(fichier_xml, int(sys.argv[1]), 'tei:note[@type=\'general\']',
-                                                           "after") for fichier_xml in liste_fichiers_in)
-        for xml_element in fichiers_out:
-            with open(xml_element[1], "w") as output_file:
-                output_file.write(etree.tostring(xml_element[0]).decode())
-
-
-        fichiers_out = [injection.injections_element(fichier_xml, int(sys.argv[1]),
-                                                           "tei:note[@type=\'particulier\'][@subtype='variante']",
-                                                           "after") for fichier_xml in liste_fichiers_in]
-
-        for xml_element in fichiers_out:
-            with open(xml_element[1], "w") as output_file:
-                output_file.write(etree.tostring(xml_element[0]).decode())
-
-        fichiers_out = (injection.injections_element(fichier_xml, int(sys.argv[1]),
-                                             'tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, \'Sev_Z\')]]',
-                                             "before") for fichier_xml in liste_fichiers_in)
-        print(type(fichiers_out))
-        # Chaque item du générateur est un tuple comprenant l'objet xml et le nom du fichier dans lequel il doit
-        # être écrit.
-        for item in fichiers_out:
-            with open(item[1], "w") as output_file:
-                output_file.write(etree.tostring(item[0]).decode())
 
 
 
