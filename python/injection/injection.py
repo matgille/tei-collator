@@ -178,7 +178,7 @@ def injection(saxon, chemin, chapitre):
     # with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
     #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
     chemin_injection = "xsl/post_alignement/injection_apparats.xsl"
-    ### subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
+    subprocess.run(["java", "-jar", saxon, fichier_entree, chemin_injection, param_chapitre, param_chemin_sortie])
 
     # seconde étape: noeuds non textuels
     print("\n---- INJECTION 2: suppression de la redondance ----")
@@ -191,7 +191,7 @@ def injection(saxon, chemin, chapitre):
             sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                     + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
             param_sigle = "sigle=" + sigle
-            ### subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+            subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
 
     print("\n---- INJECTION 2bis: suppression de la redondance ----")
@@ -202,7 +202,7 @@ def injection(saxon, chemin, chapitre):
         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                 + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
         param_sigle = "sigle=" + sigle
-        ### subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+        subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
     #  troisième étape: ponctuation
     print("\n---- INJECTION 3: ponctuation ----")
@@ -213,7 +213,7 @@ def injection(saxon, chemin, chapitre):
         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
                 + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
         param_sigle = "sigle=" + sigle
-        ### subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
+        subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
 
     #  quatrième étape: gestion des lacunes

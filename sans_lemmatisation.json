@@ -24,6 +24,6 @@
   "lang": "spa_o", // la langue, selon le standard ISO 639-3. Le latin et le castillan médiéval ne sont pas codés: utiliser lat_o et spa_o
   "sortie":{
     "tableaux_alignement": true, // créer les tableaux d'alignement
-    "LaTeX": false
+    "LaTeX": true
   }
 }
