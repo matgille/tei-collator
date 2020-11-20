@@ -18,21 +18,16 @@ def transformation_latex(saxon, fichier_xml, fusion, chemin='divs'):
     :return:
     '''
     fichier_tex = f"{fichier_xml.split('.')[0]}.tex"
-    fichier_tex_seul = fichier_tex.split("/")[-1]
+    fichier_tex_seul = f'{chemin}/{fichier_tex.split("/")[-1]}'
+    print(f"fichier tex seul: {chemin}/{fichier_tex_seul}")
     chemin_xsl_apparat = "xsl/post_alignement/conversion_latex.xsl"
-    fichier_tex_sortie = f"-o:{fichier_tex}"
-    param_fusion = f'fusion={fusion}'
+    fichier_tex_sortie = f"-o:{fichier_tex_seul}"
+    param_fusion = f'fusion={str(fusion)}'
     print("Création des fichiers pdf ✓")
     subprocess.run(["java", "-jar", saxon, "-xi:on", fichier_tex_sortie, fichier_xml, param_fusion, chemin_xsl_apparat])
-    os.chdir(chemin)
-    print(fichier_xml)
-    subprocess.run(["xelatex", fichier_tex_seul])
-    subprocess.run(["xelatex", fichier_tex_seul])
-    if fusion is False:
-        os.chdir("../..")
-    else:
-        os.chdir("..")
-
+    print(f'current dir: {os.getcwd()}')
+    subprocess.run(["xelatex", f"-output-directory={chemin}", fichier_tex_seul])
+    subprocess.run(["xelatex", f"-output-directory={chemin}", fichier_tex_seul])
 
 def fusion_documents_tei(temoin_a_traiter):
     '''
@@ -94,6 +89,11 @@ def nettoyage(directory):
         pass
 
     try:
+        os.mkdir(f'{directory}/json')
+    except:
+        pass
+
+    try:
         os.mkdir(f'{directory}/xml')
     except:
         pass
@@ -103,6 +103,9 @@ def nettoyage(directory):
 
     for fichier_tex in glob.glob(f'{directory}/*.tex'):
         os.rename(fichier_tex, f"{directory}/tex/{fichier_tex.split('/')[1]}")
+
+    for fichier_json in glob.glob(f'{directory}/*.json'):
+        os.rename(fichier_json, f"{directory}/json/{fichier_json.split('/')[1]}")
 
     for autre in glob.glob(f'{directory}/*.log'):
         os.rename(autre, f"{directory}/aux/{autre.split('/')[1]}")

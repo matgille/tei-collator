@@ -16,7 +16,7 @@ class parameters_importing:
             self.lemmatiser = True
         else:
             self.lemmatiser = False
-        self.fusion_documents = self.settings['fusion_divs']
+        self.fusion_documents = self.settings['sortie']['fusion_divs']
         self.reinjection = self.settings['reinjection']
         self.temoin_leader = self.settings['fichier_leader'].split(".")[0]
         self.element_base = self.settings['scission']['element_base']

@@ -45,7 +45,7 @@ def main():
 
     # On importe les paramètres en créant un objet parametres
     parametres = python.settings.parameters_importing(fichier_de_parametres)
-
+    print(f'\n\n\n ---- \n {parametres.__str__()}\n ---- \n')
 
 
     if parametres.tokeniser:
@@ -72,7 +72,7 @@ def main():
     portee = range(argument, arg_plus_1)
 
 
-    # collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
+    collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
 
     # Création des fichiers d'apparat
     # Les xsl permettent de créer autant de fichiers xml à processer que de divisions (ici, tei:p):
@@ -170,16 +170,14 @@ def main():
         for temoin in glob.glob('temoins_tokenises/*.xml'):
             sigle = temoin.split('/')[1].split(".xml")[0]
             sorties.fusion_documents_tei(sigle)
+        if parametres.latex:
+            for fichier in glob.glob('divs/*.xml'):
+                sorties.transformation_latex(saxon, fichier, True)
 
-    if parametres.latex and parametres.fusion_documents:
-        for fichier in glob.glob('divs/*.xml'):
-            sorties.transformation_latex(saxon, fichier, 'True')
-
-    elif parametres.latex and not parametres.fusion_documents:
-        for fichier in glob.glob(chemin):
-            if fnmatch.fnmatch(fichier, 'apparat_*_*final.xml'):
-                fichier = f"{chemin}/{fichier}"
-                sorties.transformation_latex(saxon, fichier, 'False', chemin)
+    if parametres.latex and not parametres.fusion_documents:
+        for fichier in glob.glob(f'{chemin}/apparat_*_*final.xml'):
+            print(fichier)
+            sorties.transformation_latex(saxon, fichier, False, chemin)
 
 
     sorties.nettoyage("divs")

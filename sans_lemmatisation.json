@@ -11,7 +11,6 @@
     "scinder_par": "chapitre", // doit correspondre au type de la division base: tei:div[@type='chapitre']
     "element_base": "p" // y a-t-il un élément sur lequel aligner la collation ? tei:l ou tei:p par exemple. Ne pas inclure l'espace de nom
   },
-  "fusion_divs": true,
   "reinjection": {"tei:note[@type='general']": "after", // quels éléments réinjecter, et leur position par rapport au tei:w ancre
                   "tei:note[@type='particulier'][@subtype='variante']":"after",
                   "tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, 'Sev_Z')]]": "before"},
@@ -24,6 +23,7 @@
   "process_number": 4, // combien de processus en parallèle pour la lemmatisation (doit être inférieur ou égal au nombre de coeurs du processeur) ?
   "lang": "spa_o", // la langue, selon le standard ISO 639-3. Le latin et le castillan médiéval ne sont pas codés: utiliser lat_o et spa_o
   "sortie":{
+    "fusion_divs": true, // crée-t-on des documents xml maîtres, pour produire un pdf avec toutes les divisions ?
     "tableaux_alignement": true, // créer les tableaux d'alignement
     "LaTeX": true
   }
