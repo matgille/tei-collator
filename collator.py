@@ -24,6 +24,10 @@ import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
 import python.injection.injection as injection
 import python.settings
+import python.tests.tests as tests
+# IMPORTANT: pour la POO, considérer le corpus comme un objet ? En faire une classe qui permette de tout traiter
+# à partir de là ? Suppose de demander un tei:teiCorpus
+
 
 # TODO: nettoyer le tout / s'occuper de la conservation des xml:id pour ne pas avoir à les régénérer
 # Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
@@ -31,9 +35,11 @@ import python.settings
 # Todo: faire du mot à mot et s'occuper de rassembler en plus gros apparats après. Si on fait du mot à mot, l'éclatement
 # du TEI n'a plus aucun sens car il n'y a plus de risque de destructurer...
 
+
+
+
 def main():
     t0 = time.time()
-
     saxon = "saxon9he.jar"
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--parameters", default="lemmatisation.json", help="Path to the parameter file.")
@@ -46,6 +52,7 @@ def main():
     # On importe les paramètres en créant un objet parametres
     parametres = python.settings.parameters_importing(fichier_de_parametres)
     print(f'\n\n\n ---- \n {parametres.__str__()}\n ---- \n')
+
 
 
     if parametres.tokeniser:
@@ -67,9 +74,13 @@ def main():
                 lemmatisation.lemmatisation(temoin, saxon, parametres.lang)
             except Exception as exception:
                 print(f"Error: {temoin} \n {exception}")
-    argument = int(division)
-    arg_plus_1 = argument + 1
-    portee = range(argument, arg_plus_1)
+
+    if "-" in division:
+        portee = range(int(division.split("-")[0]), int(division.split("-")[1]) + 1)
+    else:
+        argument = int(division)
+        arg_plus_1 = argument + 1
+        portee = range(argument, arg_plus_1)
 
 
     collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
@@ -155,15 +166,17 @@ def main():
         collation.apparat_final(f'{chemin}/apparat_final.json', chemin)
         print("Création des apparats ✓")
 
+        # injection.injection_omissions(f'{chemin}/apparat_Mad_G_22_final.xml', chemin)
         # Réinjection des apparats.
         injection.injection(saxon, chemin, i)
-
 
         liste_fichiers_in = glob.glob(f'{chemin}/apparat_*_*final.xml')
         # Ici on indique d'autres éléments tei à réinjecter.
         for element, position in parametres.reinjection.items():
             injection.injection_en_masse(chapitre=division, element_tei=element, position=position,
                                          liste_temoins=liste_fichiers_in)
+
+
 
 
     if parametres.fusion_documents:
@@ -179,12 +192,21 @@ def main():
             print(fichier)
             sorties.transformation_latex(saxon, fichier, False, chemin)
 
+    ## Tests de conformité
+    corpus = Corpus()
+    print(f'Comparing input file and output file tei:w...')
+    for temoin in corpus.sigles:
+        tests.tokentest(temoin, i)
 
     sorties.nettoyage("divs")
-
     t1 = time.time()
     temps_total = t1 - t0
     print(f"Fait en {round(temps_total)} secondes. \n")
+
+
+class Corpus():
+    def __init__(self):
+        self.sigles = [fichier.split("/")[1].split(".xml")[0] for fichier in glob.glob('temoins_tokenises/*.xml')]
 
 
 if __name__ == "__main__":
