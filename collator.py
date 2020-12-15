@@ -177,6 +177,12 @@ def main():
                                          liste_temoins=liste_fichiers_in)
 
 
+        ## Tests de conformité
+        corpus = Corpus()
+        print(f'Tests en cours...')
+        for temoin in corpus.sigles:
+            tests.tokentest(temoin, i)
+        ## Tests de conformité
 
 
     if parametres.fusion_documents:
@@ -192,11 +198,6 @@ def main():
             print(fichier)
             sorties.transformation_latex(saxon, fichier, False, chemin)
 
-    ## Tests de conformité
-    corpus = Corpus()
-    print(f'Comparing input file and output file tei:w...')
-    for temoin in corpus.sigles:
-        tests.tokentest(temoin, i)
 
     sorties.nettoyage("divs")
     t1 = time.time()

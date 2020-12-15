@@ -17,13 +17,17 @@ def tokentest(sigle, div):
     target_file = f'divs/div{div}/apparat_{sigle}_{div}_final.xml'
     orig_file = f'temoins_tokenises/{sigle}.xml'
     if os.path.exists(target_file):
+
+        # On va créer la liste de tous les tei:w d'une division donnée dans le fichier tokénisé originel
         with open(orig_file, 'r') as orig:
             f = etree.parse(orig)
             final_orig_list = []
-            tokens_list = f.xpath(f"//tei:w[ancestor::tei:div[@n='{div}']]", namespaces=NSMAP)
+            # attention, on casse l'universalité du code ici.
+            tokens_list = f.xpath(f"//tei:w[ancestor::tei:div[@type='chapitre'][@n='{div}']]", namespaces=NSMAP)
             for token in tokens_list:
                 final_orig_list.append(token.xpath("@xml:id")[0])
 
+        # Ainsi que la liste de tous les tei:w de la même division dans le fichier final produit par collator
         with open(target_file, 'r') as target:
             f = etree.parse(target)
             final_target_list = []
@@ -47,16 +51,22 @@ def tokentest(sigle, div):
                 else:
                     final_target_list.append(token.xpath("@xml:id")[0])
 
+        # Et on va comparer les deux listes, et sortir les identifiants qui ne sont pas dans la seconde.
         # https://www.kite.com/python/answers/how-to-get-the-difference-between-two-list-in-python
         set_difference = set(final_orig_list) - set(final_target_list)
         list_difference = list(set_difference)
 
-        with open("tests/tokentest.log", "a") as testlog:
+        with open("test_results/tokentest.log", "a") as testlog:
             testlog.write(f'On {datetime.datetime.now()}\n')
             if len(list_difference) != 0:
-                testlog.write(f'Found {len(list_difference)} differences in div {div} for witness {sigle}:\n {list_difference} ')
+                if len(list_difference) > 20:
+                    testlog.write(f'Found {len(list_difference)} differences in div {div} for witness {sigle}:'
+                                  f'\n [{[item for item in list_difference[:20]]}, etc...] ')
+                else:
+                    testlog.write(f'Found {len(list_difference)} differences in div {div} for witness {sigle}:'
+                                  f'\n {list_difference} ')
             else:
-                testlog.write(f'\tTest passed on div {div} for witness {sigle}')
+                testlog.write(f'\tTest passed for div {div}, witness {sigle}')
             testlog.write(f'\n ------------------ \n\n')
 
 
