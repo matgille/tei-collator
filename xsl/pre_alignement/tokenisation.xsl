@@ -51,8 +51,7 @@
 
 
     <xsl:variable name="ResultatSecondePasse">
-        <xsl:apply-templates select="$ResultatPremierePasse" mode="secondePasse"
-        />
+        <xsl:apply-templates select="$ResultatPremierePasse" mode="secondePasse"/>
     </xsl:variable>
 
     <xsl:template match="@* | node()" mode="secondePasse">
@@ -73,27 +72,21 @@
     <!--Il faut faire la même chose avec les unclear|damage|add-->
     <!--Qu'est-ce que le texte: c'est ici ce que tu va processer. Donc un élément éliminé marqué par un <del> n'est pas le texte-->
     <!--Meilleure idée: plutôt que les supprimer, les traiter comme une note (pas de tokénisation donc)-->
-    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']"
-        mode="secondePasse">
+    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-            <xsl:copy-of
-                select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
+            <xsl:copy-of select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
             <xsl:copy-of select="."/>
-            <xsl:copy-of
-                select="following-sibling::tei:hi[@rend = 'lettre_capitulaire']"/>
-            <xsl:value-of
-                select="substring-before(following-sibling::text()[1], ' ')"/>
+            <xsl:copy-of select="following-sibling::tei:hi[@rend = 'lettre_capitulaire']"/>
+            <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
         </xsl:element>
     </xsl:template>
 
 
-    <xsl:template
-        match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']"
+    <xsl:template match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']"
         mode="secondePasse"/>
 
     <!--https://stackoverflow.com/questions/17468891/substring-after-last-character-in-xslt-->
-    <xsl:function name="cw:substring-after-last" as="xs:string"
-        xmlns:cw="chezwam">
+    <xsl:function name="cw:substring-after-last" as="xs:string" xmlns:cw="chezwam">
         <xsl:param name="value" as="xs:string?"/>
         <xsl:param name="separator" as="xs:string"/>
         <xsl:choose>
@@ -132,21 +125,18 @@
     </xsl:template>
 
 
-    <xsl:template match="tei:choice" mode="secondePasse">
-        <!--Si on a un corr avec plusieurs mots, ça peut planter. Reprendre le code.-->
+   <!-- <xsl:template match="tei:choice" mode="secondePasse">
+        <!-\-Si on a un corr avec plusieurs mots, ça peut planter. Reprendre le code.-\->
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-            <xsl:value-of
-                select="substring-after(preceding-sibling::text()[-1], ' ')"/>
+            <xsl:value-of select="substring-after(preceding-sibling::text()[-1], ' ')"/>
             <xsl:copy-of select="."/>
             <xsl:if
                 test="not(contains(',.;?!¡¿', substring-before(following-sibling::text()[1], ' ')))">
-                <xsl:value-of
-                    select="substring-before(following-sibling::text()[1], ' ')"
-                />
+                <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
             </xsl:if>
-            <!--Attention à ne pas copier un élément de ponctuation par mégarde-->
+            <!-\-Attention à ne pas copier un élément de ponctuation par mégarde-\->
         </xsl:element>
-    </xsl:template>
+    </xsl:template>-->
 
     <!--On procède en deux temps: d'abord, tokeniser avec espace comme séparateur. Puis on analyse la chaîne produite
     et on en extrait la ponctuation-->
@@ -156,14 +146,12 @@
         <xsl:for-each select="tokenize(., '\s+')">
             <xsl:analyze-string select="." regex="([():,;¿?!¡.])">
                 <xsl:matching-substring>
-                    <xsl:element name="pc"
-                        namespace="http://www.tei-c.org/ns/1.0">
+                    <xsl:element name="pc" namespace="http://www.tei-c.org/ns/1.0">
                         <xsl:value-of select="regex-group(1)"/>
                     </xsl:element>
                 </xsl:matching-substring>
                 <xsl:non-matching-substring>
-                    <xsl:element name="w"
-                        namespace="http://www.tei-c.org/ns/1.0">
+                    <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
                         <xsl:value-of select="."/>
                     </xsl:element>
                 </xsl:non-matching-substring>
@@ -180,8 +168,7 @@
 
 
     <xsl:variable name="ResultatTroisiemePasse">
-        <xsl:apply-templates select="$ResultatSecondePasse"
-            mode="troisiemePasse"/>
+        <xsl:apply-templates select="$ResultatSecondePasse" mode="troisiemePasse"/>
     </xsl:variable>
 
 
@@ -191,11 +178,9 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template
-        match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
+    <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
-    <xsl:template
-        match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'] | tei:pb[@break = 'n']"
+    <xsl:template match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'] | tei:pb[@break = 'n']"
         mode="troisiemePasse">
         <!--<xsl:template
         match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'][not(ancestor::tei:w)] | tei:pb[@break = 'n']"
