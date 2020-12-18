@@ -79,6 +79,8 @@ def lemmatisation(fichier, moteur_xslt, langue):
                 pass
             elif mot.xpath("@lemma") and not mot.xpath("@pos"):
                 mot.set("pos", pos_position)
+            elif mot.xpath("@pos") and not mot.xpath("@lemma"):
+                mot.set("lemma", lemme_position)
             else:
                 mot.set("lemma", lemme_position)
                 mot.set("pos", pos_position)
