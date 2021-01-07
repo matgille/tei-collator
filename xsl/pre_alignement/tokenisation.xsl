@@ -29,13 +29,33 @@
     </xsl:variable>
 
 
-
+    <xsl:template match="comment()" mode="#all">
+        <xsl:comment>
+        <xsl:value-of select="."/>
+    </xsl:comment>
+    </xsl:template>
 
     <xsl:template
         match="tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
         <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="xml:id" select="@xml:id"/>
             <xsl:apply-templates/>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="tei:w">
+        <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:if test="@lemma">
+                <xsl:attribute name="lemma" select="@lemma"/>
+            </xsl:if>
+            <xsl:if test="@pos">
+                <xsl:attribute name="pos" select="@pos"/>
+            </xsl:if>
+            <!--On ajoute cet attribut pour ne pas confondre ces tei:w avec ceux produits par le tokéniseur (cas de la correction de corpus);
+            À supprimer après.-->
+            <xsl:attribute name="mode">manuel</xsl:attribute>
+            <!--On ajoute cet attribut pour ne pas confondre ces tei:w avec ceux produits par le tokéniseur (cas de la correction de corpus)-->
+            <xsl:copy-of select="child::node()"/>
         </xsl:element>
     </xsl:template>
 
@@ -125,7 +145,7 @@
     </xsl:template>
 
 
-   <!-- <xsl:template match="tei:choice" mode="secondePasse">
+    <!-- <xsl:template match="tei:choice" mode="secondePasse">
         <!-\-Si on a un corr avec plusieurs mots, ça peut planter. Reprendre le code.-\->
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:value-of select="substring-after(preceding-sibling::text()[-1], ' ')"/>
@@ -180,7 +200,10 @@
 
     <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
-    <xsl:template match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'] | tei:pb[@break = 'n']"
+
+
+    <xsl:template
+        match="tei:cb[@break = 'n'][not(ancestor::tei:w)] | tei:lb[@break = 'n'][not(ancestor::tei:w)] | tei:pb[@break = 'n'][not(ancestor::tei:w)]"
         mode="troisiemePasse">
         <!--<xsl:template
         match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'][not(ancestor::tei:w)] | tei:pb[@break = 'n']"
@@ -225,7 +248,7 @@
     </xsl:template>
 
     <xsl:template
-        match="tei:w[not(descendant::text())] | tei:w[preceding-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][child::tei:cb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:pb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:lb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][child::tei:cb[@break = 'n']]]"
+        match="tei:w[not(descendant::text())][not(@mode)] | tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:pb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:lb[@break = 'n']]] | tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:cb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:pb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:lb[@break = 'n']]] | tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:cb[@break = 'n']]]"
         mode="quatriemePasse"/>
 
 
