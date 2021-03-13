@@ -94,7 +94,7 @@ CollatioN)', [dépôt git](https://github.com/CondorCompPhil/falcon), 2018-2019.
 
 Pour citer ce projet, merci d'en référer à ma thèse de doctorat (en préparation): 
 
-`Matthias GILLE LEVENSON, La version B du "Regimiento de los prínçipes" glosé (1374-1494) : étude et éditions de la partie sur le gouvernement de la cité par temps de guerre (III,3), Thèse de doctorat en préparation sous la direction de Carlos HEUCH et de Jesús RODRÍGUEZ VELASCO.`
+`Matthias GILLE LEVENSON, La version B du "Regimiento de los prínçipes" glosé (1374-1494) : étude et éditions de la partie sur le gouvernement de la cité par temps de guerre (III,3), Thèse de doctorat en préparation sous la direction de Carlos HEUSCH et de Jesús RODRÍGUEZ VELASCO.`
 
 ## Licence
 
