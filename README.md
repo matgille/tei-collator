@@ -1,4 +1,4 @@
-# tei_collator
+# TEI Collator
 
 Projet qui contient les fichiers de l'outil de collation automatisée dont je me sers pour produire les fichiers de ma 
 thèse de doctorat.
