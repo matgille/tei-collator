@@ -90,6 +90,12 @@ Classifying Variants », 2019. [Abstract](https://dev.clariah.nl/files/dh2019/b
 * Jean Baptiste Camps, Lucence Ing et Elena Spadini,  '**CondorCompPhil/falcon** (For Alignment, Lemmatization and 
 CollatioN)', [dépôt git](https://github.com/CondorCompPhil/falcon), 2018-2019.
 
+## Citer ce projet
+
+Pour citer ce projet, merci d'en référer à ma thèse de doctorat (en préparation): 
+
+`Matthias GILLE LEVENSON, La version B du "Regimiento de los prínçipes" glosé (1374-1494) : étude et éditions de la partie sur le gouvernement de la cité par temps de guerre (III,3), Thèse de doctorat en préparation sous la direction de Carlos HEUCH et de Jesús RODRÍGUEZ VELASCO.`
+
 ## Licence
 
 Sauf indication contraire, les fichiers sont publiés [sous licence NPOSL-3.0](https://opensource.org/licenses/NPOSL-3.0). 
