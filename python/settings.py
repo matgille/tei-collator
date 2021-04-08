@@ -29,6 +29,7 @@ class parameters_importing:
         self.teiCorpus = self.settings['tei:teiCorpus']
         self.tableauxAlignement = self.settings['sortie']['tableaux_alignement']
         self.latex = self.settings['sortie']['LaTeX']
+        self.parallel_process_number = self.settings['parallel_process_number']
 
     def __str__(self):
         """
