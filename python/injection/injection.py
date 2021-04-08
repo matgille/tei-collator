@@ -4,7 +4,7 @@ from lxml import etree
 import glob
 import operator
 import traceback
-
+import multiprocessing as mp
 
 def injection_en_masse(chapitre, element_tei, position, liste_temoins):
     """
@@ -23,6 +23,11 @@ def injection_en_masse(chapitre, element_tei, position, liste_temoins):
         with open(xml_element[1], "w") as output_file:
             output_file.write(etree.tostring(xml_element[0]).decode())
 
+### ATTENTION, l'injection ne peut pas marcher en l'état absolument correctement.
+# En effet, l'alignement n'est pas assez fin pour permettre de réinjecter les éléments au token près,
+# ce qui pose des problèmes pour les milestones par exemple.
+### SOLUTION: une solution possible serait de refaire des alignements au mot-à-mot avec collatex au niveau de chaque
+# apparat: 1) alignement global 2) alignements microscopiques 3) réinjection en utilisant les index
 
 def injections_element(temoin, n, tei_elements, position):
     # TODO gérer les omissions et les cas où deux éléments se trouveraient avant ou après le même mot
@@ -50,10 +55,10 @@ def injections_element(temoin, n, tei_elements, position):
     final_notes_list = []
     final_w_list = []
     final_witness_list = []
+    tei_namespace = 'http://www.tei-c.org/ns/1.0'
+    NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
     for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/divs/div{n}/*final.xml"):
         f = etree.parse(file)
-        tei_namespace = 'http://www.tei-c.org/ns/1.0'
-        NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
 
         # On va d'abord récuperer et aligner chaque élément tei:note, l'xml:id du tei:w qui précède et le témoin concerné
         notes_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}', namespaces=NSMAP1)
@@ -149,18 +154,38 @@ def injection_python(chemin, chapitre):
                                             parsed_apparat_file.xpath("//tei:w/@xml:id", namespaces=NSMAP1))
 
 
-        for word in witness.xpath("//tei:w", namespaces=NSMAP1):
-            pass
-
 
         with open(f"/home/mgl/Documents/apparat_{siglum}_{chapitre}.xml", "w") as output_file:
             print("Outputting...")
             output_file.write(etree.tostring(witness).decode())
 
 
+def injection_omissions(temoin_a_injecter, chemin):
+    """
+    Cette fonction permet d'injecter les leçons ommises par chaque témoin, qui sont ignorées par le témoin.
+    :return:None
+    """
+    # idée: on prend apparat_collatex et on regarde tous les tei:rdg avec notre témoin qui est vide, pour le réinjecter.
+    # Problème ici: si on change de division par exemple, ça va être problématique.
+    print("On injecte les omissions")
+    tei_namespace = 'http://www.tei-c.org/ns/1.0'
+    NSMAP1 = {'tei': tei_namespace}
+    # On récupère le sigle du témoin
+    with open(temoin_a_injecter, "r") as opened_temoin:
+        parsed_temoin = etree.parse(opened_temoin)
+        sigle = "_".join(parsed_temoin.xpath("//tei:div/@xml:id", namespaces=NSMAP1)[0].split("_")[0:2])
+        print(sigle)
+    # Et on va chercher les listes d'apparats où le témoin commet une omission et leur emplacement / tei:w
+    with open(f"{chemin}/apparat_collatex.xml", "r") as apparat_collatex:
+        parsed_apparat_collatex = etree.parse(apparat_collatex)
+        #Passer à du contains plutôt en cas d'omission par plusieurs témoins
+        liste_omissions = parsed_apparat_collatex.xpath(f'//tei:app[tei:rdg[translate(@wit, \'#\', \'\')={sigle}][not(tei:w)]]', namespaces=NSMAP1)
+        liste_emplacement = [omission.xpath(f'preceding::tei:app/tei:rdg[1]/@xml:id', namespaces=NSMAP1)[0] for omission in liste_omissions]
+        liste_finale = zip(liste_omissions, liste_emplacement)
+        print(liste_finale)
 
 
-def injection(saxon, chemin, chapitre):
+def injection(saxon, chemin, chapitre, coeurs):
     """
     Fonction qui réinjecte les apparats dans chaque transcription individuelle.
     :param saxon: le moteur saxon
@@ -170,7 +195,6 @@ def injection(saxon, chemin, chapitre):
     TODO: il faudrait passer à du 100% python, pour être plus clair, c'est un peu
     l'usine à gaz là.
     """
-    # injection1(chapitre, chemin)
     print("---- INJECTION 1: apparats ----")
     param_chapitre = f"chapitre={str(chapitre)}"  # Premier paramètre passé à la xsl: le chapitre à processer
     param_chemin_sortie = f"chemin_sortie={chemin}/"  # Second paramètre: le chemin vers le fichier de sortie
@@ -185,35 +209,38 @@ def injection(saxon, chemin, chapitre):
     fichiers_apparat = f'{chemin}/apparat_*_*.xml'
     liste = glob.glob(fichiers_apparat)
     chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
-    for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
-        if re.match(r'.*[0-9].xml',  i):
-            print(i)
-            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-            param_sigle = "sigle=" + sigle
-            subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+    parallel_transformation(saxon, chemin_injection2, param_chapitre, liste, coeurs, regexp=r'.*[0-9].xml')
+    # for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
+    #     if re.match(r'.*[0-9].xml',  i):
+    #         print(i)
+    #         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+    #                 + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+    #         param_sigle = "sigle=" + sigle
+    #         subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
 
     print("\n---- INJECTION 2bis: suppression de la redondance ----")
-    chemin_injection2 = "xsl/post_alignement/injection_apparats3.xsl"
+    chemin_injection3 = "xsl/post_alignement/injection_apparats3.xsl"
     fichiers_apparat = f'{chemin}/apparat_*_*outb.xml'
     liste = glob.glob(fichiers_apparat)
-    for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
-        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-        param_sigle = "sigle=" + sigle
-        subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
+    parallel_transformation(saxon, chemin_injection3, param_chapitre, liste, coeurs)
+    # for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
+    #     sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+    #             + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+    #     param_sigle = "sigle=" + sigle
+    #     subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
     #  troisième étape: ponctuation
     print("\n---- INJECTION 3: ponctuation ----")
     chemin_injection_ponctuation = "xsl/post_alignement/injection_ponctuation.xsl"
     fichiers_apparat = f'{chemin}/apparat_*_*outc.xml'
     liste = glob.glob(fichiers_apparat)
-    for i in liste:
-        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-        param_sigle = "sigle=" + sigle
-        subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
+    parallel_transformation(saxon, chemin_injection_ponctuation, param_chapitre, liste, coeurs)
+    # for i in liste:
+    #     sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+    #             + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+    #     param_sigle = "sigle=" + sigle
+    #     subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
 
     #  quatrième étape: gestion des lacunes
@@ -221,10 +248,36 @@ def injection(saxon, chemin, chapitre):
     chemin_injection_ponctuation = "xsl/post_alignement/gestion_lacunes.xsl"
     fichiers_apparat = f'{chemin}/apparat_*_*out.xml'
     liste = glob.glob(fichiers_apparat)
-    for i in liste:
-        sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-        param_sigle = "sigle=" + sigle
-        subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
+    parallel_transformation(saxon, chemin_injection_ponctuation, param_chapitre, liste, coeurs)
+    # for i in liste:
+    #     sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+    #             + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+    #     param_sigle = "sigle=" + sigle
+    #     subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Création des balises de lacunes ✓")
 
+
+def parallel_transformation(moteur_transformation, chemin_xsl, param_chapitre, liste, coeurs, regexp=None):
+    pool = mp.Pool(processes=coeurs)
+    command_list = []
+    if regexp is None:
+        for i in liste:
+            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+            param_sigle = "sigle=" + sigle
+            command = ["java", "-jar", moteur_transformation, i, chemin_xsl, param_chapitre, param_sigle]
+            command_list.append(command)
+    else:
+        for i in liste:
+            if re.match(regexp, i):
+                sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                        + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+                param_sigle = "sigle=" + sigle
+                command = ["java", "-jar", moteur_transformation, i, chemin_xsl, param_chapitre, param_sigle]
+                command_list.append(command)
+
+    pool.map(run_subprocess, command_list)
+
+
+def run_subprocess(liste):
+    subprocess.run(liste)

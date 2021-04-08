@@ -79,12 +79,6 @@ def main():
                                                       moteur_transformation=saxon,
                                                       core_number=parametres.parallel_process_number)
         corpus_a_lemmatiser.lemmatisation_parallele()
-        # for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
-        #     temoin = f"temoins_tokenises_regularises/{temoin}"
-        #     try:
-        #         lemmatisation.lemmatisation(temoin, saxon, parametres.lang)
-        #     except Exception as exception:
-        #         print(f"Error: {temoin} \n {exception}")
     if lemmatize_only:
         exit(0)
     if "-" in division:
@@ -180,7 +174,7 @@ def main():
 
         # injection.injection_omissions(f'{chemin}/apparat_Mad_G_22_final.xml', chemin)
         # Réinjection des apparats.
-        injection.injection(saxon, chemin, i)
+        injection.injection(saxon, chemin, i, parametres.parallel_process_number)
 
 
         liste_fichiers_in = glob.glob(f'{chemin}/apparat_*_*final.xml')
