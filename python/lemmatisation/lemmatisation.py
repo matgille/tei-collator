@@ -8,13 +8,15 @@ import pie
 import multiprocessing as mp
 
 
-
 class CorpusXML:
     def __init__(self, liste_temoins: list, langue: str, moteur_transformation: str, core_number: int):
         self.chemin_vers_temoin = [f"temoins_tokenises_regularises/{temoin}" for temoin in liste_temoins]
         self.langue = langue
         self.moteur_transformation = moteur_transformation
-        self.core_number = core_number
+        if self.langue == "lat_o":
+            self.core_number = 1  # le multiprocessing n'a pas d'intérêt avec pie
+        else:
+            self.core_number = core_number
 
     def lemmatisation_parallele(self):
         pool = mp.Pool(processes=self.core_number)
@@ -81,7 +83,8 @@ class CorpusXML:
 
         elif self.langue == "lat_o":
             modele_latin = "model.tar"
-            cmd = f"pie tag <{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood> {fichier_entree_txt}"
+            cmd = f"pie tag {fichier_entree_txt} <{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
+            print(cmd)
             subprocess.run(cmd.split())
             fichier_seul = os.path.splitext(fichier_entree_txt)[0]
             fichier_lemmatise = str(fichier_seul) + "-pie.txt"
@@ -199,15 +202,14 @@ def txt_to_liste_latinclassique(filename):
     return maliste
 
 
-
 if __name__ == "__main__":
     print("Merci de lancer le script depuis la racine du dépôt.")
     temoins = glob.glob(sys.argv[1])
     langue = sys.argv[2]
     corpus_a_lemmatiser = CorpusXML(
-                                    liste_temoins=temoins,
-                                    langue=langue,
-                                    moteur_transformation="saxon9he.jar",
-                                    core_number=1
-                                    )
+        liste_temoins=temoins,
+        langue=langue,
+        moteur_transformation="saxon9he.jar",
+        core_number=mp.cpu_count()
+    )
     corpus_a_lemmatiser.lemmatisation_parallele()
