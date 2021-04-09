@@ -20,11 +20,11 @@
     "lemmatized" : false
   },// ajouter une option autodetect ? 
   "lemmatize": true, // lemmatiser avant de collationner ?
-  "process_number": 4, //(tbc) combien de processus en parallèle pour la lemmatisation (doit être inférieur ou égal au nombre de coeurs du processeur) ?
+  "parallel_process_number": "auto", // combien de processus en parallèle pour la lemmatisation ? valeurs possibles: null (pas de parallélisation) , "auto" ou entier
   "lang": "spa_o", // la langue, selon le standard ISO 639-3. Le latin et le castillan médiéval ne sont pas codés: utiliser lat_o et spa_o
   "sortie":{
     "fusion_divs": false,
     "tableaux_alignement": true, // créer les tableaux d'alignement
-    "LaTeX": true
+    "LaTeX": false
   }
 }
