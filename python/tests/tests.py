@@ -70,6 +70,14 @@ def tokentest(sigle, div):
             testlog.write(f'\n ------------------ \n\n')
 
 
+def notes_test():
+    '''
+    Cette fonction a vocation à tester la qualité de l'injection des notes dans chacun des témoins.
+    Le nombre de notes du document cible doit être égal à la somme du nombre de notes du documen tokénisé originel.
+    :return:
+    '''
+    pass
+
 class MyTestCase(unittest.TestCase):
     def test_something(self):
         self.assertEqual(True, False)

@@ -210,13 +210,6 @@ def injection(saxon, chemin, chapitre, coeurs):
     liste = glob.glob(fichiers_apparat)
     chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
     parallel_transformation(saxon, chemin_injection2, param_chapitre, liste, coeurs, regexp=r'.*[0-9].xml')
-    # for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
-    #     if re.match(r'.*[0-9].xml',  i):
-    #         print(i)
-    #         sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-    #                 + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-    #         param_sigle = "sigle=" + sigle
-    #         subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
 
     print("\n---- INJECTION 2bis: suppression de la redondance ----")
@@ -224,11 +217,6 @@ def injection(saxon, chemin, chapitre, coeurs):
     fichiers_apparat = f'{chemin}/apparat_*_*outb.xml'
     liste = glob.glob(fichiers_apparat)
     parallel_transformation(saxon, chemin_injection3, param_chapitre, liste, coeurs)
-    # for i in liste:  # on crée une boucle car les fichiers on été divisés par la feuille précédente.
-    #     sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-    #             + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-    #     param_sigle = "sigle=" + sigle
-    #     subprocess.run(["java", "-jar", saxon, i, chemin_injection2, param_chapitre, param_sigle])
 
     #  troisième étape: ponctuation
     print("\n---- INJECTION 3: ponctuation ----")
@@ -236,11 +224,6 @@ def injection(saxon, chemin, chapitre, coeurs):
     fichiers_apparat = f'{chemin}/apparat_*_*outc.xml'
     liste = glob.glob(fichiers_apparat)
     parallel_transformation(saxon, chemin_injection_ponctuation, param_chapitre, liste, coeurs)
-    # for i in liste:
-    #     sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-    #             + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-    #     param_sigle = "sigle=" + sigle
-    #     subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Injection des apparats dans chaque transcription individuelle ✓")
 
     #  quatrième étape: gestion des lacunes
@@ -249,11 +232,6 @@ def injection(saxon, chemin, chapitre, coeurs):
     fichiers_apparat = f'{chemin}/apparat_*_*out.xml'
     liste = glob.glob(fichiers_apparat)
     parallel_transformation(saxon, chemin_injection_ponctuation, param_chapitre, liste, coeurs)
-    # for i in liste:
-    #     sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-    #             + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-    #     param_sigle = "sigle=" + sigle
-    #     subprocess.run(["java", "-jar", saxon, i, chemin_injection_ponctuation, param_chapitre, param_sigle])
     print("Création des balises de lacunes ✓")
 
 

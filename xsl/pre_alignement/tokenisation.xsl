@@ -200,7 +200,8 @@
 
     <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
-
+    
+    
 
     <xsl:template
         match="tei:cb[@break = 'n'][not(ancestor::tei:w)] | tei:lb[@break = 'n'][not(ancestor::tei:w)] | tei:pb[@break = 'n'][not(ancestor::tei:w)]"

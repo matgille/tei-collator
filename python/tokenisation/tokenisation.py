@@ -44,15 +44,16 @@ def ajoutXmlId(fichier_entree, fichier_sortie):
         sortie_xml.write(str(string))
 
 
-def tokenisation(saxon, path):
+def tokenisation(saxon, path, correction=False):
     with Halo(text='Tokénisation du corpus parallélisé.', spinner='dots'):
         subprocess.run(["java", "-jar", saxon, "-xi:on", path,
                         "xsl/pre_alignement/tokenisation.xsl"])
         for transcription_individuelle in os.listdir("temoins_tokenises"):
-            fichier_xml = "temoins_tokenises/" + transcription_individuelle
+            fichier_xml = f"temoins_tokenises/{transcription_individuelle}"
             ajoutXmlId(fichier_xml, fichier_xml)
+        param_correction = f"correction={correction}"
         subprocess.run(["java", "-jar", saxon, "-xi:on", "temoins_tokenises/Sal_J.xml",
-                        "xsl/pre_alignement/regularisation.xsl"])
+                        "xsl/pre_alignement/regularisation.xsl", param_correction])
 
     print("Tokénisation et régularisation du corpus pour alignement ✓")
 

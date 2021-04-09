@@ -1,10 +1,12 @@
 import subprocess
 import sys
 import re
+import glob
 from lxml import etree
 import os
 import pie
 import multiprocessing as mp
+
 
 
 class CorpusXML:
@@ -195,3 +197,17 @@ def txt_to_liste_latinclassique(filename):
             resultat = re.split(r'\s+', line)
             maliste.append(resultat[0])
     return maliste
+
+
+
+if __name__ == "__main__":
+    print("Merci de lancer le script depuis la racine du dépôt.")
+    temoins = glob.glob(sys.argv[1])
+    langue = sys.argv[2]
+    corpus_a_lemmatiser = CorpusXML(
+                                    liste_temoins=temoins,
+                                    langue=langue,
+                                    moteur_transformation="saxon9he.jar",
+                                    core_number=1
+                                    )
+    corpus_a_lemmatiser.lemmatisation_parallele()

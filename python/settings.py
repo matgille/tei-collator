@@ -1,5 +1,6 @@
 import json
 from json_minify import json_minify
+import multiprocessing as mp
 
 
 class parameters_importing:
@@ -10,7 +11,7 @@ class parameters_importing:
         """
         with open(file, "r") as f:
             self.settings = json.loads(json_minify(f.read()))
-        self.tokeniser =  not self.settings['corpus']['tokenized']
+        self.tokeniser = not self.settings['corpus']['tokenized']
         self.xmlId = not self.settings['corpus']['xmlIdentifiers']
         if not self.settings['corpus']['lemmatized'] and self.settings['lemmatize'] is True:
             self.lemmatiser = True
@@ -29,7 +30,13 @@ class parameters_importing:
         self.teiCorpus = self.settings['tei:teiCorpus']
         self.tableauxAlignement = self.settings['sortie']['tableaux_alignement']
         self.latex = self.settings['sortie']['LaTeX']
-        self.parallel_process_number = self.settings['parallel_process_number']
+
+        if isinstance(self.settings['parallel_process_number'], int):
+            self.parallel_process_number = self.settings['parallel_process_number']
+        elif self.settings['parallel_process_number'] is None:
+            self.parallel_process_number = 1
+        else:
+            self.parallel_process_number = mp.cpu_count()
 
     def __str__(self):
         """

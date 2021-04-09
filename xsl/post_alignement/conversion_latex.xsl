@@ -42,6 +42,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         </xsl:text>
         <xsl:choose>
             <xsl:when test="$fusion = 'True'">\input{../latex/preambule.tex}</xsl:when>
+<!--Ça ne devrait pas marcher, bizarre.-->
             <xsl:otherwise>
                 <xsl:text>\input{latex/preambule.tex}</xsl:text>
             </xsl:otherwise>

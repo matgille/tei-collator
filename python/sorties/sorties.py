@@ -72,6 +72,13 @@ def fusion_documents_tei(temoin_a_traiter):
         xml_file.write(etree.tostring(f).decode())
 
 
+def tableau_alignement(saxon, chemin):
+    xsl_apparat = 'xsl/post_alignement/tableau_alignement.xsl'
+    with Halo(text='Création du tableau d\'alignement', spinner='dots'):
+        cmd = f'java -jar {saxon} -o:{chemin}/tableau_alignement.html {chemin}/aligne_regroupe.xml {xsl_apparat}'
+        subprocess.run(cmd.split())
+    print('Création du tableau d\'alignement ✓')
+
 def nettoyage(directory):
     '''
     Nettoie les fichiers du dossier passé en paramètre
