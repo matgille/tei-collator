@@ -3,7 +3,7 @@
   "chemin_vers_TEI": "/tei:teiCorpus/tei:teiCorpus[@xml:id='castB']/tei:TEI", // le chemin vers chaque fichier individuel - vérifier que le ns xml:id fonctionne
   "localisation_fichiers": "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml",
   "tei:teiCorpus": true, // les fichiers sont-ils inclus dans un tei:teiCorpus ?
-  "punctuation": true, // faut-il collationer la ponctuation ?
+  "punctuation": true, //(tbc) faut-il collationer la ponctuation ?
   "alignement": "global", // quel alignement ? Global (global) ou mot à mot (mam) ?
   "fichier_leader": "Sal_J.xml", // le programme a besoin d'un fichier leader dont il va utiliser la structure.
   "scission": {
@@ -11,20 +11,21 @@
     "scinder_par": "chapitre", // doit correspondre au type de la division base: tei:div[@type='chapitre']
     "element_base": "p" // y a-t-il un élément sur lequel aligner la collation ? tei:l ou tei:p par exemple. Ne pas inclure l'espace de nom
   },
-  "fusion_divs": true,
-  "reinjection": {"tei:note[@type='general']": "after", // quels éléments réinjecter, et leur position par rapport au tei:w ancre
-                  "tei:note[@type='particulier'][@subtype='variante']":"after",
-                  "tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, 'Sev_Z')]]": "before"},
+  "reinjection": false,
+  //"reinjection": {"tei:note[@type='general']": "after", // quels éléments réinjecter, et leur position par rapport au tei:w ancre
+                  //"tei:note[@type='particulier'][@subtype='variante']":"after",
+                 // "tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, 'Sev_Z')]]": "before"},
   "corpus": { // état du corpus avant processage
     "tokenized" : true,
     "xmlIdentifiers" : true, // chaque token est-il associé à son xml:id ?
     "lemmatized" : true
   },// ajouter une option autodetect ? 
   "lemmatize": false, // lemmatiser avant de collationner ?
-  "process_number": 4, // combien de processus en parallèle pour la lemmatisation (doit être inférieur ou égal au nombre de coeurs du processeur) ?
+  "parallel_process_number": 8, // combien de processus en parallèle pour la lemmatisation ? valeurs possibles: "auto" ou entier
   "lang": "spa_o", // la langue, selon le standard ISO 639-3. Le latin et le castillan médiéval ne sont pas codés: utiliser lat_o et spa_o
   "sortie":{
+    "fusion_divs": false, // crée-t-on des documents xml maîtres, pour produire un pdf avec toutes les divisions ?
     "tableaux_alignement": true, // créer les tableaux d'alignement
-    "LaTeX": true
+    "LaTeX": false
   }
 }

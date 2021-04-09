@@ -2,9 +2,8 @@
 <!--Seconde phase bis: on s'occupe des apparats avec une seule variante, pour les transformer en suite de tei:w
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="xs"
-    version="2.0">
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
+    exclude-result-prefixes="xs" version="2.0">
 
     <xsl:strip-space elements="*"/>
 
@@ -27,8 +26,7 @@
     </xsl:template>
 
     <xsl:template match="/">
-        <xsl:result-document
-            href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}_outc.xml">
+        <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}_outc.xml">
             <xsl:apply-templates/>
         </xsl:result-document>
     </xsl:template>
@@ -43,14 +41,22 @@
     </xsl:template>
 
     <xsl:template match="tei:app[@type = 'not_apparat']">
-        <xsl:apply-templates select="descendant::tei:w"/>
+        <xsl:variable name="wits" select="tei:rdg/@wit"/>
+        <xsl:for-each select="descendant::tei:w">
+            <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
+                <xsl:attribute name="xml:id" select="@xml:id"/>
+                <xsl:attribute name="wit" select="$wits"/>
+                <xsl:value-of select="."/>
+            </xsl:element>
+        </xsl:for-each>
     </xsl:template>
 
     <!--Ici on rétablit les tei:w/@xml:id qu'on avait perdus précédemment, en reprenant le fichier apparat_X_X.xml.-->
     <xsl:template match="tei:w">
         <xsl:variable name="xml_id" select="@xml:id"/>
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-            <xsl:if test="@xml:id != 'none'">
+            <!--On supprime les @xml:id qui contiennent une ou plusieurs valeurs vides-->
+            <xsl:if test="not(contains(@xml:id, 'none'))">
                 <xsl:attribute name="xml:id">
                     <xsl:variable name="xml_id_pre_processed">
                         <!--On va chercher dans le document avant réduction des redondances, il y a donc un risque d'avoir un xml:id double-->
@@ -60,9 +66,7 @@
                     </xsl:variable>
                     <xsl:choose>
                         <xsl:when test="contains($xml_id_pre_processed, ' ')">
-                            <xsl:value-of
-                                select="tokenize($xml_id_pre_processed, ' ')[1]"
-                            />
+                            <xsl:value-of select="tokenize($xml_id_pre_processed, ' ')[1]"/>
                         </xsl:when>
                         <xsl:otherwise>
                             <xsl:value-of select="$xml_id_pre_processed"/>
@@ -70,6 +74,7 @@
                     </xsl:choose>
                 </xsl:attribute>
             </xsl:if>
+            <!--On supprime les @xml:id qui contiennent une ou plusieurs valeurs vides-->
             <xsl:copy-of select="node()"/>
         </xsl:element>
     </xsl:template>

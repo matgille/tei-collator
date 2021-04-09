@@ -18,3 +18,5 @@ chapitres/
 temoins_regroupes/
 temoins_tokenises*/
 .idea/
+test_results/
+venv/

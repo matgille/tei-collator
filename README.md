@@ -53,6 +53,13 @@ tokénisation (tei:hi qui peuvent être à cheval sur un token par exemple, ou t
 sur mon propre corpus et devront aussi être modifiées. Ces règles n'affectent pas le fonctionnement du script sur
 un encodage purement structurel.
 
+### Problèmes fréquents dûs à l'encodage
+
+- pas d'espace dans les `tei:w`
+- indications contradictoires de césure entre un `tei:pb` et un `tei:lb`
+- pas de `tei:w` dans le `tei:teiHeader`
+- (propre à Freeling) le dernier token d'un paragraphe doit toujours
+être une ponctuation, sous peine de voir la phrase omise par le programme
 
 ## Projets sur lequel s'appuie `tei_collator`
 Ce projet est fortement inspiré du projet [Falcon](https://github.com/CondorCompPhil/falcon) (Jean-Baptiste Camps, 

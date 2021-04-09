@@ -1,21 +1,14 @@
 # -*- coding: utf-8 -*-
-import fnmatch
 import os
-import sys
 import time
 import re
 import json
-import random
-import string
 from halo import Halo
-import xml.etree.ElementTree as ET
-from lxml import etree
-import shutil
 import subprocess
 import glob
-import operator
+import logging
 import dicttoxml
-import collatex
+dicttoxml.LOG.setLevel(logging.ERROR)
 import argparse
 
 import python.collation.collation as collation
@@ -24,6 +17,10 @@ import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
 import python.injection.injection as injection
 import python.settings
+import python.tests.tests as tests
+# IMPORTANT: pour la POO, considérer le corpus comme un objet ? En faire une classe qui permette de tout traiter
+# à partir de là ? Suppose de demander un tei:teiCorpus
+
 
 # TODO: nettoyer le tout / s'occuper de la conservation des xml:id pour ne pas avoir à les régénérer
 # Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
@@ -31,20 +28,29 @@ import python.settings
 # Todo: faire du mot à mot et s'occuper de rassembler en plus gros apparats après. Si on fait du mot à mot, l'éclatement
 # du TEI n'a plus aucun sens car il n'y a plus de risque de destructurer...
 
+
+
+
 def main():
     t0 = time.time()
-
     saxon = "saxon9he.jar"
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--parameters", default="lemmatisation.json", help="Path to the parameter file.")
     parser.add_argument("-d", "--division", help="Division to be treated.")
+    parser.add_argument("-corr", "--correction", default=False, help="Correction mode (outputs more information in xml files).")
+    parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
     args = parser.parse_args()
+    correction = args.correction
+    lemmatize_only = args.lemmatizeonly
     fichier_de_parametres = args.parameters
     division = args.division
 
 
     # On importe les paramètres en créant un objet parametres
     parametres = python.settings.parameters_importing(fichier_de_parametres)
+    print(f'\n\n\n ---- Paramètres globaux: \n {parametres.__str__()}\n ')
+    print(f'Lemmatisation seule: {lemmatize_only} \n')
+    print(f'Mode correction: {correction} \n ---- \n')
 
 
 
@@ -54,31 +60,36 @@ def main():
             pass
         else:
             exit(0)
-        tokenisation.tokenisation(saxon, parametres.corpus_path)
+        tokenisation.tokenisation(saxon, parametres.corpus_path, correction)
     if parametres.xmlId and not parametres.tokeniser:  # si le corpus est tokénisé mais sans xml:id
         for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
             temoin = f"temoins_tokenises_regularises/{temoin}"
             tokenisation.ajoutXmlId(temoin, temoin)
     if parametres.lemmatiser:
         print("Lemmatisation du corpus...")
-        for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
-            temoin = f"temoins_tokenises_regularises/{temoin}"
-            try:
-                lemmatisation.lemmatisation(temoin, saxon, parametres.lang)
-            except Exception as exception:
-                print(f"Error: {temoin} \n {exception}")
-    argument = int(division)
-    arg_plus_1 = argument + 1
-    portee = range(argument, arg_plus_1)
+        corpus_a_lemmatiser = lemmatisation.CorpusXML(
+                                                      liste_temoins=glob.glob('temoins_tokenises_regularises/*.xml'),
+                                                      langue=parametres.lang,
+                                                      moteur_transformation=saxon,
+                                                      core_number=parametres.parallel_process_number
+                                                    )
+        corpus_a_lemmatiser.lemmatisation_parallele()
+    if lemmatize_only:
+        exit(0)
+    if "-" in division:
+        portee = range(int(division.split("-")[0]), int(division.split("-")[1]) + 1)
+    else:
+        argument = int(division)
+        arg_plus_1 = argument + 1
+        portee = range(argument, arg_plus_1)
 
 
-    # collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
+    collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
 
     # Création des fichiers d'apparat
     # Les xsl permettent de créer autant de fichiers xml à processer que de divisions (ici, tei:p):
     # cela permet d'éviter d'avoir un apparat qui court sur deux divisions distinctes
     for i in portee:
-        start_time = time.time()
         chemin = "divs/div" + str(i)
         print(f"Traitement de la division {str(i)}")
         for fichier_xml in os.listdir(chemin):
@@ -103,7 +114,10 @@ def main():
         # On va fusionner les fichiers individuels collationnés en un seul.
         with open(chemin_fichier_json, "w") as out_json_file:
             dictionnaire_sortie = {'table': [], 'witnesses': []}
-            for fichier in glob.glob(f"{chemin_chapitre}/alignement_collatex*.json"):
+            nombre_de_par = len(glob.glob(f"{chemin_chapitre}/alignement_collatex*.json")) # on veut ordonner la fusion des
+            # documents pour le tableau d'alignement ensuite
+            for par in range(nombre_de_par):
+                fichier = f"{chemin_chapitre}/alignement_collatex{par+1}.json"
                 with open(fichier, 'r') as file:
                     dictionnaire_entree = json.loads(file.read())
                     nombre_temoins = len(dictionnaire_entree['table'])  # nombre_temoins est le nombre de témoins
@@ -147,46 +161,58 @@ def main():
             # Création de l'apparat: suppression de la redondance, identification des lieux variants,
             # regroupement des lemmes
 
-        # Création du tableau d'alignement pour visualisation
-        if parametres.tableauxAlignement:
-            collation.tableau_alignement(saxon, chemin)
 
 
         collation.apparat_final(f'{chemin}/apparat_final.json', chemin)
         print("Création des apparats ✓")
 
+        # Création du tableau d'alignement pour visualisation
+        if parametres.tableauxAlignement:
+            sorties.tableau_alignement(saxon, chemin)
+
+        # injection.injection_omissions(f'{chemin}/apparat_Mad_G_22_final.xml', chemin)
         # Réinjection des apparats.
-        injection.injection(saxon, chemin, i)
+        injection.injection(saxon, chemin, i, parametres.parallel_process_number)
 
 
         liste_fichiers_in = glob.glob(f'{chemin}/apparat_*_*final.xml')
         # Ici on indique d'autres éléments tei à réinjecter.
-        for element, position in parametres.reinjection.items():
-            injection.injection_en_masse(chapitre=division, element_tei=element, position=position,
-                                         liste_temoins=liste_fichiers_in)
+        if parametres.reinjection:
+            for element, position in parametres.reinjection.items():
+                injection.injection_en_masse(chapitre=division, element_tei=element, position=position,
+                                             liste_temoins=liste_fichiers_in)
+
+
+        ## Tests de conformité
+        corpus = Corpus()
+        print(f'Tests en cours...')
+        for temoin in corpus.sigles:
+           tests.tokentest(temoin, i)
 
 
     if parametres.fusion_documents:
         for temoin in glob.glob('temoins_tokenises/*.xml'):
             sigle = temoin.split('/')[1].split(".xml")[0]
             sorties.fusion_documents_tei(sigle)
+        if parametres.latex:
+            for fichier in glob.glob('divs/*.xml'):
+                sorties.transformation_latex(saxon, fichier, True)
 
-    if parametres.latex and parametres.fusion_documents:
-        for fichier in glob.glob('divs/*.xml'):
-            sorties.transformation_latex(saxon, fichier, 'True')
-
-    elif parametres.latex and not parametres.fusion_documents:
-        for fichier in glob.glob(chemin):
-            if fnmatch.fnmatch(fichier, 'apparat_*_*final.xml'):
-                fichier = f"{chemin}/{fichier}"
-                sorties.transformation_latex(saxon, fichier, 'False', chemin)
+    if parametres.latex and not parametres.fusion_documents:
+        for fichier in glob.glob(f'{chemin}/apparat_*_*final.xml'):
+            print(fichier)
+            sorties.transformation_latex(saxon, fichier, False, chemin)
 
 
     sorties.nettoyage("divs")
-
     t1 = time.time()
     temps_total = t1 - t0
     print(f"Fait en {round(temps_total)} secondes. \n")
+
+
+class Corpus():
+    def __init__(self):
+        self.sigles = [fichier.split("/")[1].split(".xml")[0] for fichier in glob.glob('temoins_tokenises/*.xml')]
 
 
 if __name__ == "__main__":

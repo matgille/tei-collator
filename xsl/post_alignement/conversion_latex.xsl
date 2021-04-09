@@ -42,8 +42,9 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         </xsl:text>
         <xsl:choose>
             <xsl:when test="$fusion = 'True'">\input{../latex/preambule.tex}</xsl:when>
+<!--Ça ne devrait pas marcher, bizarre.-->
             <xsl:otherwise>
-                <xsl:text>\input{../../latex/preambule.tex}</xsl:text>
+                <xsl:text>\input{latex/preambule.tex}</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
         <xsl:text>
@@ -125,13 +126,16 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text>}</xsl:text>
     </xsl:template>
 
+
     <xsl:template match="tei:note[@subtype = 'variante'][not(parent::tei:head)]">
-        <xsl:text>\footnote{ (</xsl:text>
-        <xsl:value-of select="translate(@corresp, '#_', ' ')"/>
-        <xsl:text>)</xsl:text>
+        <xsl:text>\footnote{(</xsl:text>
+        <xsl:value-of select="translate(translate(@corresp, '#', ''), '_', ' ')"/>
+        <xsl:text>) </xsl:text>
         <xsl:apply-templates/>
         <xsl:text>}</xsl:text>
     </xsl:template>
+    
+    
 
     <xsl:template match="tei:head">
         <xsl:choose>
@@ -366,9 +370,9 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     <!--Foliation-->
 
     <xsl:template match="tei:quote">
-        <xsl:text>ouioui</xsl:text>
+        <xsl:text>``</xsl:text>
         <xsl:apply-templates/>
-        <xsl:text>ouioui</xsl:text>
+        <xsl:text>''</xsl:text>
     </xsl:template>
 
     <xsl:template match="tei:app[@type = 'graphique']">

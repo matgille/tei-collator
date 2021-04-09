@@ -2,17 +2,12 @@ import fnmatch
 import json
 import os
 import re
-import random
 import shutil
 import subprocess
-import xml.etree.ElementTree as ET
 from lxml import etree
 import glob
-import operator
-import dicttoxml
 import collatex
 from halo import Halo
-from lxml import etree
 
 
 def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
@@ -205,7 +200,8 @@ def apparat_final(fichier_entree, chemin):
                 else:
                     app.set('type', type_apparat)
             # Une fois le dictionnaire de sortie produit, le transformer en XML.
-            temoins_complets = " ".join([f'#{fichier.split(".xml")[0].split("/")[-1]}' for fichier in glob.glob("temoins_tokenises_regularises/*.xml")])
+            temoins_complets = " ".join([f'#{fichier.split(".xml")[0].split("/")[-1]}'
+                                         for fichier in glob.glob("temoins_tokenises_regularises/*.xml")])
             for key, value in dict_sortie.items():
                 if not apparat:
                     lecon = str(key)
@@ -255,12 +251,6 @@ def fileExists(file):
         print('%s: n\'est pas trouvé' % file)
 
 
-def tableau_alignement(saxon, chemin):
-    xsl_apparat = 'xsl/post_alignement/tableau_alignement.xsl'
-    with Halo(text='Création du tableau d\'alignement', spinner='dots'):
-        cmd = f'java -jar {saxon} -o:{chemin}/tableau_alignement.html {chemin}/aligne_regroupe.xml {xsl_apparat}'
-        subprocess.run(cmd.split())
-    print('Création du tableau d\'alignement ✓')
 
 
 def nettoyage():
