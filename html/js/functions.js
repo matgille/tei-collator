@@ -1,27 +1,49 @@
-// TODO: ajouter une fonction de désactivation du défilement quand <= ou => est enclenché. 
+// TODO: ajouter une fonction de désactivation du défilement quand <= ou => est enclenché.
 
 $(document).ready(function () {
+    $(".annotation").hide();
     var pause = document.getElementById("pause");
     pause.setAttribute("true", "false");
     tournezMenages();
 });
 
 /*$(function () {
-    $("td").click(function () {
-        var rect = this.getBoundingClientRect();
-        var id = this.id
-        console.log(id)
-        var rect_left = rect.left
-        console.log(rect.left);
-        var middle_of_the_screen = (screen.width / 2) - 100
-        console.log(middle_of_the_screen);
-        var shift = Math.floor(rect_left - middle_of_the_screen)
-        console.log("shift: " + shift);
-        scrollTo(id, shift)
+ $("td").click(function () {
+ var rect = this.getBoundingClientRect();
+ var id = this.id
+ console.log(id)
+ var rect_left = rect.left
+ console.log(rect.left);
+ var middle_of_the_screen = (screen.width / 2) - 100
+ console.log(middle_of_the_screen);
+ var shift = Math.floor(rect_left - middle_of_the_screen)
+ console.log("shift: " + shift);
+ scrollTo(id, shift)
+ });
+ });
+
+ */
+
+
+$(function () {
+    $(".texte").mouseover(function () {
+        console.log("Texte cliqué");
+        var ide = this.id;
+        console.log(ide);
+        var cible = "#ann_" + ide;
+        console.log(cible);
+        $(cible).show();
     });
 });
 
-*/
+
+$(function () {
+    $(".texte").mouseout(function () {
+        $(".annotation").hide();
+    });
+});
+
+
 
 $(function () {
     $("#pause").click(function () {
@@ -50,8 +72,7 @@ $(document).keydown(function (e) {
 function scrollTo(id, shift) {
     if (shift < 0) {
         var n = 1;
-    }
-    else {
+    } else {
         var n = -1;
     }
     if (document.getElementById(id).getBoundingClientRect().left === (screen.width / 2) - 100) {
@@ -62,6 +83,8 @@ function scrollTo(id, shift) {
         scrolldelay = setTimeout(scrollTo(id, shift), 10000);
     }
 }
+
+
 
 
 
