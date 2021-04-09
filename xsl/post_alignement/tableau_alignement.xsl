@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
     <!--Feuille de transformation pour créer une table d'alignement en HTML pour faciliter le commentaire-->
     <!--Je suis parti pour gagner du temps d'une base de David Birnbaum 
         ici: http://collatex.obdurodon.org/xml-json-conversion.xhtml-->
 
-    <xsl:output method="html" indent="yes" doctype-system="about:legacy-compat"/>
+    <xsl:output method="html" indent="yes"
+        doctype-system="about:legacy-compat"/>
     <xsl:strip-space elements="*"/>
     <xsl:template match="/">
         <html>
@@ -56,24 +58,30 @@
                 <table>
                     <xsl:apply-templates select="texte"/>
                 </table>
-                <button id="pause" style="position:fixed;" true="false">Défile</button>
+                <button id="pause" style="position:fixed;"
+                    true="false">Défile</button>
             </body>
         </html>
     </xsl:template>
     <xsl:template match="text()">
         <xsl:value-of select="normalize-space()"/>
     </xsl:template>
+
+
     <xsl:template match="tei:w"/>
 
     <xsl:template match="texte/tei:app[1]/tei:rdg">
-        <xsl:variable name="position" select="count(preceding-sibling::tei:rdg) + 1"/>
+        <xsl:variable name="position"
+            select="count(preceding-sibling::tei:rdg) + 1"/>
         <tr>
             <th style="position:fixed;">
                 <xsl:value-of select="@wit"/>
             </th>
-            <td class="fitwidth">
+            <td class="fitwidth texte">
                 <xsl:attribute name="id">
-                    <xsl:value-of select="translate(tei:rdg/tei:w/@xml:id, '_', '')"/>
+                    <xsl:value-of
+                        select="translate(tei:rdg/tei:w/@xml:id, '_', '')"
+                    />
                 </xsl:attribute>
                 <xsl:value-of select="tei:rdg/tei:w"/>
                 <xsl:if test="tei:rdg/om">
@@ -83,16 +91,31 @@
         </tr>
         <tr>
             <xsl:for-each select="//tei:rdg[position() = $position]">
-                <td class="fitwidth">
+                <td class="fitwidth texte">
                     <xsl:if test="tei:w">
                         <xsl:attribute name="id">
-                            <xsl:value-of select="translate(tei:w[1]/@xml:id, '_', '')"/>
+                            <xsl:value-of
+                                select="translate(string-join(tei:w/@xml:id), '_', '')"
+                            />
                         </xsl:attribute>
                         <xsl:value-of select="tei:w"/>
+                        <span class="annotation"
+                            id="ann_{translate(string-join(tei:w/@xml:id), '_', '')}">
+                            <br/>
+                            <i>
+                                <xsl:value-of select="tei:w/@lemma"/>
+                            </i>
+                            <br/>
+                            <b>
+                                <xsl:value-of select="tei:w/@pos"/>
+                            </b>
+                        </span>
                     </xsl:if>
                     <xsl:if test="om">
                         <xsl:attribute name="id">
-                            <xsl:value-of select="concat('om_', count(preceding::om) + 1)"/>
+                            <xsl:value-of
+                                select="concat('om_', count(preceding::om) + 1)"
+                            />
                         </xsl:attribute>
                         <i>omisit</i>
                     </xsl:if>
