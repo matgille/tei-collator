@@ -1,21 +1,14 @@
 # -*- coding: utf-8 -*-
-import fnmatch
 import os
-import sys
 import time
 import re
 import json
-import random
-import string
 from halo import Halo
-import xml.etree.ElementTree as ET
-from lxml import etree
-import shutil
 import subprocess
 import glob
-import operator
+import logging
 import dicttoxml
-import collatex
+dicttoxml.LOG.setLevel(logging.ERROR)
 import argparse
 
 import python.collation.collation as collation
@@ -74,10 +67,12 @@ def main():
             tokenisation.ajoutXmlId(temoin, temoin)
     if parametres.lemmatiser:
         print("Lemmatisation du corpus...")
-        corpus_a_lemmatiser = lemmatisation.CorpusXML(liste_temoins=glob.glob('temoins_tokenises_regularises/*.xml'),
+        corpus_a_lemmatiser = lemmatisation.CorpusXML(
+                                                      liste_temoins=glob.glob('temoins_tokenises_regularises/*.xml'),
                                                       langue=parametres.lang,
                                                       moteur_transformation=saxon,
-                                                      core_number=parametres.parallel_process_number)
+                                                      core_number=parametres.parallel_process_number
+                                                    )
         corpus_a_lemmatiser.lemmatisation_parallele()
     if lemmatize_only:
         exit(0)
@@ -119,7 +114,10 @@ def main():
         # On va fusionner les fichiers individuels collationnés en un seul.
         with open(chemin_fichier_json, "w") as out_json_file:
             dictionnaire_sortie = {'table': [], 'witnesses': []}
-            for fichier in glob.glob(f"{chemin_chapitre}/alignement_collatex*.json"):
+            nombre_de_par = len(glob.glob(f"{chemin_chapitre}/alignement_collatex*.json")) # on veut ordonner la fusion des
+            # documents pour le tableau d'alignement ensuite
+            for par in range(nombre_de_par):
+                fichier = f"{chemin_chapitre}/alignement_collatex{par+1}.json"
                 with open(fichier, 'r') as file:
                     dictionnaire_entree = json.loads(file.read())
                     nombre_temoins = len(dictionnaire_entree['table'])  # nombre_temoins est le nombre de témoins
