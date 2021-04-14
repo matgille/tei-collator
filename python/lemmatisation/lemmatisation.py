@@ -4,8 +4,10 @@ import re
 import glob
 from lxml import etree
 import os
+import tqdm
 import pie
 import multiprocessing as mp
+from itertools import product
 
 
 class CorpusXML:
@@ -18,11 +20,13 @@ class CorpusXML:
         else:
             self.core_number = core_number
 
-    def lemmatisation_parallele(self):
-        pool = mp.Pool(processes=self.core_number)
-        pool.map(self.lemmatisation, self.chemin_vers_temoin)
+    def lemmatisation_parallele(self, division="*"):
+        with mp.Pool(processes=self.core_number) as pool:
+            # https://www.kite.com/python/answers/how-to-map-a-function-with-multiple-arguments-to-a-multiprocessing-pool-in-python
+            data = [(temoin, division) for temoin in self.chemin_vers_temoin]
+            pool.starmap(self.lemmatisation, data)
 
-    def lemmatisation(self, temoin):
+    def lemmatisation(self, temoin, division):
         """
             Lemmatisation du fichier XML et réinjection dans le document xml originel.
             :param temoin: le temoin à lemmatiser
@@ -33,11 +37,19 @@ class CorpusXML:
         fichier_xsl = "xsl/lemmatisation/transformation_pre_lemmatisation.xsl"
         chemin_vers_fichier = "temoins_tokenises_regularises/" + str(fichier)
         fichier_entree_txt = 'temoins_tokenises_regularises/txt/' + fichier_sans_extension + '.txt'
-        param_sortie = "sortie=" + fichier_entree_txt
-        subprocess.run(["java", "-jar", self.moteur_transformation, chemin_vers_fichier, fichier_xsl, param_sortie])
+        param_division = f"division={division}"
+        param_sortie = f"sortie={fichier_entree_txt}"
+        subprocess.run(["java", "-jar",
+                        self.moteur_transformation,
+                        chemin_vers_fichier,
+                        fichier_xsl,
+                        param_sortie,
+                        param_division])
         if self.langue == "spa_o":
             fichier_lemmatise = 'temoins_tokenises_regularises/txt/' + fichier_sans_extension + '_lemmatise' + '.txt'
-            cmd_sh = ["sh", "python/lemmatisation/analyze.sh", fichier_entree_txt,
+            cmd_sh = ["sh",
+                      "python/lemmatisation/analyze.sh",
+                      fichier_entree_txt,
                       fichier_lemmatise]  # je dois passer par un script externe car un subprocess tourne dans le vide,
             # pas trouvé pourquoi
             subprocess.run(cmd_sh)  # analyze est dans /usr/bin
@@ -49,13 +61,24 @@ class CorpusXML:
             f = etree.parse(temoin_tokenise, parser=parser)
             root = f.getroot()
             tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
-            groupe_words = "//tei:w"
+            if division != "*":
+                groupe_words = f"//tei:w[ancestor::tei:div[@n='{str(division)}']]"
+            else:
+                groupe_words = f"//tei:w"
             tokens = root.xpath(groupe_words, namespaces=tei)
             fichier_lemmatise = temoin_tokenise
             n = 1
             for mot in tokens:
-                nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w)", namespaces=tei))
-                nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc)", namespaces=tei))
+                if division != "*":
+                    nombre_mots_precedents = int(
+                                            mot.xpath(
+                                            f"count(preceding::tei:w[ancestor::tei:div[@n='{str(division)}']])", namespaces=tei
+                                            )
+                                            )
+                    nombre_ponctuation_precedente = int(mot.xpath(f"count(preceding::tei:pc[ancestor::tei:div[@n='{str(division)}']])", namespaces=tei))
+                else:
+                    nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w)", namespaces=tei))
+                    nombre_ponctuation_precedente = int(mot.xpath("count(preceding::tei:pc)", namespaces=tei))
                 position_absolue_element = nombre_mots_precedents + nombre_ponctuation_precedente
                 try:
                     liste_correcte = maliste[position_absolue_element]  # Ça marche bien si la lemmatisation se fait
@@ -80,10 +103,11 @@ class CorpusXML:
                 else:
                     mot.set("lemma", lemme_position)
                     mot.set("pos", pos_position)
+            print(f"Travail terminé pour {fichier_sans_extension}!")
 
         elif self.langue == "lat_o":
             modele_latin = "model.tar"
-            cmd = f"pie tag {fichier_entree_txt} <{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
+            cmd = f"pie tag --device cuda {fichier_entree_txt} <{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
             print(cmd)
             subprocess.run(cmd.split())
             fichier_seul = os.path.splitext(fichier_entree_txt)[0]
@@ -105,7 +129,7 @@ class CorpusXML:
             nombre_pc = int(root.xpath("count(//tei:pc)", namespaces=tei))
             nombre_tokens = nombre_mots + nombre_pc
             fichier_lemmatise = temoin_tokenise
-            for mot in tokens:
+            for mot in tqdm.tqdm(tokens):
                 nombre_mots_precedents = int(mot.xpath("count(preceding::tei:w) + 1", namespaces=tei))
                 nombre_ponctuation_precedente = int(
                     mot.xpath("count(preceding::tei:pc) + 1", namespaces=tei))

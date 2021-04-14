@@ -8,6 +8,7 @@ import subprocess
 import glob
 import logging
 import dicttoxml
+
 dicttoxml.LOG.setLevel(logging.ERROR)
 import argparse
 
@@ -18,6 +19,8 @@ import python.sorties.sorties as sorties
 import python.injection.injection as injection
 import python.settings
 import python.tests.tests as tests
+
+
 # IMPORTANT: pour la POO, considérer le corpus comme un objet ? En faire une classe qui permette de tout traiter
 # à partir de là ? Suppose de demander un tei:teiCorpus
 
@@ -29,22 +32,24 @@ import python.tests.tests as tests
 # du TEI n'a plus aucun sens car il n'y a plus de risque de destructurer...
 
 
-
-
 def main():
     t0 = time.time()
     saxon = "saxon9he.jar"
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--parameters", default="lemmatisation.json", help="Path to the parameter file.")
     parser.add_argument("-d", "--division", help="Division to be treated.")
-    parser.add_argument("-corr", "--correction", default=False, help="Correction mode (outputs more information in xml files).")
+    parser.add_argument("-corr", "--correction", default=False,
+                        help="Correction mode (outputs more information in xml files).")
     parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
+    parser.add_argument("-ao", "--align_only", default=False, help="Exit after lemmatization.")
     args = parser.parse_args()
     correction = args.correction
     lemmatize_only = args.lemmatizeonly
+    align_only = args.align_only
     fichier_de_parametres = args.parameters
     division = args.division
-
+    if division is None:
+        division = "*"
 
     # On importe les paramètres en créant un objet parametres
     parametres = python.settings.parameters_importing(fichier_de_parametres)
@@ -52,10 +57,9 @@ def main():
     print(f'Lemmatisation seule: {lemmatize_only} \n')
     print(f'Mode correction: {correction} \n ---- \n')
 
-
-
     if parametres.tokeniser:
-        reponse = input("Vous êtes en train de réécrire les fichiers et de relancer la lemmatisation. Continuer ? [o/n]\n")
+        reponse = input(
+            "Vous êtes en train de réécrire les fichiers et de relancer la lemmatisation. Continuer ? [o/n]\n")
         if reponse == "o":
             pass
         else:
@@ -68,21 +72,25 @@ def main():
     if parametres.lemmatiser:
         print("Lemmatisation du corpus...")
         corpus_a_lemmatiser = lemmatisation.CorpusXML(
-                                                      liste_temoins=glob.glob('temoins_tokenises_regularises/*.xml'),
-                                                      langue=parametres.lang,
-                                                      moteur_transformation=saxon,
-                                                      core_number=parametres.parallel_process_number
-                                                    )
-        corpus_a_lemmatiser.lemmatisation_parallele()
+            liste_temoins=glob.glob('temoins_tokenises_regularises/*.xml'),
+            langue=parametres.lang,
+            moteur_transformation=saxon,
+            core_number=parametres.parallel_process_number
+        )
+        # corpus_a_lemmatiser.lemmatisation_parallele(division)
+        corpus_a_lemmatiser.lemmatisation("temoins_tokenises_regularises/temoins_tokenises_regularises/Mad_A.xml", division)
     if lemmatize_only:
+        t1 = time.time()
+        temps_total = t1 - t0
+        print(f"Fait en {round(temps_total)} secondes. \n")
         exit(0)
+
     if "-" in division:
         portee = range(int(division.split("-")[0]), int(division.split("-")[1]) + 1)
     else:
         argument = int(division)
         arg_plus_1 = argument + 1
         portee = range(argument, arg_plus_1)
-
 
     collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
 
@@ -114,16 +122,18 @@ def main():
         # On va fusionner les fichiers individuels collationnés en un seul.
         with open(chemin_fichier_json, "w") as out_json_file:
             dictionnaire_sortie = {'table': [], 'witnesses': []}
-            nombre_de_par = len(glob.glob(f"{chemin_chapitre}/alignement_collatex*.json")) # on veut ordonner la fusion des
+            nombre_de_par = len(glob.glob(f"{chemin_chapitre}/alignement_collatex*.json"))  # on veut ordonner la
+            # fusion des
             # documents pour le tableau d'alignement ensuite
             for par in range(nombre_de_par):
-                fichier = f"{chemin_chapitre}/alignement_collatex{par+1}.json"
+                fichier = f"{chemin_chapitre}/alignement_collatex{par + 1}.json"
                 with open(fichier, 'r') as file:
                     dictionnaire_entree = json.loads(file.read())
                     nombre_temoins = len(dictionnaire_entree['table'])  # nombre_temoins est le nombre de témoins
                     for index_temoin in range(nombre_temoins):  # pour chaque témoin
                         temoin = dictionnaire_entree['witnesses'][index_temoin]
-                        if len(dictionnaire_sortie['witnesses']) != nombre_temoins:  # tant que la liste des témoins nombre_temoins'est pas complète
+                        if len(dictionnaire_sortie[
+                                   'witnesses']) != nombre_temoins:  # tant que la liste des témoins nombre_temoins'est pas complète
                             dictionnaire_sortie['witnesses'].append(temoin)
                         if len(dictionnaire_sortie['table']) != nombre_temoins:  #
                             liste_vide = []
@@ -131,8 +141,6 @@ def main():
                         for element in dictionnaire_entree['table'][index_temoin]:
                             dictionnaire_sortie['table'][index_temoin].append(element)
             json.dump(dictionnaire_sortie, out_json_file)
-
-
 
         # On compare les lieux variants et on en déduit les <app>
         with Halo(text='Création des apparats', spinner='dots'):
@@ -143,7 +151,6 @@ def main():
                     obj = json.loads(fichier_json_a_xmliser.read())
                     vers_xml = dicttoxml.dicttoxml(obj).decode("utf-8")
                 sortie_xml.write(vers_xml)
-
 
             chemin_regroupement = "xsl/post_alignement/regroupement.xsl"
             # Regroupement des lieux variants (témoin A puis témoin B puis témoin C
@@ -161,19 +168,21 @@ def main():
             # Création de l'apparat: suppression de la redondance, identification des lieux variants,
             # regroupement des lemmes
 
-
-
         collation.apparat_final(f'{chemin}/apparat_final.json', chemin)
         print("Création des apparats ✓")
 
         # Création du tableau d'alignement pour visualisation
         if parametres.tableauxAlignement:
             sorties.tableau_alignement(saxon, chemin)
+        if align_only:
+            t1 = time.time()
+            temps_total = t1 - t0
+            print(f"Fait en {round(temps_total)} secondes. \n")
+            exit(0)
 
         # injection.injection_omissions(f'{chemin}/apparat_Mad_G_22_final.xml', chemin)
         # Réinjection des apparats.
         injection.injection(saxon, chemin, i, parametres.parallel_process_number)
-
 
         liste_fichiers_in = glob.glob(f'{chemin}/apparat_*_*final.xml')
         # Ici on indique d'autres éléments tei à réinjecter.
@@ -182,13 +191,11 @@ def main():
                 injection.injection_en_masse(chapitre=division, element_tei=element, position=position,
                                              liste_temoins=liste_fichiers_in)
 
-
-        ## Tests de conformité
+        # Tests de conformité
         corpus = Corpus()
         print(f'Tests en cours...')
         for temoin in corpus.sigles:
-           tests.tokentest(temoin, i)
-
+            tests.tokentest(temoin, i)
 
     if parametres.fusion_documents:
         for temoin in glob.glob('temoins_tokenises/*.xml'):
@@ -202,7 +209,6 @@ def main():
         for fichier in glob.glob(f'{chemin}/apparat_*_*final.xml'):
             print(fichier)
             sorties.transformation_latex(saxon, fichier, False, chemin)
-
 
     sorties.nettoyage("divs")
     t1 = time.time()
