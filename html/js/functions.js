@@ -1,11 +1,13 @@
 // TODO: ajouter une fonction de désactivation du défilement quand <= ou => est enclenché.
 
 $(document).ready(function () {
-    $(".annotation").hide();
     var pause = document.getElementById("pause");
     pause.setAttribute("true", "false");
     tournezMenages();
+    var show_lemma = true;
 });
+
+var show_lemma = true
 
 /*$(function () {
  $("td").click(function () {
@@ -22,9 +24,8 @@ $(document).ready(function () {
  });
  });
 
- */
-
-
+ */ 3
+/*
 $(function () {
     $(".texte").mouseover(function () {
         console.log("Texte cliqué");
@@ -32,17 +33,17 @@ $(function () {
         console.log(ide);
         var cible = "#ann_" + ide;
         console.log(cible);
-        $(cible).show();
+        $(cible).css("visibility", "visible");
     });
 });
 
 
 $(function () {
     $(".texte").mouseout(function () {
-        $(".annotation").hide();
+        $(".annotation").css("visibility", "hidden");
     });
 });
-
+*/
 
 
 $(function () {
@@ -67,6 +68,21 @@ $(document).keydown(function (e) {
     }
 });
 
+/*Ajouter une fonction pour faire apparaître les lemmes*/
+$(document).keydown(function (e) {
+    switch (e.keyCode) {
+        case 76:
+        // check if the key is registered
+        console.log("L is pressed!");
+        if (show_lemma == true) {
+            $(".annotation").css("visibility", "visible");
+            show_lemma = false;
+        } else {
+            $(".annotation").css("visibility", "hidden");
+            show_lemma = true;
+        }
+    }
+});
 
 
 function scrollTo(id, shift) {
@@ -83,9 +99,6 @@ function scrollTo(id, shift) {
         scrolldelay = setTimeout(scrollTo(id, shift), 10000);
     }
 }
-
-
-
 
 
 function tournezMenages() {
