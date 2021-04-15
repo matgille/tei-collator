@@ -59,9 +59,9 @@
                                 <xsl:attribute name="xml:id">
                                     <xsl:value-of select="descendant::xml:id"/>
                                 </xsl:attribute>
-                                <xsl:if test="descendant::n">
+                                <xsl:if test="descendant::lemma">
                                     <xsl:attribute name="lemma">
-                                        <xsl:value-of select="descendant::n"/>
+                                        <xsl:value-of select="descendant::lemma"/>
                                     </xsl:attribute>
                                 </xsl:if>
                                 <xsl:if test="descendant::pos">
@@ -109,9 +109,9 @@
                                     <xsl:attribute name="xml:id">
                                         <xsl:value-of select="descendant::xml:id"/>
                                     </xsl:attribute>
-                                    <xsl:if test="descendant::n">
+                                    <xsl:if test="descendant::lemma">
                                         <xsl:attribute name="lemma">
-                                            <xsl:value-of select="descendant::n"/>
+                                            <xsl:value-of select="descendant::lemma"/>
                                         </xsl:attribute>
                                     </xsl:if>
                                     <xsl:if test="descendant::pos">

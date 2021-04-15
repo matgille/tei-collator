@@ -3,9 +3,11 @@
 
 
 <!--Troisième partie: transformer en json les sources xml pour pouvoir utiliser au mieux collatex -->
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+<xsl:stylesheet
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:math="http://www.w3.org/2005/xpath-functions/math" exclude-result-prefixes="xs math"
+    xmlns:math="http://www.w3.org/2005/xpath-functions/math"
+    exclude-result-prefixes="xs math"
     xmlns:tei="http://www.tei-c.org/ns/1.0" version="3.0">
     <xsl:output method="text"/>
 
@@ -36,6 +38,12 @@
             <xsl:if test="@lemma">
                 <xsl:text>,</xsl:text>
                 <xsl:text>"n": "</xsl:text>
+                <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs-->
+                <xsl:value-of
+                    select="concat(@lemma, '|', @pos, '|')"/>
+                <xsl:text>" </xsl:text>
+                <xsl:text>,</xsl:text>
+                <xsl:text>"lemma": "</xsl:text>
                 <xsl:value-of select="@lemma"/>
                 <xsl:text>" </xsl:text>
             </xsl:if>
@@ -49,9 +57,11 @@
             <xsl:text>"xml:id" : "</xsl:text>
             <xsl:value-of select="@xml:id"/>
             <xsl:text>"}</xsl:text>
-            <xsl:variable name="nom_temoin" select="ancestor::temoin/@n"/>
+            <xsl:variable name="nom_temoin"
+                select="ancestor::temoin/@n"/>
             <!--<xsl:if test="following::tei:w[text()][ancestor::temoin/@n = $nom_temoin]|following::tei:pc[ancestor::temoin/@n = $nom_temoin]">-->
-            <xsl:if test="following::tei:w[text()][ancestor::temoin/@n = $nom_temoin]">
+            <xsl:if
+                test="following::tei:w[text()][ancestor::temoin/@n = $nom_temoin]">
                 <xsl:text>,</xsl:text>
             </xsl:if>
         </xsl:for-each>
