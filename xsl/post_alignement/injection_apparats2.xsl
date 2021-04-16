@@ -94,7 +94,10 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
         <xsl:variable name="retour_au_texte"
             select="concat($chemin_sortie2, 'temoins_tokenises?=*.xml')"/>
         <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:attribute name="lemma" select="@lemma"/>
+            <xsl:attribute name="pos" select="@pos"/>
             <xsl:attribute name="wit" select="@wit"/>
+            <xsl:attribute name="id" select="@id"/>
             <xsl:attribute name="xml:id" select="$xml_id"/>
             <!--On ne récupère rien (à changer p.e.)-->
             <!--            <xsl:for-each select="tei:w">-->
@@ -114,6 +117,9 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
             select="concat($chemin_sortie2, 'temoins_tokenises/', $sigle, '.xml')"/>
         <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="wit" select="@wit"/>
+            <xsl:attribute name="lemma" select="@lemma"/>
+            <xsl:attribute name="pos" select="@pos"/>
+            <xsl:attribute name="id" select="@id"/>
             <xsl:attribute name="xml:id" select="$xml_id"/>
             <!--On récupère les tei:w des transcriptions tokenisées et éventuellement les noeuds à l'intérieur-->
             <xsl:for-each select="tokenize(@xml:id, '_')">

@@ -1,14 +1,22 @@
 import fnmatch
 import json
 import os
+import random
 import re
 import shutil
+import string
 import subprocess
+
 from lxml import etree
 import glob
 import collatex
 from halo import Halo
+import random
+import string
 
+
+def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
@@ -177,7 +185,22 @@ def apparat_final(fichier_entree, chemin):
 
                         # Mise à jour la liste
                         liste_lecons.append(lecon_depart)
+                # TODO: commencer par extraire les lignes qui suivent pour en faire une fonction.
+                # TODO: remplacer les + par des espaces pour ignorer les crases qui sont souvent
+                # TODO: uniquement des variantes graphiques: PR0CN00+PP3CSD0 > PR0CN00 PP3CSD0
+                #  ignorer: como/cómo
+                #  AQ0CS00 / AQ0FS00 / AO0MS00 avec un entier, on peut ignorer. (ignorer les analyses sur les cardinaux/ordinaux)
+                #  Idem PT / PR avec une différence d'accent.
+                # TODO: éventuellement, créer une liste pour ignorer certains lemmes dans la comparaison
+                #  des POS: comme que par exemple, qu'il s'agira de corriger non pas sur le XML mais
+                #  directement sur le TSV lors de la production du corpus. Ou alors, considérer que c'est
+                #  une variante graphique si le terme n'est pas analysé comme un nom au moins une fois.
 
+                # TODO: ignorer les erreurs d'analyse probables: même lemmes, pos différent mais parce que
+                #  changement de catégorie (= P <=> D, etc). Comme ça on affine le corpus sur tsv et pas sur
+                #  xml.
+
+                ## TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
                 comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
                 comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
                 # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante grapique.
@@ -208,16 +231,19 @@ def apparat_final(fichier_entree, chemin):
                     xml_id = value[0]
                     rdg = etree.SubElement(app, tei + 'rdg')
                     # on indique que tous les témoins proposent la leçon
+                    rdg.set('id', generateur_id())
                     rdg.set('wit', temoins_complets)
                     rdg.set('{http://www.w3.org/XML/1998/namespace}id', xml_id)
                 else:
                     lecon = str(key)
                     xml_id, temoin, lemmes, pos = value[0], value[1], value[2], value[3]
                     rdg = etree.SubElement(app, tei + 'rdg')
+                    rdg.set('id', generateur_id())
                     rdg.set('lemma', lemmes)
                     rdg.set('pos', pos)
                     rdg.set('wit', temoin)
-                    rdg.set('{http://www.w3.org/XML/1998/namespace}id', f'{xml_id}')  # ensemble des id des tokens, pour la
+                    rdg.set('{http://www.w3.org/XML/1998/namespace}id',
+                            f'{xml_id}')  # ensemble des id des tokens, pour la
                     # suppression de la redondance plus tard
                     # Re-créer les noeuds tei:w
                 liste_w = lecon.split()
@@ -249,8 +275,6 @@ def fileExists(file):
         print('%s: check' % file)
     else:
         print('%s: n\'est pas trouvé' % file)
-
-
 
 
 def nettoyage():
@@ -294,3 +318,74 @@ def txt_to_liste(filename):
             resultat = re.split(r'\s+', line)
             maliste.append(resultat)
     return maliste
+
+
+def raffinage_apparats(fichier, i):
+    """
+    Cette fonction permet de raffiner les apparats en rassemblant les variantes graphiques au sein d'un apparat qui
+    comporte des variantes "vraies" ou grammaticales. On va créer des tei:rdgGroup qui rassembleront les rdg.
+    """
+    sigle = fichier.split("apparat_")[1].split(f"_{i}_")[0]
+    print(sigle)
+    tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
+    parser = etree.XMLParser(load_dtd=True,
+                             resolve_entities=True)
+    f = etree.parse(fichier, parser=parser)  # https://lxml.de/tutorial.html#namespaces
+    root = f.getroot()
+    liste_apps = root.xpath(f"//tei:app[not(@type='graphique')]", namespaces=tei)
+    for apparat in liste_apps:
+        lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=tei)
+        # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat.
+        if len(lecon) <= 2:
+            pass
+
+        # Sinon, les choses deviennent intéressantes
+        else:
+            print("\n")
+            liste_de_lecons = apparat.xpath(f"tei:rdg", namespaces=tei)
+
+            liste_annotations = []
+            for lecon in liste_de_lecons:
+                texte = " ".join(lecon.xpath("descendant::tei:w/descendant::text()", namespaces=tei))
+                identifiant_rdg = lecon.xpath("@id", namespaces=tei)[0]
+                lemme = lecon.xpath("@lemma")[0]
+                pos = lecon.xpath("@pos")[0]
+                pos_reduit = pos.split(" ")[0]
+                lemme_reduit = "_".join(lemme.split("_")[:len(pos_reduit.split("_"))])
+                liste_annotations.append((identifiant_rdg, pos_reduit, lemme_reduit))
+
+            # On identifie les variants graphiques au sein
+            # du lieu variant ( = les paires Pos/Lemmes qui se répètent)
+            liste_d_analyses = set([(pos, lemma) for identifiant, pos, lemma in liste_annotations])
+            dictionnaire_de_regroupement = {}
+            for i in liste_d_analyses:
+                for j in liste_annotations: # on va récupérer l'identifiant
+                    if all(x in j for x in i):
+                        identifiant, pos, lemma = j
+                        # https://www.geeksforgeeks.org/python-check-if-one-tuple-is-subset-of-other/
+                        print(f"{i} is subset of {j}")
+                        try:
+                            dictionnaire_de_regroupement[i].append(identifiant)
+                        except KeyError:
+                            dictionnaire_de_regroupement[i] = [identifiant]
+                        # Le dictionnaire est de la forme: {(pos, lemmes): [liste des identifiants]]}
+
+            # Ce qui nous intéresse, c'est de produire les groupes: on ne garde que les valeurs
+            # du dictionnaire
+            rdg_groups = list(dictionnaire_de_regroupement.values())
+
+            # On va pouvoir maintenant créer des rdgGroups autour des tei:rdg que l'on a identifiés
+            # comme similaires.
+
+            # Créons donc des tei:rdgGrp parents pour ces groupes
+            for group in rdg_groups:
+                tei_namespace = 'http://www.tei-c.org/ns/1.0'
+                namespace = '{%s}' % tei_namespace
+                rdg_grp = etree.SubElement(apparat, namespace + 'rdg_grp')
+                for identifiant in group:
+                    orig_rdg = apparat.xpath(f"tei:rdg[@id = '{identifiant}']", namespaces=tei)[0]
+                    rdg_grp.append(orig_rdg)
+
+    with open(fichier, 'w+') as sortie_xml:
+        output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+        sortie_xml.write(str(output))

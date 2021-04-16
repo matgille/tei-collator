@@ -77,8 +77,8 @@ def main():
             moteur_transformation=saxon,
             core_number=parametres.parallel_process_number
         )
-        # corpus_a_lemmatiser.lemmatisation_parallele(division)
-        corpus_a_lemmatiser.lemmatisation("temoins_tokenises_regularises/temoins_tokenises_regularises/Mad_A.xml", division)
+        corpus_a_lemmatiser.lemmatisation_parallele(division)
+
     if lemmatize_only:
         t1 = time.time()
         temps_total = t1 - t0
@@ -100,6 +100,7 @@ def main():
     for i in portee:
         chemin = "divs/div" + str(i)
         print(f"Traitement de la division {str(i)}")
+        print("Alignement avec CollateX.")
         for fichier_xml in os.listdir(chemin):
             # Ici on travaille sur des petits fichiers qui correspondent aux divisions indiquées en paramètres
             # pour éviter d'avoir des apparats qui se chevauchent
@@ -191,11 +192,19 @@ def main():
                 injection.injection_en_masse(chapitre=division, element_tei=element, position=position,
                                              liste_temoins=liste_fichiers_in)
 
+
+
+        # Raffinage des apparats
+        liste_fichiers_in = glob.glob(f'divs/div{i}/apparat_*_*final.xml')
+        for fichier in liste_fichiers_in:
+            collation.raffinage_apparats(fichier, i)
+        exit(0)
         # Tests de conformité
         corpus = Corpus()
         print(f'Tests en cours...')
         for temoin in corpus.sigles:
             tests.tokentest(temoin, i)
+
 
     if parametres.fusion_documents:
         for temoin in glob.glob('temoins_tokenises/*.xml'):

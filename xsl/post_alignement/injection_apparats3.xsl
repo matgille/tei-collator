@@ -36,6 +36,9 @@
             <xsl:attribute name="wit">
                 <xsl:value-of select="@wit"/>
             </xsl:attribute>
+            <xsl:attribute name="id" select="@id"/>
+            <xsl:attribute name="lemma" select="@lemma"/>
+            <xsl:attribute name="pos" select="@pos"/>
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>
