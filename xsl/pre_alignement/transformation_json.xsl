@@ -39,8 +39,11 @@
                 <xsl:text>,</xsl:text>
                 <xsl:text>"n": "</xsl:text>
                 <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs-->
-                <xsl:value-of
+                  <xsl:value-of
                     select="concat(@lemma, '|', @pos, '|')"/>
+<!--                <xsl:value-of select="@lemma"/>-->
+                <!--Éventuellement aller plus loin et ne mettre que la catégorie grammaticale?-->
+                <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs: peut être moins efficace ?-->
                 <xsl:text>" </xsl:text>
                 <xsl:text>,</xsl:text>
                 <xsl:text>"lemma": "</xsl:text>
