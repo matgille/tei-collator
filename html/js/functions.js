@@ -9,22 +9,12 @@ $(document).ready(function () {
 
 var show_lemma = true
 
-/*$(function () {
- $("td").click(function () {
- var rect = this.getBoundingClientRect();
- var id = this.id
- console.log(id)
- var rect_left = rect.left
- console.log(rect.left);
- var middle_of_the_screen = (screen.width / 2) - 100
- console.log(middle_of_the_screen);
- var shift = Math.floor(rect_left - middle_of_the_screen)
- console.log("shift: " + shift);
- scrollTo(id, shift)
+$(function () {
+ $(".forme").click(function () {
+ $(this).css("background-color", "grey")
  });
  });
 
- */ 3
 /*
 $(function () {
     $(".texte").mouseover(function () {
@@ -100,6 +90,14 @@ function scrollTo(id, shift) {
     }
 }
 
+$(document).scroll(function(){
+    var scroll_left = $(this).scrollLeft();
+    var client_width = document.body.clientWidth;
+    var scroll_width = document.body.scrollWidth;
+    var scrollPercentage=100*scroll_left/scroll_width/(1-client_width/scroll_width);
+    $('#log').html(scrollPercentage.toFixed(2)+'%');
+    console.log(scrollPercentage.toFixed(2)+'%');
+});
 
 function tournezMenages() {
     var pause = document.getElementById("pause");

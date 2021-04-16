@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+<xsl:stylesheet
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns="http://www.w3.org/1999/xhtml"
     xmlns:tei="http://www.tei-c.org/ns/1.0"
@@ -83,10 +84,13 @@
 
 
             </head>
-            <body>
-                <table>
-                    <xsl:apply-templates select="texte"/>
-                </table>
+            <body id="body">
+                <div>
+                    <table id="container">
+                        <xsl:apply-templates select="texte"
+                        />
+                    </table>
+                </div>
                 <button id="pause" style="position:fixed;"
                     true="false">Défile</button>
 
@@ -95,14 +99,17 @@
                     <table>
                         <tr>
                             <td class="variante1">
-                                <span>Variante</span>
+                              <span>Variante</span>
                             </td>
                             <td class="variante2">
-                                <span>Lemme différent</span>
+                              <span>Lemme différent</span>
                             </td>
                             <td class="grammatical">
-                                <span>Variante grammaticale (pos
-                                   différent)</span>
+                              <span>Variante grammaticale
+                              (pos différent)</span>
+                            </td>
+                            <td>
+                              <span id="log">0%</span>
                             </td>
                         </tr>
                     </table>
@@ -140,18 +147,47 @@
             </td>
         </tr>
         <tr>
-            <xsl:for-each select="//tei:rdg[position() = $position]">
+            <xsl:for-each
+                select="//tei:rdg[position() = $position]">
                 <xsl:message>
                     <xsl:value-of select="$position"/>
                 </xsl:message>
 
                 <!--Créer une règle pour mettre les lieux variants avec une omission d'une certaine couleur. Éventuellement, si on détecte une omission, refaire un tour d'évaluation.-->
 
+                <!--Form comparison-->
+
+                <xsl:variable name="first_form"
+                    select="concat('(', string-join(translate(string-join(tei:w/text()), 'áéíóúýv', 'aeiouyu'), '-'), ')')"/>
+                <xsl:message>First pos: <xsl:value-of
+                        select="$first_form"/></xsl:message>
+                <!--Avec cette expression on va pouvoir isoler les pos d'une même leçon pour pouvoir les comparer entre elles-->
+                <xsl:variable name="all_forms" select="
+                        string-join(for $i in (parent::tei:app/tei:rdg[position() > 1])
+                        return
+                            concat('(', string-join(translate(string-join($i/tei:w/text()), 'áéíóúýv', 'aeiouyu'), '-'), ')'), '|')"/>
+                <xsl:message>All pos: <xsl:value-of
+                        select="$all_forms"/></xsl:message>
+                <xsl:variable name="form">
+                    <xsl:choose>
+                        <xsl:when
+                            test="not($first_form != tokenize($all_forms, '\|'))"
+                            >True</xsl:when>
+                        <xsl:otherwise>False</xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
+                <xsl:message>Form: <xsl:value-of
+                        select="$form"/></xsl:message>
+                <xsl:message> </xsl:message>
+                <!--Form comparison-->
+
+
                 <!--Lemma comparison-->
                 <xsl:variable name="first_word_lemma"
                     select="concat('(', string-join(tei:w/@lemma, '-'), ')')"/>
                 <xsl:message>First lemma: <xsl:value-of
-                        select="$first_word_lemma"/></xsl:message>
+                        select="$first_word_lemma"
+                    /></xsl:message>
                 <xsl:variable name="all_lemmas" select="
                         string-join(for $i in (parent::tei:app/tei:rdg[position() > 1])
                         return
@@ -168,24 +204,27 @@
                         <xsl:otherwise>False</xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
-                <xsl:message>Pos: <xsl:value-of select="$lemma"
-                    /></xsl:message>
+                <xsl:message>Lemma: <xsl:value-of
+                        select="$lemma"/></xsl:message>
                 <xsl:message> </xsl:message>
                 <!--Lemma comparison-->
 
 
-                <!--Lemma comparison-->
+
+
+                <!--Pos comparison-->
                 <xsl:variable name="first_word_pos"
                     select="concat('(', string-join(tei:w/@pos, '-'), ')')"/>
                 <xsl:message>First pos: <xsl:value-of
-                        select="$first_word_pos"/></xsl:message>
+                        select="$first_word_pos"
+                    /></xsl:message>
                 <!--Avec cette expression on va pouvoir isoler les pos d'une même leçon pour pouvoir les comparer entre elles-->
                 <xsl:variable name="all_poss" select="
                         string-join(for $i in (parent::tei:app/tei:rdg[position() > 1])
                         return
                             concat('(', string-join($i/tei:w/@pos, '-'), ')'), '|')"/>
-                <xsl:message>All pos: <xsl:value-of select="$all_poss"
-                    /></xsl:message>
+                <xsl:message>All pos: <xsl:value-of
+                        select="$all_poss"/></xsl:message>
                 <xsl:variable name="pos">
                     <xsl:choose>
                         <xsl:when
@@ -194,20 +233,34 @@
                         <xsl:otherwise>False</xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
-                <xsl:message>Pos: <xsl:value-of select="$pos"
-                    /></xsl:message>
+                <xsl:message>Pos: <xsl:value-of
+                        select="$pos"/></xsl:message>
                 <xsl:message> </xsl:message>
-                <!--Lemma comparison-->
+                <!--Pos comparison-->
 
                 <xsl:variable name="comparison_value">
-                    <xsl:if test="$pos = 'False' and $lemma = 'False'"
-                        >fitwidth texte variante1</xsl:if>
-                    <xsl:if test="$pos = 'False' and $lemma = 'True'"
-                        >fitwidth texte grammatical</xsl:if>
-                    <xsl:if test="$pos = 'True' and $lemma = 'True'"
-                        >fitwidth texte</xsl:if>
-                    <xsl:if test="$pos = 'True' and $lemma = 'False'"
-                        >fitwidth texte variante2</xsl:if>
+                    <xsl:choose>
+                        <!--Si toutes les formes sont égales, pas besoin d'aller corriger les pos ou les lemmes.-->
+                        <xsl:when test="$form = 'True'"
+                            >fitwidth texte</xsl:when>
+                        <xsl:otherwise>
+                            <xsl:if
+                              test="$pos = 'False' and $lemma = 'False'"
+                              >fitwidth texte
+                              variante1</xsl:if>
+                            <xsl:if
+                              test="$pos = 'False' and $lemma = 'True'"
+                              >fitwidth texte
+                              grammatical</xsl:if>
+                            <xsl:if
+                              test="$pos = 'True' and $lemma = 'True'"
+                              >fitwidth texte</xsl:if>
+                            <xsl:if
+                              test="$pos = 'True' and $lemma = 'False'"
+                              >fitwidth texte
+                              variante2</xsl:if>
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </xsl:variable>
 
                 <xsl:element name="td"
@@ -217,7 +270,7 @@
                     <xsl:if test="tei:w">
                         <xsl:attribute name="id">
                             <xsl:value-of
-                                select="translate(string-join(tei:w/@xml:id), '_', '')"
+                              select="translate(string-join(tei:w/@xml:id), '_', '')"
                             />
                         </xsl:attribute>
                         <span class="forme">
@@ -226,20 +279,21 @@
                         <span class="annotation"
                             id="ann_{translate(string-join(tei:w/@xml:id), '_', '')}">
                             <span class="ann_lemma">
-                                <i>
-                                   <xsl:value-of select="tei:w/@lemma"
-                                   />
-                                </i>
+                              <i>
+                              <xsl:value-of
+                              select="tei:w/@lemma"/>
+                              </i>
                             </span>
                             <span class="ann_pos">
-                                <xsl:value-of select="tei:w/@pos"/>
+                              <xsl:value-of
+                              select="tei:w/@pos"/>
                             </span>
                         </span>
                     </xsl:if>
                     <xsl:if test="om">
                         <xsl:attribute name="id">
                             <xsl:value-of
-                                select="concat('om_', count(preceding::om) + 1)"
+                              select="concat('om_', count(preceding::om) + 1)"
                             />
                         </xsl:attribute>
                         <i>omisit</i>
