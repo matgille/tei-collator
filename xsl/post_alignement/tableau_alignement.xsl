@@ -105,7 +105,7 @@
                               <span>Lemme différent</span>
                             </td>
                             <td class="grammatical">
-                              <span>Variante grammaticale
+                              <span>Variante morphosyntactique
                               (pos différent)</span>
                             </td>
                             <td>

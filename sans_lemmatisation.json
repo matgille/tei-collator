@@ -11,10 +11,9 @@
     "scinder_par": "chapitre", // doit correspondre au type de la division base: tei:div[@type='chapitre']
     "element_base": "p" // y a-t-il un élément sur lequel aligner la collation ? tei:l ou tei:p par exemple. Ne pas inclure l'espace de nom
   },
-  "reinjection": false,
-  //"reinjection": {"tei:note[@type='general']": "after", // quels éléments réinjecter, et leur position par rapport au tei:w ancre
-                  //"tei:note[@type='particulier'][@subtype='variante']":"after",
-                 // "tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, 'Sev_Z')]]": "before"},
+  "reinjection": {"tei:note[@type='general']": "after", // quels éléments réinjecter, et leur position par rapport au tei:w ancre
+                  "tei:note[@type='particulier'][@subtype='variante']":"after",
+                 "tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, 'Sev_Z')]]": "before"},
   "corpus": { // état du corpus avant processage
     "tokenized" : true,
     "xmlIdentifiers" : true, // chaque token est-il associé à son xml:id ?
@@ -26,6 +25,6 @@
   "sortie":{
     "fusion_divs": false, // crée-t-on des documents xml maîtres, pour produire un pdf avec toutes les divisions ?
     "tableaux_alignement": true, // créer les tableaux d'alignement
-    "LaTeX": false
+    "LaTeX": true
   }
 }
