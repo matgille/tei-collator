@@ -198,7 +198,6 @@ def main():
         liste_fichiers_in = glob.glob(f'divs/div{i}/apparat_*_*final.xml')
         for fichier in liste_fichiers_in:
             collation.raffinage_apparats(fichier, i)
-        exit(0)
         # Tests de conformité
         corpus = Corpus()
         print(f'Tests en cours...')

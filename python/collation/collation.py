@@ -206,12 +206,12 @@ def apparat_final(fichier_entree, chemin):
                 # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante grapique.
                 # Ici il faut se rappeler qu'il y a une différence entre les formes
                 if not comparaison_lemme:  # si il y a une différence de lemmes seulement: 'vraie variante'
-                    type_apparat = 'variante'
+                    type_apparat = 'lexicale'
                 ### TODO: ajouter une règle sur les noms propres. Si lemmes différent, mais pos = NP, alors variante
                 ### d'entité nommée. Ça ne changera probablement rien à la fin mais l'encodage est plus fin comme ça.
                 ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
                 elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
-                    type_apparat = 'personne_genre'
+                    type_apparat = 'morphosyntactique'
                 elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
                     if liste_lemme[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
                         # indéterminée
@@ -323,7 +323,7 @@ def txt_to_liste(filename):
 def raffinage_apparats(fichier, i):
     """
     Cette fonction permet de raffiner les apparats en rassemblant les variantes graphiques au sein d'un apparat qui
-    comporte des variantes "vraies" ou grammaticales. On va créer des tei:rdgGroup qui rassembleront les rdg.
+    comporte des variantes "vraies" ou morphosyntactiques. On va créer des tei:rdgGroup qui rassembleront les rdg.
     """
     sigle = fichier.split("apparat_")[1].split(f"_{i}_")[0]
     print(sigle)
@@ -381,7 +381,7 @@ def raffinage_apparats(fichier, i):
             for group in rdg_groups:
                 tei_namespace = 'http://www.tei-c.org/ns/1.0'
                 namespace = '{%s}' % tei_namespace
-                rdg_grp = etree.SubElement(apparat, namespace + 'rdg_grp')
+                rdg_grp = etree.SubElement(apparat, namespace + 'rdgGrp')
                 for identifiant in group:
                     orig_rdg = apparat.xpath(f"tei:rdg[@id = '{identifiant}']", namespaces=tei)[0]
                     rdg_grp.append(orig_rdg)
