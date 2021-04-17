@@ -103,7 +103,6 @@ class CorpusXML:
                 else:
                     mot.set("lemma", lemme_position)
                     mot.set("pos", pos_position)
-            print(f"Travail terminé pour {fichier_sans_extension}!")
 
         elif self.langue == "lat_o":
             modele_latin = "model.tar"
@@ -230,10 +229,14 @@ if __name__ == "__main__":
     print("Merci de lancer le script depuis la racine du dépôt.")
     temoins = glob.glob(sys.argv[1])
     langue = sys.argv[2]
+    try:
+        division = sys.argv[3]
+    except IndexError:
+        division = "*"
     corpus_a_lemmatiser = CorpusXML(
         liste_temoins=temoins,
         langue=langue,
         moteur_transformation="saxon9he.jar",
         core_number=mp.cpu_count()
     )
-    corpus_a_lemmatiser.lemmatisation_parallele()
+    corpus_a_lemmatiser.lemmatisation_parallele(division)
