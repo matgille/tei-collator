@@ -1,0 +1,30 @@
+{// Cette feuille de configuration est copiee de la méthode de Enrique Manjavacas et de Thibault Clérice pour leur projet Pie
+  "structure": "tei:teiCorpus/tei:TEI/tei:text/tei:div/tei:div/tei:div/tei:div/tei:p", // comment est structuré le xml: le dernier élément indiqué est celui de la collation
+  "chemin_vers_TEI": "/tei:teiCorpus/tei:teiCorpus[@xml:id='castB']/tei:TEI", // le chemin vers chaque fichier individuel - vérifier que le ns xml:id fonctionne
+  "localisation_fichiers": "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml",
+  "tei:teiCorpus": true, // les fichiers sont-ils inclus dans un tei:teiCorpus ?
+  "punctuation": true, //(tbc) faut-il collationer la ponctuation ?
+  "alignement": "global", // quel alignement ? Global (global) ou mot à mot (mam) ?
+  "fichier_leader": "Sal_J.xml", // le programme a besoin d'un fichier leader dont il va utiliser la structure.
+  "scission": {
+    "scinder": true, // est-ce que le programme scinde la collation (pour les gros fichiers xml) et n'aligne que bloc par bloc (évite l'overlapping)
+    "scinder_par": "chapitre", // doit correspondre au type de la division base: tei:div[@type='chapitre']
+    "element_base": "p" // y a-t-il un élément sur lequel aligner la collation ? tei:l ou tei:p par exemple. Ne pas inclure l'espace de nom
+  },
+  "reinjection": {"tei:note[@type='general']": "after", // quels éléments réinjecter, et leur position par rapport au tei:w ancre
+                  "tei:note[@type='particulier'][@subtype='variante']":"after",
+                  "tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, 'Sev_Z')]]": "before"},
+  "corpus": { // état du corpus avant processage
+    "tokenized" : false,
+    "xmlIdentifiers" : false, // chaque token est-il associé à son xml:id ?
+    "lemmatized" : false
+  },// ajouter une option autodetect ? 
+  "lemmatize": true, // lemmatiser avant de collationner ?
+  "parallel_process_number": "auto", // combien de processus en parallèle pour la lemmatisation ? valeurs possibles: null (pas de parallélisation) , "auto" ou entier
+  "lang": "spa_o", // la langue, selon le standard ISO 639-3. Le latin et le castillan médiéval ne sont pas codés: utiliser lat_o et spa_o
+  "sortie":{
+    "fusion_divs": false,
+    "tableaux_alignement": true, // créer les tableaux d'alignement
+    "LaTeX": true
+  }
+}
