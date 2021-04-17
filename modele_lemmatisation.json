@@ -25,6 +25,6 @@
   "sortie":{
     "fusion_divs": false,
     "tableaux_alignement": true, // créer les tableaux d'alignement
-    "LaTeX": false
+    "LaTeX": true
   }
 }

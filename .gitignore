@@ -20,3 +20,5 @@ temoins_tokenises*/
 .idea/
 test_results/
 venv/
+lemmatisation.json
+sans_lemmatisation.json

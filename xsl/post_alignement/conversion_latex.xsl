@@ -4,8 +4,10 @@
     et bien formée (une déclaration d'entité, etc) Sur cette transformation, en faire une seconde qui va supprimer tout ce qui est xml et garder que le texte ET qui 
 pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'adapter les détails à LaTeX, comme les - - qui donne un tiret correct, ou transformer tous les e en &, etc-->
 
-<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:tex="placeholder.uri"
+<xsl:stylesheet version="2.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:tei="http://www.tei-c.org/ns/1.0"
+    xmlns:tex="placeholder.uri"
     exclude-result-prefixes="tex">
     <!--RECOMMANDÉ: la feuille xsl est construite pour une utilisation du document .tex comme annexe 
         vers laquelle pointe le document principal (utilisant \input{...} par exemple).-->
@@ -24,7 +26,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     <!--Cette feuille est adaptée à mon propre document XML-->
     <!--Merci à Arianne Pinche pour son aide précieuse dans cette feuille-->
     <!--Merci à Marjorie Burghart de m'avoir envoyé sa feuille de transformation qui m'a bien aidé-->
-    <xsl:output method="text" omit-xml-declaration="no" encoding="UTF-8"/>
+    <xsl:output method="text" omit-xml-declaration="no"
+        encoding="UTF-8"/>
     <xsl:strip-space elements="*"/>
     <xsl:param name="fusion"/>
     <xsl:template match="/">
@@ -41,8 +44,9 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
             \documentclass[francais,oneside,a4paper,12pt]{book}
         </xsl:text>
         <xsl:choose>
-            <xsl:when test="$fusion = 'True'">\input{../latex/preambule.tex}</xsl:when>
-<!--Ça ne devrait pas marcher, bizarre.-->
+            <xsl:when test="$fusion = 'True'"
+                >\input{../latex/preambule.tex}</xsl:when>
+            <!--Ça ne devrait pas marcher, bizarre.-->
             <xsl:otherwise>
                 <xsl:text>\input{latex/preambule.tex}</xsl:text>
             </xsl:otherwise>
@@ -120,22 +124,24 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     <!--Est ce que je me complique pas la vie à écrire deux fois les mêmes règles?-->
     <!--Si la note est thématique, second niveau de notes, appel en chiffres arabes-->
     <xsl:template
-        match="tei:note[@type = 'general'][not(parent::tei:head)][not(@subtype = 'variante')]">
+        match="tei:note[@type = 'general'][not(parent::tei:head)][not(@subtype = 'lexicale')]">
         <xsl:text>\footnote{</xsl:text>
         <xsl:apply-templates/>
         <xsl:text>}</xsl:text>
     </xsl:template>
 
 
-    <xsl:template match="tei:note[@subtype = 'variante'][not(parent::tei:head)]">
+    <xsl:template
+        match="tei:note[@subtype = 'lexicale'][not(parent::tei:head)]">
         <xsl:text>\footnote{(</xsl:text>
-        <xsl:value-of select="translate(translate(@corresp, '#', ''), '_', ' ')"/>
+        <xsl:value-of
+            select="translate(translate(@corresp, '#', ''), '_', ' ')"/>
         <xsl:text>) </xsl:text>
         <xsl:apply-templates/>
         <xsl:text>}</xsl:text>
     </xsl:template>
-    
-    
+
+
 
     <xsl:template match="tei:head">
         <xsl:choose>
@@ -205,7 +211,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                     <!--Si l'apparat n'est pas un apparat principal mais un apparat de point notables (notable)
                     >> note. On peut accepter la note de bas de page (éviter les notes de bas de page dans un apparat
                     critique...)-->
-                    <xsl:when test="(ancestor::tei:app/@type = 'notable')">
+                    <xsl:when
+                        test="(ancestor::tei:app/@type = 'notable')">
                         <xsl:text>\footnote{Ajouté en marge:\textit{</xsl:text>
                         <xsl:apply-templates/>
                         <xsl:text>}}</xsl:text>
@@ -223,7 +230,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                 <xsl:text>\footnote{</xsl:text>
                 <xsl:if test="@corresp">
                     <xsl:text> [Ms. </xsl:text>
-                    <xsl:value-of select="translate(@corresp, '#', '')"/>
+                    <xsl:value-of
+                        select="translate(@corresp, '#', '')"/>
                     <xsl:text>] </xsl:text>
                 </xsl:if>
                 <xsl:text>Ajouté </xsl:text>
@@ -233,7 +241,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                 <xsl:text>}''</xsl:text>
                 <xsl:if test="@hand">
                     <xsl:text> Main </xsl:text>
-                    <xsl:value-of select="translate(@hand, '#', '')"/>
+                    <xsl:value-of
+                        select="translate(@hand, '#', '')"/>
                     <xsl:text>. </xsl:text>
                 </xsl:if>
                 <xsl:if test="./tei:note">
@@ -329,15 +338,18 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
 
-    <xsl:template match="tei:div[@type = 'chapitre'][not(@type = 'glose' or @type = 'traduction')]">
+    <xsl:template
+        match="tei:div[@type = 'chapitre'][not(@type = 'glose' or @type = 'traduction')]">
         <xsl:variable name="temoin_courant">
-            <xsl:analyze-string select="@xml:id" regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
+            <xsl:analyze-string select="@xml:id"
+                regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
                 <xsl:matching-substring>
                     <xsl:value-of select="regex-group(1)"/>
                 </xsl:matching-substring>
             </xsl:analyze-string>
         </xsl:variable>
-        <xsl:variable name="temoin_courant2" select="substring-after($temoin_courant, '_')"/>
+        <xsl:variable name="temoin_courant2"
+            select="substring-after($temoin_courant, '_')"/>
         <xsl:text>\chapter{Chapitre </xsl:text>
         <xsl:value-of select="@n"/>
         <xsl:choose>
@@ -380,14 +392,16 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text> </xsl:text>
         <!--Afficher ici la lecture du témoin courant, voir plus bas-->
         <xsl:variable name="temoin_courant">
-            <xsl:analyze-string select="ancestor::tei:div[@type = 'chapitre'][@xml:id]/@xml:id"
+            <xsl:analyze-string
+                select="ancestor::tei:div[@type = 'chapitre'][@xml:id]/@xml:id"
                 regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
                 <xsl:matching-substring>
                     <xsl:value-of select="regex-group(1)"/>
                 </xsl:matching-substring>
             </xsl:analyze-string>
         </xsl:variable>
-        <xsl:apply-templates select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
+        <xsl:apply-templates
+            select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
         <xsl:if
             test="descendant::tei:note[not(ancestor::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)])]">
             <xsl:apply-templates
@@ -406,7 +420,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
         <xsl:if test="@unit = 'item_rang_2'">
             <xsl:text>\textbf{ </xsl:text>
-            <xsl:value-of select="preceding::tei:milestone[@unit = 'item_rang_1'][1]/@n"/>
+            <xsl:value-of
+                select="preceding::tei:milestone[@unit = 'item_rang_1'][1]/@n"/>
             <xsl:text>.</xsl:text>
             <xsl:value-of select="@n"/>
             <xsl:text> }</xsl:text>
@@ -414,9 +429,11 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
         <xsl:if test="@unit = 'item_rang_3'">
             <xsl:text>\textbf{ </xsl:text>
-            <xsl:value-of select="preceding::tei:milestone[@unit = 'item_rang_1'][1]/@n"/>
+            <xsl:value-of
+                select="preceding::tei:milestone[@unit = 'item_rang_1'][1]/@n"/>
             <xsl:text>.</xsl:text>
-            <xsl:value-of select="preceding::tei:milestone[@unit = 'item_rang_2'][1]/@n"/>
+            <xsl:value-of
+                select="preceding::tei:milestone[@unit = 'item_rang_2'][1]/@n"/>
             <xsl:text>.</xsl:text>
             <xsl:value-of select="@n"/>
             <xsl:text> }</xsl:text>
@@ -433,55 +450,166 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
     <xsl:template match="tei:hi[@rend = 'lettre_attente']"/>
 
-    <xsl:template match="tei:hi[@rend = 'lettre_capitulaire']">
+    <xsl:template
+        match="tei:hi[@rend = 'lettre_capitulaire']">
         <xsl:value-of select="lower-case(.)"/>
     </xsl:template>
 
     <xsl:template
-        match="tei:app[@type = 'variante'] | tei:app[@type = 'personne_genre'] | tei:app[@type = 'indetermine']">
+        match="tei:app[@type = 'lexicale'] | tei:app[@type = 'morphosyntactique'] | tei:app[@type = 'indetermine']">
         <xsl:text> </xsl:text>
         <xsl:variable name="temoin_courant">
-            <xsl:analyze-string select="ancestor::tei:div[@type = 'chapitre'][@xml:id]/@xml:id"
+            <xsl:analyze-string
+                select="ancestor::tei:div[@type = 'chapitre'][@xml:id]/@xml:id"
                 regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
                 <xsl:matching-substring>
                     <xsl:value-of select="regex-group(1)"/>
                 </xsl:matching-substring>
             </xsl:analyze-string>
         </xsl:variable>
-        <xsl:variable name="temoin_courant2" select="substring-after($temoin_courant, '_')"/>
+        <xsl:variable name="temoin_courant2"
+            select="substring-after($temoin_courant, '_')"/>
         <xsl:text> \Anote{</xsl:text>
         <!-- test: UNCLEAR entre crochets avec un ?-->
-        <xsl:apply-templates select="tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
+        <xsl:apply-templates
+            select="descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
         <xsl:text>}{</xsl:text>
         <xsl:text>\textit{</xsl:text>
         <!--Pour chaque témoin, ne faire apparaître que la lettre correspondante-->
-        <xsl:for-each
-            select="tokenize(tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]/@wit, '\s')">
-            <xsl:value-of select="substring-after(., '_')"/>
-        </xsl:for-each>
+        <xsl:choose>
+            <!--S'il y a un rdgGrp (= si d'autres leçons sont identiques modulo variation graphique à la leçon base)-->
+            <xsl:when
+                test="boolean(descendant::tei:rdgGrp[descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]])">
+                <xsl:variable name="lemma_wits">
+                    <xsl:for-each
+                        select="tokenize(descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]/@wit, '\s')">
+                        <xsl:value-of
+                            select="substring-after(., '_')"
+                        />
+                    </xsl:for-each>
+                </xsl:variable>
+                <xsl:variable name="siblings">
+                    <xsl:for-each
+                        select="descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]/following-sibling::tei:rdg">
+                        <xsl:for-each
+                            select="tokenize(@wit, '\s')">
+                            <xsl:value-of
+                              select="substring-after(., '_')"
+                            />
+                        </xsl:for-each>
+                    </xsl:for-each>
+                    <xsl:for-each
+                        select="descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]/preceding-sibling::tei:rdg">
+                        <xsl:for-each
+                            select="tokenize(@wit, '\s')">
+                            <xsl:value-of
+                              select="substring-after(., '_')"
+                            />
+                        </xsl:for-each>
+                    </xsl:for-each>
+                </xsl:variable>
+
+                <!--Il y a parfois des rdgGrp qui ne contiennent qu'un tei:rdg: dans ce cas, n'imprimer que la valeur du témoin base-->
+                <xsl:choose>
+                    <xsl:when
+                        test="boolean(count(descendant::tei:rdgGrp[descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]]/descendant::tei:rdg) > 1)">
+                        <xsl:value-of
+                            select="concat($lemma_wits, ' ', $siblings, ' c.v.')"
+                        />
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:message>False</xsl:message>
+                        <xsl:value-of select="$lemma_wits"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+                <!--Il y a parfois des rdgGrp qui ne contiennent qu'un tei:rdg: dans ce cas, n'imprimer que la valeur du témoin base-->
+            </xsl:when>
+            <!--S'il y a un rdgGrp (= si d'autres leçons sont identiques modulo variation graphique à la leçon base)-->
+            <xsl:otherwise>
+                <xsl:for-each
+                    select="tokenize(tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]/@wit, '\s')">
+                    <xsl:value-of
+                        select="substring-after(., '_')"/>
+                </xsl:for-each>
+            </xsl:otherwise>
+        </xsl:choose>
         <!--Pour chaque témoin, ne faire apparaître que la lettre correspondante-->
         <xsl:text>}\,|\,</xsl:text>
         <!--La même chose mais en utilisant une autre méthode-->
-        <xsl:for-each select="tei:rdg[not(contains(translate(@wit, '#', ''), $temoin_courant))]">
-            <xsl:variable name="sigle_temoin">
-                <xsl:analyze-string select="@wit" regex="([a-zA-Z]*_)([A-Z])">
-                    <xsl:matching-substring>
-                        <xsl:value-of select="regex-group(2)"/>
-                    </xsl:matching-substring>
-                </xsl:analyze-string>
-            </xsl:variable>
-            <xsl:choose>
-                <xsl:when test="descendant::text()">
-                    <xsl:apply-templates select="."/>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:text>\textit{om.}</xsl:text>
-                </xsl:otherwise>
-            </xsl:choose>
-            <xsl:text>\,\textit{</xsl:text>
-            <xsl:value-of select="$sigle_temoin"/>
-            <xsl:text>}\,</xsl:text>
-        </xsl:for-each>
+        <xsl:choose>
+            <xsl:when test="descendant::tei:rdgGrp">
+                <xsl:for-each
+                    select="descendant::tei:rdgGrp[count(descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]) = 0]">
+                    <xsl:message>
+                        <xsl:copy-of
+                            select="self::tei:rdgGrp/node()"/>
+                        <xsl:value-of
+                            select="count(descendant::tei:rdg[contains(@wit, concat('#', $temoin_courant))])"
+                        />
+                    </xsl:message>
+                    <!--L'idée ici est de raffiner les apparats pour rassembler les variantes graphiques entre elles-->
+                    <xsl:for-each
+                        select="descendant::tei:rdg">
+                        <xsl:variable name="sigle_temoin">
+                            <xsl:analyze-string
+                              select="@wit"
+                              regex="([a-zA-Z]*_)([A-Z])">
+                              <xsl:matching-substring>
+                              <xsl:value-of
+                              select="regex-group(2)"/>
+                              </xsl:matching-substring>
+                            </xsl:analyze-string>
+                        </xsl:variable>
+                        <xsl:choose>
+                            <xsl:when
+                              test="descendant::text()">
+                              <xsl:if
+                              test="not(preceding-sibling::tei:rdg)">
+                              <xsl:apply-templates
+                              select="."/>
+                              </xsl:if>
+                            </xsl:when>
+                            <xsl:otherwise>
+                              <xsl:text>\textit{om.}</xsl:text>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                        <xsl:text>\,\textit{</xsl:text>
+                        <xsl:value-of select="$sigle_temoin"/>
+                        <xsl:if
+                            test="not(count(ancestor::tei:rdgGrp/descendant::tei:rdg) = 1) and not(following-sibling::tei:rdg)">
+                            <xsl:text> c.v.</xsl:text>
+                        </xsl:if>
+                        <xsl:text>}\,</xsl:text>
+                    </xsl:for-each>
+                </xsl:for-each>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:for-each
+                    select="tei:rdg[not(contains(translate(@wit, '#', ''), $temoin_courant))]">
+                    <xsl:variable name="sigle_temoin">
+                        <xsl:analyze-string select="@wit"
+                            regex="([a-zA-Z]*_)([A-Z])">
+                            <xsl:matching-substring>
+                              <xsl:value-of
+                              select="regex-group(2)"/>
+                            </xsl:matching-substring>
+                        </xsl:analyze-string>
+                    </xsl:variable>
+                    <xsl:choose>
+                        <xsl:when test="descendant::text()">
+                            <xsl:apply-templates select="."
+                            />
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:text>\textit{om.}</xsl:text>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                    <xsl:text>\,\textit{</xsl:text>
+                    <xsl:value-of select="$sigle_temoin"/>
+                    <xsl:text>}\,</xsl:text>
+                </xsl:for-each>
+            </xsl:otherwise>
+        </xsl:choose>
         <xsl:text>}</xsl:text>
     </xsl:template>
     <!--STRUCTURE DU TEXTE-->
@@ -514,12 +642,14 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
     <xsl:template match="tei:witEnd">
         <xsl:text>\footnote{Le témoin </xsl:text>
-        <xsl:value-of select="substring-after(parent::tei:rdg/@wit, '_')"/>
+        <xsl:value-of
+            select="substring-after(parent::tei:rdg/@wit, '_')"/>
         <xsl:text> s'arrête ici.}</xsl:text>
     </xsl:template>
 
     <xsl:template match="text()">
-        <xsl:variable name="remplacement1" select="replace(., '&amp;', '\\&amp;')"/>
+        <xsl:variable name="remplacement1"
+            select="replace(., '&amp;', '\\&amp;')"/>
         <xsl:value-of select="$remplacement1"/>
     </xsl:template>
 
