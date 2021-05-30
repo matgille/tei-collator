@@ -2,6 +2,8 @@ import subprocess
 import sys
 import re
 import glob
+
+import torch
 from lxml import etree
 import os
 import tqdm
@@ -16,7 +18,8 @@ class CorpusXML:
         self.langue = langue
         self.moteur_transformation = moteur_transformation
         if self.langue == "lat_o":
-            self.core_number = 1  # le multiprocessing n'a pas d'intérêt avec pie
+            self.core_number = 1  # le multiprocessing n'a pas d'intérêt avec pie, il vaut mieux chercher
+            # à utiliser la carte graphique s'il y en a une.
         else:
             self.core_number = core_number
 
@@ -106,7 +109,8 @@ class CorpusXML:
 
         elif self.langue == "lat_o":
             modele_latin = "model.tar"
-            cmd = f"pie tag --device cuda {fichier_entree_txt} <{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
+            device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
+            cmd = f"pie tag --device {device} {fichier_entree_txt} <{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
             print(cmd)
             subprocess.run(cmd.split())
             fichier_seul = os.path.splitext(fichier_entree_txt)[0]
