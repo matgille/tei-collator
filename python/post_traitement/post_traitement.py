@@ -6,6 +6,9 @@ import operator
 import traceback
 import multiprocessing as mp
 
+import python.utils.utils as utils
+
+
 def injection_en_masse(chapitre, element_tei, position, liste_temoins):
     """
     Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier.
@@ -17,11 +20,12 @@ def injection_en_masse(chapitre, element_tei, position, liste_temoins):
     :return: None
     """
     fichiers_out = (injections_element(fichier_xml, chapitre, element_tei,
-                                                 position) for fichier_xml in liste_temoins)
+                                       position) for fichier_xml in liste_temoins)
 
     for xml_element in fichiers_out:
         with open(xml_element[1], "w") as output_file:
             output_file.write(etree.tostring(xml_element[0]).decode())
+
 
 ### ATTENTION, l'injection ne peut pas marcher en l'état absolument correctement.
 # En effet, l'alignement n'est pas assez fin pour permettre de réinjecter les éléments au token près,
@@ -45,12 +49,11 @@ def injections_element(temoin, n, tei_elements, position):
     print(f'\nInserting {tei_elements} into {temoin}')
 
     if position == "before":
-        following_or_preceding = "following" # on va chercher le tei:w suivant
-        sign = operator.sub # et on injectera donc avant ce tei:w (index(tei:w) - 1)
+        following_or_preceding = "following"  # on va chercher le tei:w suivant
+        sign = operator.sub  # et on injectera donc avant ce tei:w (index(tei:w) - 1)
     else:
-        following_or_preceding = "preceding" # on va chercher le tei:w précédent
-        sign = operator.add # et on injectera donc après ce tei:w (index(tei:w) + 1)
-
+        following_or_preceding = "preceding"  # on va chercher le tei:w précédent
+        sign = operator.add  # et on injectera donc après ce tei:w (index(tei:w) + 1)
 
     final_notes_list = []
     final_w_list = []
@@ -63,14 +66,17 @@ def injections_element(temoin, n, tei_elements, position):
         # On va d'abord récuperer et aligner chaque élément tei:note, l'xml:id du tei:w qui précède et le témoin concerné
         notes_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}', namespaces=NSMAP1)
         nombre_de_notes = len(notes_list)
-        w_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/{following_or_preceding}::tei:w[1]/@xml:id', namespaces=NSMAP1)
-        temoin_id = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/ancestor::tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)
+        w_list = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/{following_or_preceding}::tei:w[1]/@xml:id',
+                         namespaces=NSMAP1)
+        temoin_id = f.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}/ancestor::tei:div[@type=\'chapitre\']/@xml:id',
+                            namespaces=NSMAP1)
         if temoin_id:
             temoin_id = "_".join(temoin_id[0].split("_")[0:2])
-            final_witness_list.extend([temoin_id for x in range(nombre_de_notes)]) # https://stackoverflow.com/a/4654446
+            final_witness_list.extend(
+                [temoin_id for x in range(nombre_de_notes)])  # https://stackoverflow.com/a/4654446
         final_w_list.extend(w_list)
         final_notes_list.extend(notes_list)
-    notes_tuples =  list(zip(final_w_list, final_notes_list, final_witness_list))
+    notes_tuples = list(zip(final_w_list, final_notes_list, final_witness_list))
     # On produit une liste de tuples de la forme :
     # [
     # ('kNMdVRz', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9ac8>, 'Sev_R'),
@@ -81,18 +87,19 @@ def injections_element(temoin, n, tei_elements, position):
         print(f'{etree.tostring(i[1])} is {position} w[@xml:id=\'{i[0]}\']')
     # Puis on va parcourir le dictionnaire et insérer toutes les notes dans le témoin traité.
     current_xml_file = etree.parse(temoin)
-    temoin_id_courant = "_".join(current_xml_file.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[0:2])
+    temoin_id_courant = "_".join(
+        current_xml_file.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[0:2])
     print("--- Injection ---")
     print(len(notes_tuples))
     for item in notes_tuples:
         id_item, element, temoin_de_l_element = item[0], item[1], item[2]
-        if element.xpath("@injected='injected'"): # on évite ainsi de réinjecter des éléments déjà injectés
+        if element.xpath("@injected='injected'"):  # on évite ainsi de réinjecter des éléments déjà injectés
             # quand on passe au témoin suivant.
             pass
         else:
             print(f'Élément à injecter : {etree.tostring(element)}')
-            element.set("injected", "injected") # il faudra nettoyer ça à la fin de la boucle.
-            element.set("corresp", f'#{temoin_de_l_element}') # on indique de quel témoin provient l'élément.
+            element.set("injected", "injected")  # il faudra nettoyer ça à la fin de la boucle.
+            element.set("corresp", f'#{temoin_de_l_element}')  # on indique de quel témoin provient l'élément.
             # Il y a un bug ici: puisque l'on modifie à la volée les textes, à chaque fois qu'on change de témoin
             # ça pose problème et le témoin dans le corresp est faux, ce qui
             # va biaiser la suite du processus... Il faut que cette fonction produise un nouveau document de sortie
@@ -102,17 +109,19 @@ def injections_element(temoin, n, tei_elements, position):
             else:
                 try:
                     # print(f"témoin: {temoin_id_courant}; id: {id_item}\n"
-                          # f"contenu de l'élément: {etree.tostring(element)}")
+                    # f"contenu de l'élément: {etree.tostring(element)}")
                     word_to_change = current_xml_file.xpath(f'//tei:w[@xml:id=\'{id_item}\']', namespaces=NSMAP1)[0]
                     item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
                     # -element-after-another-element
                     # print(sign)
-                    index = sign(item_element.index(word_to_change), 1)# https://stackoverflow.com/a/54559513
+                    index = sign(item_element.index(word_to_change), 1)  # https://stackoverflow.com/a/54559513
                     # print(f'index => {index}')
                     if index == -1:
                         index = 0
                     # On va tester la présence de l'élément à l'emplacement de l'injection
-                    test_existence = current_xml_file.xpath(f'//tei:div[@n=\'{n}\']//{tei_elements}[{following_or_preceding}::tei:w[@xml:id = \'{id_item}\']]', namespaces=NSMAP1)
+                    test_existence = current_xml_file.xpath(
+                        f'//tei:div[@n=\'{n}\']//{tei_elements}[{following_or_preceding}::tei:w[@xml:id = \'{id_item}\']]',
+                        namespaces=NSMAP1)
                     if len(test_existence) == 0:
                         item_element.insert(index, element)
                     else:
@@ -124,12 +133,136 @@ def injections_element(temoin, n, tei_elements, position):
     return current_xml_file, temoin
 
 
+def raffinage_apparats(fichier, i):
+    """
+    Cette fonction permet de raffiner les apparats en rassemblant les variantes graphiques au sein d'un apparat qui
+    comporte des variantes "vraies" ou morphosyntactiques. On va créer des tei:rdgGroup qui rassembleront les rdg.
+    """
+    # TODO: fusionner cette fonctiona avec la fonction de création d'apparat ?
+    # TODO: il reste un problème dans le cas suivant (en amont): chaîne identique, (lemme?|)pos différent.
+    sigle = fichier.split("apparat_")[1].split(f"_{i}_")[0]
+    print(sigle)
+    tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
+    parser = etree.XMLParser(load_dtd=True,
+                             resolve_entities=True)
+    f = etree.parse(fichier, parser=parser)  # https://lxml.de/tutorial.html#namespaces
+    root = f.getroot()
+    liste_apps = root.xpath(f"//tei:app[not(@type='graphique')]", namespaces=tei)
+    for apparat in liste_apps:
+        lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=tei)
+        # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat.
+        if len(lecon) <= 2:
+            pass
+
+        # Sinon, les choses deviennent intéressantes
+        else:
+            print("\n")
+            liste_de_lecons = apparat.xpath(f"tei:rdg", namespaces=tei)
+
+            liste_annotations = []
+            for lecon in liste_de_lecons:
+                texte = " ".join(lecon.xpath("descendant::tei:w/descendant::text()", namespaces=tei))
+                identifiant_rdg = lecon.xpath("@id", namespaces=tei)[0]
+                lemme = lecon.xpath("@lemma")[0]
+                pos = lecon.xpath("@pos")[0]
+                pos_reduit = pos.split(" ")[0]
+                lemme_reduit = "_".join(lemme.split("_")[:len(pos_reduit.split("_"))])
+                liste_annotations.append((identifiant_rdg, pos_reduit, lemme_reduit))
+
+            # On identifie les variants graphiques au sein
+            # du lieu variant ( = les paires Pos/Lemmes qui se répètent)
+            liste_d_analyses = set([(pos, lemma) for identifiant, pos, lemma in liste_annotations])
+            dictionnaire_de_regroupement = {}
+            for i in liste_d_analyses:
+                for j in liste_annotations:  # on va récupérer l'identifiant
+                    if all(x in j for x in i):
+                        identifiant, pos, lemma = j
+                        # https://www.geeksforgeeks.org/python-check-if-one-tuple-is-subset-of-other/
+                        print(f"{i} is subset of {j}")
+                        try:
+                            dictionnaire_de_regroupement[i].append(identifiant)
+                        except KeyError:
+                            dictionnaire_de_regroupement[i] = [identifiant]
+                        # Le dictionnaire est de la forme: {(pos, lemmes): [liste des identifiants]]}
+
+            # Ce qui nous intéresse, c'est de produire les groupes: on ne garde que les valeurs
+            # du dictionnaire
+            rdg_groups = list(dictionnaire_de_regroupement.values())
+
+            # On va pouvoir maintenant créer des rdgGroups autour des tei:rdg que l'on a identifiés
+            # comme similaires.
+
+            # Créons donc des tei:rdgGrp parents pour ces groupes
+            for group in rdg_groups:
+                tei_namespace = 'http://www.tei-c.org/ns/1.0'
+                namespace = '{%s}' % tei_namespace
+                rdg_grp = etree.SubElement(apparat, namespace + 'rdgGrp')
+                for identifiant in group:
+                    orig_rdg = apparat.xpath(f"tei:rdg[@id = '{identifiant}']", namespaces=tei)[0]
+                    rdg_grp.append(orig_rdg)
+
+    with open(fichier, 'w+') as sortie_xml:
+        output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+        sortie_xml.write(str(output))
+
+def gestion_inversions(chemin, sensibilité=3):
+    pass
+
+
+def gestion_lacunes(chemin,  target_path, sensibilite=3):
+    """
+    Définition de lacune:
+    Cette fonction crée des balises de lacunes en cas d'omissions répétées
+    variable: sensibilite: le nombre d'apparats vides consécutifs pour que soit considérée la lacune
+    """
+    tei_namespace = 'http://www.tei-c.org/ns/1.0'
+    tei = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+    dict_index_omission = {}
+    output_dict = {}
+    for file in glob.glob(target_path):
+        sigle = "_".join(file.split("_")[1:3])
+        print(sigle)
+
+        with open(file, "r") as file:
+            parsed_file = etree.parse(file)
+        apps = parsed_file.xpath("//tei:app", namespaces=tei)
+        for index, app in enumerate(apps):
+            inf, sup = verification_ngram(sensibilite, apps, index, sigle)
+            if sup > sensibilite:
+                try:
+                    dict_index_omission[sigle].append((inf, inf+sup))
+                except:
+                    dict_index_omission[sigle] = [(inf, inf+sup)]
+        for witness, liste in dict_index_omission.items():
+            output_dict[witness] = utils.nettoyage_liste_positions(liste)
+    print(f"Omissions of witness {chemin}")
+    print(output_dict)
+
+
+def verification_ngram(sensibilite, apps, borne_inferieure, sigle):
+    """
+    Fonction récursive qui permet d'estimer s'il y a une lacune pour un manuscrit donné
+    """
+    tei_namespace = 'http://www.tei-c.org/ns/1.0'
+    tei = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+    borne_superieure = sensibilite
+    n_gram = [current_app for current_app in apps[borne_inferieure: (borne_inferieure + sensibilite)]]
+
+    target_sigla = f"boolean(descendant::tei:rdg[contains(@wit, {sigle})][not(descendant::node())])"
+    if all([apparat.xpath(target_sigla, namespaces=tei)
+            for apparat in n_gram]):
+        #print(sigle)
+        #print(target_sigla)
+        #print(f"\n\n{sigle}\n\n".join([etree.tostring(apparat).decode('utf-8') for apparat in n_gram]))
+        borne_inferieure, borne_superieure = verification_ngram(sensibilite + 1, apps, borne_inferieure, sigle)
+    return borne_inferieure, borne_superieure
+
 
 def injection_python(chemin, chapitre):
     print("On réinjecte les apparats")
     tei_namespace = 'http://www.tei-c.org/ns/1.0'
     NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
-    file =  f"/home/mgl/Bureau/These/Edition/collator/divs/div{chapitre}/juxtaposition_orig.xml"
+    file = f"/home/mgl/Bureau/These/Edition/collator/divs/div{chapitre}/juxtaposition_orig.xml"
     apparat_file = f"/home/mgl/Bureau/These/Edition/collator/divs/div{chapitre}/apparat_collatex.xml"
 
     with open(file, "r") as opened_file:
@@ -140,7 +273,7 @@ def injection_python(chemin, chapitre):
     # On travaille sur chaque témoin
     for witness in parsed_group_file.xpath("//temoin"):
         siglum = witness.xpath("@n")[0]
-        for word in witness.xpath("//tei:w", namespaces = NSMAP1):
+        for word in witness.xpath("//tei:w", namespaces=NSMAP1):
             xml_id = word.xpath("@xml:id")[0]
 
         # On écrit finalement le fichier
@@ -148,12 +281,10 @@ def injection_python(chemin, chapitre):
         witness[0].getparent().set("{http://www.w3.org/XML/1998/namespace}id", f'{siglum}_3_3_{chapitre}')
         witness[0].getparent().set("type", "chapitre")
         witness[0].getparent().set("n", str(chapitre))
-        witness[0].set("xmlns", tei_namespace) # on crée le namespace adéquat.
+        witness[0].set("xmlns", tei_namespace)  # on crée le namespace adéquat.
 
         list_word_id_apparat_collatex = zip(parsed_apparat_file.xpath("//tei:w", namespaces=NSMAP1),
                                             parsed_apparat_file.xpath("//tei:w/@xml:id", namespaces=NSMAP1))
-
-
 
         with open(f"/home/mgl/Documents/apparat_{siglum}_{chapitre}.xml", "w") as output_file:
             print("Outputting...")
@@ -178,9 +309,11 @@ def injection_omissions(temoin_a_injecter, chemin):
     # Et on va chercher les listes d'apparats où le témoin commet une omission et leur emplacement / tei:w
     with open(f"{chemin}/apparat_collatex.xml", "r") as apparat_collatex:
         parsed_apparat_collatex = etree.parse(apparat_collatex)
-        #Passer à du contains plutôt en cas d'omission par plusieurs témoins
-        liste_omissions = parsed_apparat_collatex.xpath(f'//tei:app[tei:rdg[translate(@wit, \'#\', \'\')={sigle}][not(tei:w)]]', namespaces=NSMAP1)
-        liste_emplacement = [omission.xpath(f'preceding::tei:app/tei:rdg[1]/@xml:id', namespaces=NSMAP1)[0] for omission in liste_omissions]
+        # Passer à du contains plutôt en cas d'omission par plusieurs témoins
+        liste_omissions = parsed_apparat_collatex.xpath(
+            f'//tei:app[tei:rdg[translate(@wit, \'#\', \'\')={sigle}][not(tei:w)]]', namespaces=NSMAP1)
+        liste_emplacement = [omission.xpath(f'preceding::tei:app/tei:rdg[1]/@xml:id', namespaces=NSMAP1)[0] for omission
+                             in liste_omissions]
         liste_finale = zip(liste_omissions, liste_emplacement)
         print(liste_finale)
 
@@ -210,7 +343,6 @@ def injection(saxon, chemin, chapitre, coeurs):
     liste = glob.glob(fichiers_apparat)
     chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
     parallel_transformation(saxon, chemin_injection2, param_chapitre, liste, coeurs, regexp=r'.*[0-9].xml')
-
 
     print("\n---- INJECTION 2bis: suppression de la redondance ----")
     chemin_injection3 = "xsl/post_alignement/injection_apparats3.xsl"
