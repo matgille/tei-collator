@@ -1,10 +1,8 @@
 import fnmatch
 import json
 import os
-import random
 import re
 import shutil
-import string
 import subprocess
 
 from lxml import etree
@@ -18,6 +16,7 @@ import string
 def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
+
 def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
     with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
         cmd = f'java -jar {saxon} temoins_tokenises_regularises/{temoin_leader}.xml xsl/pre_alignement/preparation_corpus.xsl ' \
@@ -28,15 +27,18 @@ def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
 
 # Étape avant la collation: transformation en json selon la structure voulue par CollateX.
 # Voir https://collatex.net/doc/#json-input
-def transformation_json(saxon, output_fichier_json, input_fichier_xml):
+def transformation_json(saxon, output_fichier_json, input_fichier_xml, correction):
+    param_correction = f"correction={correction}"
     subprocess.run(['java', '-jar', saxon, output_fichier_json, input_fichier_xml,
-                    'xsl/pre_alignement/transformation_json.xsl'])
+                    'xsl/pre_alignement/transformation_json.xsl', param_correction])
 
 
-def alignement(fichier_a_collationer, numero, chemin, alignement='global'):
+def alignement(fichier_a_collationer, numero, chemin, correction, alignement='global'):
     """
         Alignement CollateX, puis regroupement des leçons communes en lieux variants
     """
+    if correction:
+        alignement = 'mam'
     with open(fichier_a_collationer,
               'r') as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
         entree_json1 = entree_json0.read()
@@ -133,17 +135,21 @@ def apparat_final(fichier_entree, chemin):
 
             # Étape 1: déterminer si il y a variation ou pas
             for key, value in dic.items():
-                id_token, lecon_depart, temoin = value[0], value[1], value[2]
-                liste_lecons.append(lecon_depart)
+                id_token, lecon_depart, temoin, lemme, pos = value[0], value[1], value[2], value[3], value[4]
+                liste_lecons.append((lecon_depart, lemme, pos))
 
             if len(liste_lecons) > 0:
                 # Comparer chaque lecon à la première
-                identite = all(elem == liste_lecons[0] for elem in liste_lecons)
-                # Première étape. Si tous les lieux variants sont égaux 
+                identite_forme = all(forme == liste_lecons[0][0] for forme, lemme, pos in liste_lecons)
+                identite_lemme = all(lemme == liste_lecons[0][1] for forme, lemme, pos in liste_lecons)
+                identite_pos = all(pos == liste_lecons[0][2] for forme, lemme, pos in liste_lecons)
+                # Première étape. Si tous les lieux variants sont égaux ainsi que leur analyse grammaticale
                 # entre eux,ne pas créer d'apparat mais imprimer 
-                # directement le texte    
+                # directement le texte
+                # Résultat de ça: on a des tei:app avec 1 seul tei:rdg si la graphie est identique mais l'analyse
+                # grammaticale distincte (signe d'une erreur de lemmatisation en général).
                 app = etree.SubElement(root, tei + 'app')
-                if identite:
+                if identite_forme and identite_lemme and identite_pos:
                     apparat = False
                 else:
                     pass
@@ -185,39 +191,9 @@ def apparat_final(fichier_entree, chemin):
 
                         # Mise à jour la liste
                         liste_lecons.append(lecon_depart)
-                # TODO: commencer par extraire les lignes qui suivent pour en faire une fonction.
-                # TODO: remplacer les + par des espaces pour ignorer les crases qui sont souvent
-                # TODO: uniquement des variantes graphiques: PR0CN00+PP3CSD0 > PR0CN00 PP3CSD0
-                #  ignorer: como/cómo
-                #  AQ0CS00 / AQ0FS00 / AO0MS00 avec un entier, on peut ignorer. (ignorer les analyses sur les cardinaux/ordinaux)
-                #  Idem PT / PR avec une différence d'accent.
-                # TODO: éventuellement, créer une liste pour ignorer certains lemmes dans la comparaison
-                #  des POS: comme que par exemple, qu'il s'agira de corriger non pas sur le XML mais
-                #  directement sur le TSV lors de la production du corpus. Ou alors, considérer que c'est
-                #  une variante graphique si le terme n'est pas analysé comme un nom au moins une fois.
+                #
+                type_apparat = typologie_variantes(liste_lemme, liste_pos)
 
-                # TODO: ignorer les erreurs d'analyse probables: même lemmes, pos différent mais parce que
-                #  changement de catégorie (= P <=> D, etc). Comme ça on affine le corpus sur tsv et pas sur
-                #  xml.
-
-                ## TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
-                comparaison_lemme = all(elem == liste_lemme[0] for elem in liste_lemme)
-                comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
-                # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante grapique.
-                # Ici il faut se rappeler qu'il y a une différence entre les formes
-                if not comparaison_lemme:  # si il y a une différence de lemmes seulement: 'vraie variante'
-                    type_apparat = 'lexicale'
-                ### TODO: ajouter une règle sur les noms propres. Si lemmes différent, mais pos = NP, alors variante
-                ### d'entité nommée. Ça ne changera probablement rien à la fin mais l'encodage est plus fin comme ça.
-                ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
-                elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
-                    type_apparat = 'morphosyntactique'
-                elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
-                    if liste_lemme[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
-                        # indéterminée
-                        type_apparat = 'indetermine'
-                    else:  # si on a un lemme et un PoS identiques, la variante est graphique
-                        type_apparat = 'graphique'
                 if not apparat:
                     app.set('type', 'not_apparat')
                 else:
@@ -320,72 +296,57 @@ def txt_to_liste(filename):
     return maliste
 
 
-def raffinage_apparats(fichier, i):
+def typologie_variantes(liste_lemmes, liste_pos):
     """
-    Cette fonction permet de raffiner les apparats en rassemblant les variantes graphiques au sein d'un apparat qui
-    comporte des variantes "vraies" ou morphosyntactiques. On va créer des tei:rdgGroup qui rassembleront les rdg.
+    Cette fonction permet de produire la typologie des variantes.
+    Elle s'appuie notamment sur l'article de Camps, Spadini et Ing 2019:
+    "Collating Medieval Vernacular Texts: Aligning Witnesses, Classifying Variants"
     """
-    sigle = fichier.split("apparat_")[1].split(f"_{i}_")[0]
-    print(sigle)
-    tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
-    parser = etree.XMLParser(load_dtd=True,
-                             resolve_entities=True)
-    f = etree.parse(fichier, parser=parser)  # https://lxml.de/tutorial.html#namespaces
-    root = f.getroot()
-    liste_apps = root.xpath(f"//tei:app[not(@type='graphique')]", namespaces=tei)
-    for apparat in liste_apps:
-        lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=tei)
-        # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat.
-        if len(lecon) <= 2:
-            pass
+    # TODO: remplacer les + par des espaces pour ignorer les crases qui sont souvent
+    # TODO: uniquement des variantes graphiques: PR0CN00+PP3CSD0 > PR0CN00 PP3CSD0
+    #  ignorer: como/cómo
+    #  AQ0CS00 / AQ0FS00 / AO0MS00 avec un entier, on peut ignorer. (ignorer les analyses sur les cardinaux/ordinaux)
+    #  Idem PT / PR avec une différence d'accent.
+    # TODO: éventuellement, créer une liste pour ignorer certains lemmes dans la comparaison
+    #  des POS: comme que par exemple, qu'il s'agira de corriger non pas sur le XML mais
+    #  directement sur le TSV lors de la production du corpus. Ou alors, considérer que c'est
+    #  une variante graphique si le terme n'est pas analysé comme un nom au moins une fois.
 
-        # Sinon, les choses deviennent intéressantes
+    # TODO: ignorer les erreurs d'analyse probables: même lemmes, pos différent mais parce que
+    #  changement de catégorie (= P <=> D, etc). Comme ça on affine le corpus sur tsv et pas sur
+    #  xml.
+
+    ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
+    ## TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
+
+    comparaison_lemme = all(elem == liste_lemmes[0] for elem in liste_lemmes)
+    comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
+    # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante grapique.
+    # Ici il faut se rappeler qu'il y a une différence entre les formes
+    type_de_variante = None
+    if not comparaison_lemme:  # si il y a une différence de lemmes seulement: 'vraie variante'
+        if all(pos.startswith('NP') for pos in liste_pos):
+            type_de_variante = 'entite_nommee'
         else:
-            print("\n")
-            liste_de_lecons = apparat.xpath(f"tei:rdg", namespaces=tei)
+            type_de_variante = 'lexicale'
+    elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
+        # Ici on va vérifier qu'il ne s'agit pas d'une variante de genre et de personne
+        if all(pos.startswith('NC') for pos in liste_pos):
+        # On rappelle la structure de l'étiquette du nom: NCMS000 pour un nom masculin singulier
+            if all(pos[2] == liste_pos[0][2] for pos in liste_pos):
+                if all(pos[3] == liste_pos[0][3] for pos in liste_pos):
+                    pass
+                else:
+                    type_de_variante = 'personne'
+            else:
+                type_de_variante = 'genre'
+        else:
+            type_de_variante = 'morphosyntactique'
+    elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
+        if liste_lemmes[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
+            # indéterminée
+            type_de_variante = 'indetermine'
+        else:  # si on a un lemme et un PoS identiques, la variante est graphique
+            type_de_variante = 'graphique'
 
-            liste_annotations = []
-            for lecon in liste_de_lecons:
-                texte = " ".join(lecon.xpath("descendant::tei:w/descendant::text()", namespaces=tei))
-                identifiant_rdg = lecon.xpath("@id", namespaces=tei)[0]
-                lemme = lecon.xpath("@lemma")[0]
-                pos = lecon.xpath("@pos")[0]
-                pos_reduit = pos.split(" ")[0]
-                lemme_reduit = "_".join(lemme.split("_")[:len(pos_reduit.split("_"))])
-                liste_annotations.append((identifiant_rdg, pos_reduit, lemme_reduit))
-
-            # On identifie les variants graphiques au sein
-            # du lieu variant ( = les paires Pos/Lemmes qui se répètent)
-            liste_d_analyses = set([(pos, lemma) for identifiant, pos, lemma in liste_annotations])
-            dictionnaire_de_regroupement = {}
-            for i in liste_d_analyses:
-                for j in liste_annotations: # on va récupérer l'identifiant
-                    if all(x in j for x in i):
-                        identifiant, pos, lemma = j
-                        # https://www.geeksforgeeks.org/python-check-if-one-tuple-is-subset-of-other/
-                        print(f"{i} is subset of {j}")
-                        try:
-                            dictionnaire_de_regroupement[i].append(identifiant)
-                        except KeyError:
-                            dictionnaire_de_regroupement[i] = [identifiant]
-                        # Le dictionnaire est de la forme: {(pos, lemmes): [liste des identifiants]]}
-
-            # Ce qui nous intéresse, c'est de produire les groupes: on ne garde que les valeurs
-            # du dictionnaire
-            rdg_groups = list(dictionnaire_de_regroupement.values())
-
-            # On va pouvoir maintenant créer des rdgGroups autour des tei:rdg que l'on a identifiés
-            # comme similaires.
-
-            # Créons donc des tei:rdgGrp parents pour ces groupes
-            for group in rdg_groups:
-                tei_namespace = 'http://www.tei-c.org/ns/1.0'
-                namespace = '{%s}' % tei_namespace
-                rdg_grp = etree.SubElement(apparat, namespace + 'rdgGrp')
-                for identifiant in group:
-                    orig_rdg = apparat.xpath(f"tei:rdg[@id = '{identifiant}']", namespaces=tei)[0]
-                    rdg_grp.append(orig_rdg)
-
-    with open(fichier, 'w+') as sortie_xml:
-        output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
-        sortie_xml.write(str(output))
+    return type_de_variante
