@@ -1,10 +1,38 @@
+import glob
 import unittest
 from lxml import etree
+from lxml import isoschematron
 import os
 import datetime
 
 tei_namespace = 'http://www.tei-c.org/ns/1.0'
 NSMAP = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+
+svrl_namespaces = 'http://purl.oclc.org/dsdl/svrl'
+svrlns = {'svrl': svrl_namespaces}
+
+
+def witness_test(sigle, div):
+    print(f"Checking if all tei:app contain each witness for {sigle}")
+    target_value = 0
+    for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
+        f = etree.parse(temoin)
+        if f.xpath(f"boolean(//tei:div[@type='chapitre'][@n='{div}'])", namespaces=NSMAP):  # universalité
+            target_value += 1
+    target_file = f'divs/div{div}/apparat_{sigle}_{div}_final.xml'
+    if os.path.exists(target_file):
+        f = etree.parse(target_file)
+        app_list = f.xpath(f"//tei:app", namespaces=NSMAP)
+        for apparat in app_list:
+            token_id = apparat.xpath("descendant::tei:w[1]/@xml:id", namespaces=NSMAP)[0]
+            count_witnesses = "".join(apparat.xpath("descendant::tei:rdg[@wit]/@wit", namespaces=NSMAP)).count("#")
+            if count_witnesses == target_value:
+                pass
+            else:
+                print(f"Target: {target_value},\n  {sigle}: Issue with tei:app containing token {token_id}")
+    else:
+        print(f"{sigle} does not exist for div {div}.")
+
 
 def tokentest(sigle, div):
     '''
@@ -17,7 +45,6 @@ def tokentest(sigle, div):
     target_file = f'divs/div{div}/apparat_{sigle}_{div}_final.xml'
     orig_file = f'temoins_tokenises/{sigle}.xml'
     if os.path.exists(target_file):
-
         # On va créer la liste de tous les tei:w d'une division donnée dans le fichier tokénisé originel
         with open(orig_file, 'r') as orig:
             f = etree.parse(orig)
@@ -78,9 +105,43 @@ def notes_test():
     '''
     pass
 
+
 class MyTestCase(unittest.TestCase):
     def test_something(self):
         self.assertEqual(True, False)
+
+
+def validation_xml(corpus, schematron):
+    """
+    Cette fonction valide le corpus et cherche des erreurs fatales pour éviter
+    de lancer la chaîne de traitement inutilement.
+    Voir https://lxml.de/validation.html
+    corpus: le chemin vers le corpus
+    schema_rng: le chemin vers le schéma
+    schematron: le chemin vers le schema schematron
+    RETURNS: un tuple avec le résultat de la validation et l'erreur.
+    """
+    print("Pré-validation du corpus")
+    parser = etree.XMLParser(load_dtd=False,
+                             resolve_entities=False)
+    corpus = etree.parse(corpus, parser=parser)
+    corpus.xinclude()
+    parsed_schematron = etree.parse(schematron)
+    # https://stackoverflow.com/questions/10963206/schematron-report-issue-with-python-lxml
+    schematron_validator = isoschematron.Schematron(parsed_schematron, store_report=True)
+    schematron_validator.validate(corpus)
+    report = schematron_validator.validation_report
+    fatal_errors = report.xpath("//node()[@role='fatal']")
+
+
+    if len(fatal_errors) == 0:
+        valid = True
+        print("Corpus valide. On continue.")
+    else:
+        fatal_errors = report.xpath("//svrl:failed-assert[@role='fatal']//descendant::svrl:text", namespaces=svrlns)
+        valid = False
+
+    return valid, fatal_errors
 
 
 if __name__ == '__main__':
