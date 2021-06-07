@@ -22,7 +22,8 @@ def witness_test(sigle, div):
     target_file = f'divs/div{div}/apparat_{sigle}_{div}_final.xml'
     if os.path.exists(target_file):
         f = etree.parse(target_file)
-        app_list = f.xpath(f"//tei:app", namespaces=NSMAP)
+        # Certains apparats sont présents dans le corpus source (pour indiquer des lacunes par exemple): il faut les ignorer
+        app_list = f.xpath(f"//tei:app[not(@type='manuel')]", namespaces=NSMAP)
         for apparat in app_list:
             token_id = apparat.xpath("descendant::tei:w[1]/@xml:id", namespaces=NSMAP)[0]
             count_witnesses = "".join(apparat.xpath("descendant::tei:rdg[@wit]/@wit", namespaces=NSMAP)).count("#")
@@ -132,7 +133,6 @@ def validation_xml(corpus, schematron):
     schematron_validator.validate(corpus)
     report = schematron_validator.validation_report
     fatal_errors = report.xpath("//node()[@role='fatal']")
-
 
     if len(fatal_errors) == 0:
         valid = True

@@ -72,8 +72,7 @@ def main():
         sorties.nettoyage("divs")
         exit(0)
 
-    pre_validation = True
-    if pre_validation:
+    if parametres.prevalidation:
         corpus = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml"
         schema_sch = "/home/mgl/Bureau/These/Edition/collator/python/tests/validator.sch"
         if not tests.validation_xml(corpus, schema_sch)[0]:
