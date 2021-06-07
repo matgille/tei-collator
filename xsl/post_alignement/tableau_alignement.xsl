@@ -105,8 +105,9 @@
                               <span>Lemme différent</span>
                             </td>
                             <td class="grammatical">
-                              <span>Variante morphosyntactique
-                              (pos différent)</span>
+                              <span>Variante
+                              morphosyntactique (pos
+                              différent)</span>
                             </td>
                             <td>
                               <span id="log">0%</span>
@@ -149,9 +150,6 @@
         <tr>
             <xsl:for-each
                 select="//tei:rdg[position() = $position]">
-                <xsl:message>
-                    <xsl:value-of select="$position"/>
-                </xsl:message>
 
                 <!--Créer une règle pour mettre les lieux variants avec une omission d'une certaine couleur. Éventuellement, si on détecte une omission, refaire un tour d'évaluation.-->
 
@@ -159,15 +157,11 @@
 
                 <xsl:variable name="first_form"
                     select="concat('(', string-join(translate(string-join(tei:w/text()), 'áéíóúýv', 'aeiouyu'), '-'), ')')"/>
-                <xsl:message>First pos: <xsl:value-of
-                        select="$first_form"/></xsl:message>
                 <!--Avec cette expression on va pouvoir isoler les pos d'une même leçon pour pouvoir les comparer entre elles-->
                 <xsl:variable name="all_forms" select="
                         string-join(for $i in (parent::tei:app/tei:rdg[position() > 1])
                         return
                             concat('(', string-join(translate(string-join($i/tei:w/text()), 'áéíóúýv', 'aeiouyu'), '-'), ')'), '|')"/>
-                <xsl:message>All pos: <xsl:value-of
-                        select="$all_forms"/></xsl:message>
                 <xsl:variable name="form">
                     <xsl:choose>
                         <xsl:when
@@ -176,24 +170,16 @@
                         <xsl:otherwise>False</xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
-                <xsl:message>Form: <xsl:value-of
-                        select="$form"/></xsl:message>
-                <xsl:message> </xsl:message>
                 <!--Form comparison-->
 
 
                 <!--Lemma comparison-->
                 <xsl:variable name="first_word_lemma"
                     select="concat('(', string-join(tei:w/@lemma, '-'), ')')"/>
-                <xsl:message>First lemma: <xsl:value-of
-                        select="$first_word_lemma"
-                    /></xsl:message>
                 <xsl:variable name="all_lemmas" select="
                         string-join(for $i in (parent::tei:app/tei:rdg[position() > 1])
                         return
                             concat('(', string-join($i/tei:w/@lemma, '-'), ')'), '|')"/>
-                <xsl:message>All lemma: <xsl:value-of
-                        select="$all_lemmas"/></xsl:message>
                 <xsl:variable name="lemma">
                     <xsl:choose>
                         <!--https://stackoverflow.com/a/36872484-->
@@ -204,9 +190,6 @@
                         <xsl:otherwise>False</xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
-                <xsl:message>Lemma: <xsl:value-of
-                        select="$lemma"/></xsl:message>
-                <xsl:message> </xsl:message>
                 <!--Lemma comparison-->
 
 
@@ -215,16 +198,11 @@
                 <!--Pos comparison-->
                 <xsl:variable name="first_word_pos"
                     select="concat('(', string-join(tei:w/@pos, '-'), ')')"/>
-                <xsl:message>First pos: <xsl:value-of
-                        select="$first_word_pos"
-                    /></xsl:message>
                 <!--Avec cette expression on va pouvoir isoler les pos d'une même leçon pour pouvoir les comparer entre elles-->
                 <xsl:variable name="all_poss" select="
                         string-join(for $i in (parent::tei:app/tei:rdg[position() > 1])
                         return
                             concat('(', string-join($i/tei:w/@pos, '-'), ')'), '|')"/>
-                <xsl:message>All pos: <xsl:value-of
-                        select="$all_poss"/></xsl:message>
                 <xsl:variable name="pos">
                     <xsl:choose>
                         <xsl:when
@@ -233,9 +211,6 @@
                         <xsl:otherwise>False</xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
-                <xsl:message>Pos: <xsl:value-of
-                        select="$pos"/></xsl:message>
-                <xsl:message> </xsl:message>
                 <!--Pos comparison-->
 
                 <xsl:variable name="comparison_value">

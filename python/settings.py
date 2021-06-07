@@ -18,6 +18,7 @@ class parameters_importing:
         else:
             self.lemmatiser = False
         self.fusion_documents = self.settings['sortie']['fusion_divs']
+        self.prevalidation = self.settings['prévalidation']
         self.reinjection = self.settings['reinjection']
         self.temoin_leader = self.settings['fichier_leader'].split(".")[0]
         self.element_base = self.settings['scission']['element_base']

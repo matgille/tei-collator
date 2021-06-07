@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--Cette feuille régularise les éléments une fois tokénisés et xmlidsés-->
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+<xsl:stylesheet
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
@@ -22,19 +23,22 @@
     <xsl:template match="/">
         <xsl:for-each
             select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI">
-            <xsl:variable name="nom_fichier" select="@xml:id"/>
+            <xsl:variable name="nom_fichier"
+                select="@xml:id"/>
             <xsl:result-document
                 href="temoins_tokenises_regularises/{$nom_fichier}.xml">
                 <xsl:element name="TEI"
                     namespace="http://www.tei-c.org/ns/1.0">
-                    <xsl:attribute name="xml:id" select="$nom_fichier"/>
+                    <xsl:attribute name="xml:id"
+                        select="$nom_fichier"/>
                     <xsl:apply-templates/>
                 </xsl:element>
             </xsl:result-document>
         </xsl:for-each>
     </xsl:template>
 
-    <xsl:template match="tei:hi[not(@rend = 'lettre_attente')]">
+    <xsl:template
+        match="tei:hi[not(@rend = 'lettre_attente')]">
         <xsl:apply-templates/>
     </xsl:template>
 
@@ -48,7 +52,20 @@
     <xsl:template match="tei:choice">
         <xsl:apply-templates select="tei:reg"/>
         <xsl:apply-templates select="tei:expan"/>
-        <xsl:apply-templates select="tei:corr"/>
+
+        <!--Des fois on a des sic sans correction: dans ce cas, appliquer
+        les règles sur les sic, sinon la forme est supprimée.-->
+        <xsl:choose>
+            <xsl:when test="not(tei:corr) and tei:sic">
+                <xsl:apply-templates select="tei:sic"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates select="tei:corr"/>
+            </xsl:otherwise>
+        </xsl:choose>
+        <!--Des fois on a des sic sans correction: dans ce cas, appliquer
+        les règles sur les sic, sinon la forme est supprimée.-->
+        
     </xsl:template>
 
     <!--  <xsl:template match="tei:add">

@@ -8,6 +8,7 @@ import subprocess
 import glob
 import logging
 import dicttoxml
+from lxml import etree
 
 dicttoxml.LOG.setLevel(logging.ERROR)
 import argparse
@@ -16,7 +17,8 @@ import python.collation.collation as collation
 import python.tokenisation.tokenisation as tokenisation
 import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
-import python.injection.injection as injection
+import python.post_traitement.post_traitement as post_traitement
+import python.utils.utils as utils
 import python.settings
 import python.tests.tests as tests
 
@@ -24,7 +26,7 @@ import python.tests.tests as tests
 # IMPORTANT: pour la POO, considérer le corpus comme un objet ? En faire une classe qui permette de tout traiter
 # à partir de là ? Suppose de demander un tei:teiCorpus
 
-
+# TODO: URGENT ! vérifier pourquoi les tei:w/tei:sic sont supprimés. 
 # TODO: nettoyer le tout / s'occuper de la conservation des xml:id pour ne pas avoir à les régénérer
 # Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
 # conseils.
@@ -41,10 +43,12 @@ def main():
     parser.add_argument("-corr", "--correction", default=False,
                         help="Correction mode (outputs more information in xml files).")
     parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
-    parser.add_argument("-ao", "--align_only", default=False, help="Exit after lemmatization.")
+    parser.add_argument("-ao", "--align_only", default=False, help="Exit after alignment.")
+    parser.add_argument("-cp", "--createpdf", default=False, help="Produce pdf and exit.")
     args = parser.parse_args()
     correction = args.correction
     lemmatize_only = args.lemmatizeonly
+    pdf_only = args.createpdf
     align_only = args.align_only
     fichier_de_parametres = args.parameters
     division = args.division
@@ -54,8 +58,29 @@ def main():
     # On importe les paramètres en créant un objet parametres
     parametres = python.settings.parameters_importing(fichier_de_parametres)
     print(f'\n\n\n ---- Paramètres globaux: \n {parametres.__str__()}\n ')
+    print("Attention, certains paramètres peuvent être modifiés par des options "
+          "de la ligne de commande.")
     print(f'Lemmatisation seule: {lemmatize_only} \n')
     print(f'Mode correction: {correction} \n ---- \n')
+
+    if pdf_only:
+        chemin = f"divs/div{division}"
+        print("On produit les fichiers pdf.")
+        for fichier in glob.glob(f'{chemin}/apparat_*_*final.xml'):
+            print(fichier)
+            sorties.transformation_latex(saxon, fichier, False, chemin)
+        sorties.nettoyage("divs")
+        exit(0)
+
+    if parametres.prevalidation:
+        corpus = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml"
+        schema_sch = "/home/mgl/Bureau/These/Edition/collator/python/tests/validator.sch"
+        if not tests.validation_xml(corpus, schema_sch)[0]:
+            print("Une erreur fatale est apparue. Merci de vérifier l'encodage.")
+            print(f"Erreurs: {';'.join(element.text for element in tests.validation_xml(corpus, schema_sch)[1])}")
+            exit(1)
+        else:
+            pass
 
     if parametres.tokeniser:
         reponse = input(
@@ -65,6 +90,7 @@ def main():
         else:
             exit(0)
         tokenisation.tokenisation(saxon, parametres.corpus_path, correction)
+
     if parametres.xmlId and not parametres.tokeniser:  # si le corpus est tokénisé mais sans xml:id
         for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
             temoin = f"temoins_tokenises_regularises/{temoin}"
@@ -97,8 +123,17 @@ def main():
     # Création des fichiers d'apparat
     # Les xsl permettent de créer autant de fichiers xml à processer que de divisions (ici, tei:p):
     # cela permet d'éviter d'avoir un apparat qui court sur deux divisions distinctes
+
+    # Création des balises de lacune et nettoyage des apparats
+
     for i in portee:
-        chemin = "divs/div" + str(i)
+        chemin = f"divs/div{str(i)}"
+        target_path = f'{chemin}/apparat_*_*final.xml'
+        liste_fichiers_in = glob.glob(target_path)
+        # for fichier in liste_fichiers_in:
+        #     print(f"Treating {fichier}")
+        #     post_traitement.gestion_lacunes(fichier, target_path, sensibilite=3)
+        # exit(0)
         print(f"Traitement de la division {str(i)}")
         print("Alignement avec CollateX.")
         for fichier_xml in os.listdir(chemin):
@@ -113,10 +148,10 @@ def main():
                 output_fichier_json = f"-o:{chemin}/{fichier_json}"
                 input_fichier_xml = f"{chemin}/{fichier_xml}"
                 # Étape avant la collation: transformation en json selon la structure voulue par CollateX
-                collation.transformation_json(saxon, output_fichier_json, input_fichier_xml)
+                collation.transformation_json(saxon, output_fichier_json, input_fichier_xml, correction)
 
                 # Alignement avec CollateX. Il en ressort du JSON, encore
-                collation.alignement(fichier_json_complet, numero, chemin, parametres.alignement)
+                collation.alignement(fichier_json_complet, numero, chemin, parametres.alignement, correction)
 
         chemin_chapitre = f"divs/div{i}"
         chemin_fichier_json = f"{chemin_chapitre}/final.json"
@@ -181,29 +216,32 @@ def main():
             print(f"Fait en {round(temps_total)} secondes. \n")
             exit(0)
 
-        # injection.injection_omissions(f'{chemin}/apparat_Mad_G_22_final.xml', chemin)
+        # post_traitement.injection_omissions(f'{chemin}/apparat_Mad_G_22_final.xml', chemin)
         # Réinjection des apparats.
-        injection.injection(saxon, chemin, i, parametres.parallel_process_number)
+        post_traitement.injection(saxon, chemin, i, parametres.parallel_process_number)
 
         liste_fichiers_in = glob.glob(f'{chemin}/apparat_*_*final.xml')
         # Ici on indique d'autres éléments tei à réinjecter.
         if parametres.reinjection:
             for element, position in parametres.reinjection.items():
-                injection.injection_en_masse(chapitre=division, element_tei=element, position=position,
+                post_traitement.injection_en_masse(chapitre=division, element_tei=element, position=position,
                                              liste_temoins=liste_fichiers_in)
 
 
 
-        # Raffinage des apparats
+        # Raffinage des apparats: on rassemble les lieux variants
         liste_fichiers_in = glob.glob(f'divs/div{i}/apparat_*_*final.xml')
         for fichier in liste_fichiers_in:
-            collation.raffinage_apparats(fichier, i)
+            post_traitement.raffinage_apparats(fichier, i)
+
+
+
         # Tests de conformité
         corpus = Corpus()
         print(f'Tests en cours...')
         for temoin in corpus.sigles:
             tests.tokentest(temoin, i)
-
+            tests.witness_test(temoin, i)
 
     if parametres.fusion_documents:
         for temoin in glob.glob('temoins_tokenises/*.xml'):

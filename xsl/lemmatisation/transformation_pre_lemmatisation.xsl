@@ -43,7 +43,8 @@
     <xsl:template match="tei:w">
         <xsl:value-of
             select="translate(., 'áéíóúý', 'aeiouy')"/>
-        <!--On supprime les accents pour avoir une meilleur lemmatisation. Ils ne seront pas supprimés -->
+        <!--On supprime les accents pour avoir une meilleur lemmatisation. Ils ne seront pas supprimés dans le document de sortie,
+        on ne réinjectera que les analyses dans le xml.-->
         <xsl:text>&#xA;</xsl:text>
     </xsl:template>
 

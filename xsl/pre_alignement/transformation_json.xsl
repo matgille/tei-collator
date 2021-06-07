@@ -10,11 +10,14 @@
     exclude-result-prefixes="xs math"
     xmlns:tei="http://www.tei-c.org/ns/1.0" version="3.0">
     <xsl:output method="text"/>
+    <xsl:param name="correction"/>
 
     <xsl:strip-space elements="*"/>
 
 
     <xsl:template match="/">
+        <xsl:message>Correction mode: <xsl:value-of
+                select="$correction"/></xsl:message>
         <xsl:text>{
         "witnesses" : [</xsl:text>
         <xsl:apply-templates/>
@@ -39,11 +42,22 @@
                 <xsl:text>,</xsl:text>
                 <xsl:text>"n": "</xsl:text>
                 <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs-->
-                  <xsl:value-of
-                    select="concat(@lemma, '|', @pos, '|')"/>
-<!--                <xsl:value-of select="@lemma"/>-->
-                <!--Éventuellement aller plus loin et ne mettre que la catégorie grammaticale?-->
-                <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs: peut être moins efficace ?-->
+                <xsl:choose>
+                    <xsl:when test="$correction = 'True'">
+                        <xsl:value-of
+                            select="concat(@lemma, '|', @pos, '|')"/>
+                        <!--on supprime les + qui marquent l'agglutination selon EAGLES et Freeling, pour un meilleur alignement.-->
+                        <!--<xsl:value-of
+                    select="translate(@lemma, '+', ' ')"/>-->
+                        <!--Éventuellement aller plus loin et ne mettre que la catégorie grammaticale?-->
+                        <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs: peut être moins efficace ?-->
+                        <!--Ajouter une règle de normalisation sur le POS si c'est un nom propre-->
+                        <!--Voir pourquoi l'alignement global ne marche plus.-->
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="@lemma"/>
+                    </xsl:otherwise>
+                </xsl:choose>
                 <xsl:text>" </xsl:text>
                 <xsl:text>,</xsl:text>
                 <xsl:text>"lemma": "</xsl:text>
