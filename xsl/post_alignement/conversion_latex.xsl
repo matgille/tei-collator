@@ -130,6 +130,11 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text>}</xsl:text>
     </xsl:template>
 
+    <xsl:template match="tei:note[@type = 'particulier']">
+        <xsl:text>\footnote{</xsl:text>
+        <xsl:apply-templates/>
+        <xsl:text>}</xsl:text>
+    </xsl:template>
 
     <xsl:template
         match="tei:note[@subtype = 'lexicale'][not(parent::tei:head)]">
@@ -337,6 +342,14 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text>~\\</xsl:text>
     </xsl:template>
 
+    <!--Ici on va créer des règles pour afficher les éléments dans les apparats-->
+
+
+
+    <!--Ici on va créer des règles pour afficher les éléments dans les apparats-->
+
+
+
 
     <xsl:template
         match="tei:div[@type = 'chapitre'][not(@type = 'glose' or @type = 'traduction')]">
@@ -387,7 +400,10 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:text>''</xsl:text>
     </xsl:template>
 
-    <xsl:template match="tei:app[@type = 'graphique']">
+
+    <!--Les apparats de type filtre sont à ignorer-->
+    <xsl:template
+        match="tei:app[@type = 'graphique'] | tei:app[@type = 'filtre']">
         <!--Ajouter un test sur la présence d'une note-->
         <xsl:text> </xsl:text>
         <!--Afficher ici la lecture du témoin courant, voir plus bas-->
@@ -456,7 +472,12 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
     <xsl:template
-        match="tei:app[@type = 'lexicale'] | tei:app[@type = 'morphosyntactique'] | tei:app[@type = 'indetermine']">
+        match="tei:app[@type = 'lexicale'][count(descendant::tei:rdg) = 1] | tei:app[@type = 'morphosyntactique'][count(descendant::tei:rdg) = 1] | tei:app[@type = 'indetermine'][count(descendant::tei:rdg) = 1]">
+        <xsl:apply-templates/>
+    </xsl:template>
+
+    <xsl:template
+        match="tei:app[@type = 'lexicale'][count(descendant::tei:rdg) > 1] | tei:app[@type = 'morphosyntactique'][count(descendant::tei:rdg) > 1] | tei:app[@type = 'indetermine'][count(descendant::tei:rdg) > 1]">
         <xsl:text> </xsl:text>
         <xsl:variable name="temoin_courant">
             <xsl:analyze-string
@@ -514,11 +535,10 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                     <xsl:when
                         test="boolean(count(descendant::tei:rdgGrp[descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]]/descendant::tei:rdg) > 1)">
                         <xsl:value-of
-                            select="concat($lemma_wits, ' ', $siblings, ' c.v.')"
+                            select="concat($lemma_wits, '~', $siblings, '~c.v.')"
                         />
                     </xsl:when>
                     <xsl:otherwise>
-                        <xsl:message>False</xsl:message>
                         <xsl:value-of select="$lemma_wits"/>
                     </xsl:otherwise>
                 </xsl:choose>
@@ -540,13 +560,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
             <xsl:when test="descendant::tei:rdgGrp">
                 <xsl:for-each
                     select="descendant::tei:rdgGrp[count(descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]) = 0]">
-                    <xsl:message>
-                        <xsl:copy-of
-                            select="self::tei:rdgGrp/node()"/>
-                        <xsl:value-of
-                            select="count(descendant::tei:rdg[contains(@wit, concat('#', $temoin_courant))])"
-                        />
-                    </xsl:message>
+
                     <!--L'idée ici est de raffiner les apparats pour rassembler les variantes graphiques entre elles-->
                     <xsl:for-each
                         select="descendant::tei:rdg">
@@ -577,7 +591,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
                         <xsl:value-of select="$sigle_temoin"/>
                         <xsl:if
                             test="not(count(ancestor::tei:rdgGrp/descendant::tei:rdg) = 1) and not(following-sibling::tei:rdg)">
-                            <xsl:text> c.v.</xsl:text>
+                            <xsl:text>~c.v.</xsl:text>
                         </xsl:if>
                         <xsl:text>}\,</xsl:text>
                     </xsl:for-each>
