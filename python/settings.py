@@ -3,7 +3,7 @@ from json_minify import json_minify
 import multiprocessing as mp
 
 
-class parameters_importing:
+class Parametres:
     def __init__(self, file):
         """
         On initialise l'instance avec les paramètres qui sont dans le fichier json indiqué.
