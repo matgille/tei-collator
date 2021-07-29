@@ -60,7 +60,7 @@
     </xsl:template>
 
     <!--<xsl:template
-        match="tei:hi[following-sibling::text()][not(following-sibling::tei:hi[@rend = 'lettre_capitulaire'])][@rend = 'lettrine']"
+        match="tei:hi[following-sibling::text()][not(following-sibling::tei:hi[@rend = 'lettre_capitulaire'])][@rend = 'initiale']"
         mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="."/>
@@ -70,7 +70,7 @@
 
     <!--Il faut faire la même chose avec les unclear|damage-->
     <!--Qu'est-ce que le texte: c'est ici ce que tu va processer. Donc un élément éliminé marqué par un <del> n'est pas le texte-->
-    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'lettrine']" mode="secondePasse">
+    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'initiale']" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
             <xsl:copy-of select="."/>
