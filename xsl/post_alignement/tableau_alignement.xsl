@@ -63,6 +63,9 @@
                         font-size: 10px;
                         font-weight: bold;
                     }
+                    .ann_lemma {
+                        font-style: italics;
+                    }
                     .legende {
                         width: 600px;
                         position: fixed;
@@ -251,15 +254,15 @@
                         <span class="forme">
                             <xsl:value-of select="tei:w"/>
                         </span>
-                        <span class="annotation"
+                        <span
                             id="ann_{translate(string-join(tei:w/@xml:id), '_', '')}">
-                            <span class="ann_lemma">
-                              <i>
+                            <span
+                              class="ann_lemma annotation">
                               <xsl:value-of
                               select="tei:w/@lemma"/>
-                              </i>
+
                             </span>
-                            <span class="ann_pos">
+                            <span class="ann_pos annotation">
                               <xsl:value-of
                               select="tei:w/@pos"/>
                             </span>

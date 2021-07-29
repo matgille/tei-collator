@@ -60,6 +60,13 @@
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <!--On supprime les @xml:id qui contiennent une ou plusieurs valeurs vides-->
             <xsl:if test="not(contains(@xml:id, 'none'))">
+                <xsl:if test="ancestor::tei:app[@type='not_apparat']">
+                    <!--Ici on va ajouter les id des mots alignés.-->
+                    <xsl:variable name="corresponding_id">
+                        <xsl:value-of select="translate(replace(document($retour_au_texte)//tei:w[contains(@xml:id, $xml_id)]/@xml:id, $xml_id, ''), '__', '')"></xsl:value-of>
+                    </xsl:variable>
+                    <xsl:attribute name="corresp" select="$corresponding_id"/>
+                </xsl:if>
                 <xsl:attribute name="xml:id">
                     <xsl:variable name="xml_id_pre_processed">
                         <!--On va chercher dans le document avant réduction des redondances, il y a donc un risque d'avoir un xml:id double-->

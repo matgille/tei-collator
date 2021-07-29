@@ -167,7 +167,9 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     <xsl:template match="tei:lb"/>
 
     <xsl:template match="tei:w">
-        <xsl:text> </xsl:text>
+        <xsl:if test="not(parent::tei:del)">
+            <xsl:text> </xsl:text>
+        </xsl:if>
         <xsl:apply-templates/>
         <!--<xsl:choose>
             <xsl:when test="following::tei:pct[1]"/>
@@ -212,23 +214,16 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:if test="@place = 'margin'">
             <!--Si le add est inclus dans un apparat-->
             <xsl:if test="ancestor::tei:app">
-                <xsl:choose>
-                    <!--Si l'apparat n'est pas un apparat principal mais un apparat de point notables (notable)
+                <!--Si l'apparat n'est pas un apparat principal mais un apparat de point notables (notable)
                     >> note. On peut accepter la note de bas de page (éviter les notes de bas de page dans un apparat
                     critique...)-->
-                    <xsl:when
-                        test="(ancestor::tei:app/@type = 'notable')">
-                        <xsl:text>\footnote{Ajouté en marge:\textit{</xsl:text>
-                        <xsl:apply-templates/>
-                        <xsl:text>}}</xsl:text>
-                    </xsl:when>
-                    <!--Si l'apparat n'est pas un apparat principal mais un apparat de point notables (notable)-->
-                    <xsl:otherwise>
-                        <xsl:text>[ajouté en marge:\textit{</xsl:text>
-                        <xsl:apply-templates/>
-                        <xsl:text>}]</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
+                <!--Si l'apparat n'est pas un apparat principal mais un apparat de point notables (notable)-->
+
+                <xsl:text>\textit{</xsl:text>
+                <xsl:apply-templates/>
+                <xsl:text>}</xsl:text>
+
+
             </xsl:if>
             <!--Si le add est inclus dans un apparat-->
             <xsl:if test="not(ancestor::tei:app)">
@@ -325,10 +320,12 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
     <!-- ignorer le text entre balises <del>-->
-    <xsl:template match="//tei:del" name="del">
-        <xsl:text>[[</xsl:text>
-        <xsl:apply-templates/>
-        <xsl:text>]]</xsl:text>
+    <xsl:template match="tei:del">
+        <xsl:variable name="child">
+            <xsl:apply-templates/>
+        </xsl:variable>
+        <xsl:value-of
+            select="concat(' ', '[[', $child, ']]')"/>
     </xsl:template>
     <!-- ignorer le text entre balises <del>-->
 
@@ -458,8 +455,8 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
     <!--  Ne marche pas pour l'instant avec ednotes (il faudrait pouvoir faire apparaitre
       le texte non mis en forme en note)
-      <xsl:template match="tei:hi[@rend = 'lettrine']">
-        <xsl:text>\lettrine[lines=3, findent=3pt, nindent=0pt]{</xsl:text>
+      <xsl:template match="tei:hi[@rend = 'initiale']">
+        <xsl:text>\initiale[lines=3, findent=3pt, nindent=0pt]{</xsl:text>
         <xsl:value-of select="upper-case(.)"/>
         <xsl:text>}</xsl:text>
     </xsl:template>-->
@@ -477,7 +474,24 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
     <xsl:template
-        match="tei:app[@type = 'lexicale'][count(descendant::tei:rdg) > 1] | tei:app[@type = 'morphosyntactique'][count(descendant::tei:rdg) > 1] | tei:app[@type = 'indetermine'][count(descendant::tei:rdg) > 1]">
+        match="tei:app[@type = 'filtre'][count(descendant::tei:rdg) > 1]">
+        <xsl:variable name="temoin_courant">
+            <xsl:analyze-string
+                select="ancestor::tei:div[@type = 'chapitre'][@xml:id]/@xml:id"
+                regex="([A-Za-z]+_[a-zA-Z]+)(.*)">
+                <xsl:matching-substring>
+                    <xsl:value-of select="regex-group(1)"/>
+                </xsl:matching-substring>
+            </xsl:analyze-string>
+        </xsl:variable>
+        <xsl:apply-templates
+            select="descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
+    </xsl:template>
+
+
+
+    <xsl:template
+        match="tei:app[@type = 'entite_nommee'][count(descendant::tei:rdg) > 1] | tei:app[@type = 'lexicale'][count(descendant::tei:rdg) > 1] | tei:app[@type = 'morphosyntactique'][count(descendant::tei:rdg) > 1] | tei:app[@type = 'indetermine'][count(descendant::tei:rdg) > 1]">
         <xsl:text> </xsl:text>
         <xsl:variable name="temoin_courant">
             <xsl:analyze-string
