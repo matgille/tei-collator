@@ -22,3 +22,4 @@ test_results/
 venv/
 lemmatisation.json
 sans_lemmatisation.json
+logs/
