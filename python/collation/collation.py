@@ -59,7 +59,7 @@ def alignement(fichier_a_collationer, numero, chemin, correction, alignement='gl
         sortie_json.write(resultat_json)
 
 
-def apparat_final(fichier_entree, chemin):
+def apparat_final(fichier_entree, chemin, log=False):
     """
         Cette fonction permet de passer de la table d'alignement à 
         l'apparat proprement dit, avec création d'apparat s'il y a
@@ -194,6 +194,13 @@ def apparat_final(fichier_entree, chemin):
                 #
                 type_apparat = typologie_variantes(liste_lemme, liste_pos)
 
+                if log:
+                    with open("logs/variant_log.txt", "a") as variants_log:
+                        variants_log.write(f"Variante: {type_apparat}\n"
+                                           f"Formes: {' '.join(liste_lecons)}\n"
+                                           f"Lemmes: {' '.join(liste_lemme)}\n"
+                                           f"Pos: {' '.join(liste_pos)}\n\n")
+
                 if not apparat:
                     app.set('type', 'not_apparat')
                 else:
@@ -230,7 +237,6 @@ def apparat_final(fichier_entree, chemin):
                     nombre_mots = len(liste_w)
                     position_mot = liste_w.index(mot)
                     position_finale = (nombre_temoins * (position_mot + 1))
-                    position_initiale = position_finale - nombre_temoins
                     xml_id_courant = '_'.join(liste_id[n::nombre_mots])  # on va distribuer les xml:id:
                     # abcd > ac, db pour 2 témoins qui lisent la même chose (ab et cd sont les identifiants des deux
                     # tokens identiques, donc il faut distribuer pour identifier le premier token, puis le second)
@@ -304,7 +310,7 @@ def typologie_variantes(liste_lemmes, liste_pos):
     """
     # TODO: remplacer les + par des espaces pour ignorer les crases qui sont souvent
     # TODO: uniquement des variantes graphiques: PR0CN00+PP3CSD0 > PR0CN00 PP3CSD0
-    #  ignorer: como/cómo
+    #  ignorer: como/cómo FAIT
     #  AQ0CS00 / AQ0FS00 / AO0MS00 avec un entier, on peut ignorer. (ignorer les analyses sur les cardinaux/ordinaux)
     #  Idem PT / PR avec une différence d'accent.
     # TODO: éventuellement, créer une liste pour ignorer certains lemmes dans la comparaison
@@ -316,29 +322,32 @@ def typologie_variantes(liste_lemmes, liste_pos):
     #  changement de catégorie (= P <=> D, etc). Comme ça on affine le corpus sur tsv et pas sur
     #  xml.
 
+    # TODO: Créer une catégorie de variante discursive ? et/e - o/e ?
+
     ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
     ## TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
 
-    comparaison_lemme = all(elem == liste_lemmes[0] for elem in liste_lemmes)
-    comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos)
+    comparaison_lemme = all(elem == liste_lemmes[0] for elem in liste_lemmes[1:])
+    comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos[1:])
 
     ## Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
     # de corriger dans le XML ou car il n'y a pas d'intérêt à la variante.
-    filtre = [('como', 'cómo'), ('et', 'e')]
+    filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca')]
     # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante graphique.
     # Ici il faut se rappeler qu'il y a une différence entre les formes
     type_de_variante = None
-    if comparaison_lemme is False:  # si il y a une différence de lemmes seulement: 'vraie variante'
+    if not comparaison_lemme:  # si il y a une différence de lemmes seulement: 'vraie variante'
         if all(pos.startswith('NP') for pos in liste_pos):
             type_de_variante = 'entite_nommee'
         else:
-            # on cherche à vérifier que tous les lemmes (all) sont dans une des deux listes (any)
-            if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre):
+            # on cherche à vérifier que tous les lemmes (all) soºnt dans une des deux listes (any)
+            if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
                 type_de_variante = 'filtre'
             else:
                 type_de_variante = 'lexicale'
     elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
-        if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre):
+        # On peut avoir un lemme identique et un pos qui change ('como' p.ex)
+        if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
             type_de_variante = 'filtre'
         elif all(pos.startswith('NC') for pos in liste_pos):
         # On rappelle la structure de l'étiquette du nom: NCMS000 pour un nom masculin singulier
@@ -365,4 +374,5 @@ def typologie_variantes(liste_lemmes, liste_pos):
     if type_de_variante == "filtre":
         print(type_de_variante)
         print(liste_lemmes)
+
     return type_de_variante
