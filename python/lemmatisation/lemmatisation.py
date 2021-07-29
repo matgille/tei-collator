@@ -35,7 +35,6 @@ class CorpusALemmatiser:
             :param temoin: le temoin à lemmatiser
             :param division: la division à traiter
             """
-        print("Prout")
         fichier = os.path.basename(temoin)
         print(f"Lemmatisation de {temoin}\n")
         fichier_sans_extension = os.path.splitext(fichier)[0]
@@ -99,7 +98,7 @@ class CorpusALemmatiser:
                     mot.set("pos", pos_position)
 
         elif self.langue == "lat_o":
-            modele_latin = "model.tar"
+            modele_latin = "python/lemmatisation/model.tar"
             device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
             cmd = f"pie tag --device {device} {fichier_entree_txt} " \
                   f"<{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
@@ -158,6 +157,3 @@ if __name__ == "__main__":
     )
     corpus_a_lemmatiser.lemmatisation_parallele(division)
 
-
-def test_lem(self, temoin, division):
-    print("Done")
