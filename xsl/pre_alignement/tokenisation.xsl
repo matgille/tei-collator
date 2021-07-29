@@ -43,6 +43,7 @@
         match="tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
         <xsl:element name="TEI"
             namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:namespace name="tei">http://www.tei-c.org/ns/1.0</xsl:namespace>
             <xsl:attribute name="xml:id" select="@xml:id"/>
             <xsl:apply-templates/>
         </xsl:element>
@@ -91,7 +92,7 @@
     </xsl:template>
 
     <!--<xsl:template
-        match="tei:hi[following-sibling::text()][not(following-sibling::tei:hi[@rend = 'lettre_capitulaire'])][@rend = 'lettrine']"
+        match="tei:hi[following-sibling::text()][not(following-sibling::tei:hi[@rend = 'lettre_capitulaire'])][@rend = 'initiale']"
         mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="."/>
@@ -103,7 +104,7 @@
     <!--Qu'est-ce que le texte: c'est ici ce que tu va processer. Donc un élément éliminé marqué par un <del> n'est pas le texte-->
     <!--Meilleure idée: plutôt que les supprimer, les traiter comme une note (pas de tokénisation donc)-->
     <xsl:template
-        match="tei:hi[following-sibling::text()][@rend = 'lettrine']"
+        match="tei:hi[following-sibling::text()][@rend = 'initiale']"
         mode="secondePasse">
         <xsl:element name="w"
             namespace="http://www.tei-c.org/ns/1.0">
