@@ -25,7 +25,12 @@ def witness_test(sigle, div):
         # Certains apparats sont présents dans le corpus source (pour indiquer des lacunes par exemple): il faut les ignorer
         app_list = f.xpath(f"//tei:app[not(@type='manuel')]", namespaces=NSMAP)
         for apparat in app_list:
-            token_id = apparat.xpath("descendant::tei:w[1]/@xml:id", namespaces=NSMAP)[0]
+            try:
+                token_id = apparat.xpath("descendant::tei:w[1]/@xml:id", namespaces=NSMAP)[0]
+            except IndexError as _:
+                print(f"List index out of range for witness {sigle}. "
+                      f"A tei:app/tei:w has no xml:id. Segmentation problem?")
+                exit(1)
             count_witnesses = "".join(apparat.xpath("descendant::tei:rdg[@wit]/@wit", namespaces=NSMAP)).count("#")
             if count_witnesses == target_value:
                 pass
@@ -107,10 +112,6 @@ def notes_test():
     pass
 
 
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
-        self.assertEqual(True, False)
-
 
 def validation_xml(corpus, schematron):
     """
@@ -144,5 +145,3 @@ def validation_xml(corpus, schematron):
     return valid, fatal_errors
 
 
-if __name__ == '__main__':
-    unittest.main()
