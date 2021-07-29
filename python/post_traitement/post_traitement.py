@@ -1,12 +1,15 @@
-import subprocess
+import math
 import re
 from lxml import etree
 import glob
 import operator
 import traceback
 import multiprocessing as mp
+import itertools
+import numpy as np
 
 import python.utils.utils as utils
+import python.post_traitement.embeddings as embeddings
 
 
 def injection_en_masse(chapitre, element_tei, position, liste_temoins):
@@ -35,6 +38,7 @@ def injection_en_masse(chapitre, element_tei, position, liste_temoins):
 
 def injections_element(temoin, n, tei_elements, position):
     # TODO gérer les omissions et les cas où deux éléments se trouveraient avant ou après le même mot
+    # TODO: attention, ne gère par encore les non-apparats.
     """
     Cette fonction permet la réinjection d'éléments présents dans un témoin dans tous les autres témoins.
     Il s'appuie pour ce faire sur le tei:w qui suit ou précède l'élément ciblé, en fonction
@@ -205,11 +209,12 @@ def raffinage_apparats(fichier, i):
         output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
         sortie_xml.write(str(output))
 
+
 def gestion_inversions(chemin, sensibilité=3):
     pass
 
 
-def gestion_lacunes(chemin,  target_path, sensibilite=3):
+def gestion_lacunes(chemin, target_path, sensibilite=3):
     """
     Définition de lacune:
     Cette fonction crée des balises de lacunes en cas d'omissions répétées
@@ -230,9 +235,9 @@ def gestion_lacunes(chemin,  target_path, sensibilite=3):
             inf, sup = verification_ngram(sensibilite, apps, index, sigle)
             if sup > sensibilite:
                 try:
-                    dict_index_omission[sigle].append((inf, inf+sup))
+                    dict_index_omission[sigle].append((inf, inf + sup))
                 except:
-                    dict_index_omission[sigle] = [(inf, inf+sup)]
+                    dict_index_omission[sigle] = [(inf, inf + sup)]
         for witness, liste in dict_index_omission.items():
             output_dict[witness] = utils.nettoyage_liste_positions(liste)
     print(f"Omissions of witness {chemin}")
@@ -251,9 +256,9 @@ def verification_ngram(sensibilite, apps, borne_inferieure, sigle):
     target_sigla = f"boolean(descendant::tei:rdg[contains(@wit, {sigle})][not(descendant::node())])"
     if all([apparat.xpath(target_sigla, namespaces=tei)
             for apparat in n_gram]):
-        #print(sigle)
-        #print(target_sigla)
-        #print(f"\n\n{sigle}\n\n".join([etree.tostring(apparat).decode('utf-8') for apparat in n_gram]))
+        # print(sigle)
+        # print(target_sigla)
+        # print(f"\n\n{sigle}\n\n".join([etree.tostring(apparat).decode('utf-8') for apparat in n_gram]))
         borne_inferieure, borne_superieure = verification_ngram(sensibilite + 1, apps, borne_inferieure, sigle)
     return borne_inferieure, borne_superieure
 
@@ -367,6 +372,89 @@ def injection(saxon, chemin, chapitre, coeurs):
     print("Création des balises de lacunes ✓")
 
 
+def calcul_similarite(fichier):
+    """
+    Fonction qui calcule les similarités entre variants dans chaque lieu variant lexical.
+    On se sert pour l'instant de plongements de mots entraînés par un modèle très simple de
+    prédiction par contexte. Modèle entraîné sur le propre corpus lemmatisé.
+    Idée originelle de JB Camps.
+    Il reste à trouver une façon de faire parler les chiffres, et à injecter ça dans le XML proprement.
+    """
+    tei_namespace = 'http://www.tei-c.org/ns/1.0'
+    NSMAP = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+
+    with open(fichier, "r") as opened_file:
+        fichier_parse = etree.parse(opened_file)
+    print(fichier)
+    liste_d_apparats = fichier_parse.xpath("//tei:app[@type='lexicale'][count(descendant::tei:rdg) > 1]",
+                                           namespaces=NSMAP)
+
+    with open("similarity_results.txt", "a") as similarity_file:
+        similarity_file.truncate(0)
+
+    # On processe les entrées pour sortir les paires à comparer, en supprimant la redondance et les omissions.
+    embs = embeddings.Embeddings(model='python/post_traitement/model_embeddings.pt')
+
+    # On va garder dans une liste la métrique pour tous les couples de mots
+    global_similarity_list = []
+
+    for lieu_variant in liste_d_apparats:
+        # D'abord on récupère toutes les analyses, on supprime la redondance et on crée des paires
+        id = lieu_variant.xpath("descendant::tei:w/@xml:id", namespaces=NSMAP)
+        with open("similarity_results.txt", "a") as similarity_file:
+            similarity_file.write(f"Identifiant:{id}\n")
+        liste_de_lemmes = [lemme.split("_")[0] for lemme in
+                           lieu_variant.xpath("descendant::tei:rdg/@lemma", namespaces=NSMAP)]
+        liste_de_pos = [pos.split(" ")[0] for pos in lieu_variant.xpath("descendant::tei:rdg/@pos", namespaces=NSMAP)]
+        lemmes = [lemme for lemme in liste_de_lemmes if lemme != ""]
+        pos = [pos for pos in liste_de_pos if pos != ""]
+        analyses_regroupees = list(set([f"{pos}{lemme}" for pos, lemme in zip(pos, lemmes)]))
+        paires_a_analyser = list(itertools.combinations(analyses_regroupees, 2))
+
+        # On calcule ensuite la similarité pour chacune des paires
+        similarity_dict = dict()
+        mean_similarity = embs.mean_similarity
+        for paire in paires_a_analyser:
+            with open("similarity_results.txt", "a") as similarity_file:
+                similarity_file.write(f"Paire à analyser: {paire}\n")
+                cosine_metric, test_metric, test_words = embs.compute_similarity(cosine_similarity=True, pair=paire)
+                similarity_file.write(f"Distance: {cosine_metric}\n")
+                similarity_file.write(f"Distance moyenne entre 100 paires: {mean_similarity}\n")
+                similarity_file.write(f"Distance entre deux vecteurs aléatoires: ({test_words}) {test_metric}\n")
+            global_similarity_list.append((cosine_metric.item(), paire))
+            similarity_dict[paire] = cosine_metric.item()
+
+        lieu_variant.set("subtype", similarity_dict.__repr__())
+        global_similarity_list = [(metric, couple) for metric, couple in global_similarity_list if
+                                  math.isnan(metric) is False]
+        with open("similarity_results.txt", "a") as similarity_file:
+            similarity_file.write(f"Dict: {global_similarity_list}")
+            similarity_file.write("\n\n Nouveau lieu variant. \n\n")
+
+    print(mean_similarity)
+    print(embs.median_similarity)
+    liste_de_similarites = [similarity for similarity, _ in global_similarity_list if math.isnan(similarity) is False]
+    similarite_maximum = np.max(np.array(liste_de_similarites))
+    similarite_minimum = np.min(np.array(liste_de_similarites))
+
+    similarity_threshold = None
+    # Ici il faut trouver une façon de déterminer le seuil de similarité. À la main une fois les embeddings produits
+    # et un premier tour de comparaison fait entre tous les lieux variant ?
+
+    # On ordonne la liste de similarité puis on imprime.
+    global_similarity_list = list(set(global_similarity_list))
+    global_similarity_list.sort(key=lambda x: x[0])
+    with open("similarity_dict.list", "w") as similarity_list_file:
+        similarity_list_file.write(f"Similarité minimum: {similarite_minimum}\n"
+                                   f"Similarité maximum: {similarite_maximum}\n")
+        similarity_list_file.write(f"Moyenne de similarités (10000 couples): {embs.mean_similarity}\n")
+        similarity_list_file.write("\n".join([f"{x}: ({y[0]}/{y[1]})" for x, y in global_similarity_list]))
+
+    with open(fichier.replace("final", "definitif"), "w+") as output_file:
+        output_file.write(etree.tostring(fichier_parse, pretty_print=True).decode())
+
+
+
 def parallel_transformation(moteur_transformation, chemin_xsl, param_chapitre, liste, coeurs, regexp=None):
     pool = mp.Pool(processes=coeurs)
     command_list = []
@@ -386,8 +474,6 @@ def parallel_transformation(moteur_transformation, chemin_xsl, param_chapitre, l
                 command = ["java", "-jar", moteur_transformation, i, chemin_xsl, param_chapitre, param_sigle]
                 command_list.append(command)
 
-    pool.map(run_subprocess, command_list)
+    pool.map(utils.run_subprocess, command_list)
 
 
-def run_subprocess(liste):
-    subprocess.run(liste)
