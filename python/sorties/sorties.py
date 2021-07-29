@@ -26,8 +26,8 @@ def transformation_latex(saxon, fichier_xml, fusion, chemin='divs'):
     print("Création des fichiers pdf ✓")
     subprocess.run(["java", "-jar", saxon, "-xi:on", fichier_tex_sortie, fichier_xml, param_fusion, chemin_xsl_apparat])
     print(f'current dir: {os.getcwd()}')
-    subprocess.run(["xelatex", f"-output-directory={chemin}", fichier_tex_seul])
-    subprocess.run(["xelatex", f"-output-directory={chemin}", fichier_tex_seul])
+    subprocess.run(["xelatex", "-quiet", f"-output-directory={chemin}", fichier_tex_seul])
+    subprocess.run(["xelatex", "-quiet", f"-output-directory={chemin}", fichier_tex_seul])
 
 def fusion_documents_tei(temoin_a_traiter):
     '''
