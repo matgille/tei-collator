@@ -122,10 +122,17 @@ def main():
         arg_plus_1 = argument + 1
         portee = range(argument, arg_plus_1)
 
+
     collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
 
     for i in portee:
         chemin = f"divs/div{str(i)}"
+        # liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
+        # embs = post_traitement.embeddings
+        # for fichier in liste_fichiers_finaux:
+            # embs = post_traitement.calcul_similarite(fichier)
+        # embs.courbe_de_gauss()
+        # exit(0)
         print(f"Traitement de la division {str(i)}")
         print("Alignement avec CollateX.")
         for fichier_xml in os.listdir(chemin):

@@ -8,6 +8,7 @@ import multiprocessing as mp
 import itertools
 import numpy as np
 
+import subprocess
 import python.utils.utils as utils
 import python.post_traitement.embeddings as embeddings
 
@@ -371,7 +372,6 @@ def injection(saxon, chemin, chapitre, coeurs):
     parallel_transformation(saxon, chemin_injection_ponctuation, param_chapitre, liste, coeurs)
     print("Création des balises de lacunes ✓")
 
-
 def calcul_similarite(fichier):
     """
     Fonction qui calcule les similarités entre variants dans chaque lieu variant lexical.
@@ -389,11 +389,11 @@ def calcul_similarite(fichier):
     liste_d_apparats = fichier_parse.xpath("//tei:app[@type='lexicale'][count(descendant::tei:rdg) > 1]",
                                            namespaces=NSMAP)
 
-    with open("similarity_results.txt", "a") as similarity_file:
+    with open("embeddings_results/similarity_results.txt", "a") as similarity_file:
         similarity_file.truncate(0)
 
     # On processe les entrées pour sortir les paires à comparer, en supprimant la redondance et les omissions.
-    embs = embeddings.Embeddings(model='python/post_traitement/model_embeddings.pt')
+    embs = embeddings.Embeddings(model='python/post_traitement/model_embeddings.pt', device='cpu')
 
     # On va garder dans une liste la métrique pour tous les couples de mots
     global_similarity_list = []
@@ -401,11 +401,12 @@ def calcul_similarite(fichier):
     for lieu_variant in liste_d_apparats:
         # D'abord on récupère toutes les analyses, on supprime la redondance et on crée des paires
         id = lieu_variant.xpath("descendant::tei:w/@xml:id", namespaces=NSMAP)
-        with open("similarity_results.txt", "a") as similarity_file:
+        with open("embeddings_results/similarity_results.txt", "a") as similarity_file:
             similarity_file.write(f"Identifiant:{id}\n")
         liste_de_lemmes = [lemme.split("_")[0] for lemme in
                            lieu_variant.xpath("descendant::tei:rdg/@lemma", namespaces=NSMAP)]
-        liste_de_pos = [pos.split(" ")[0] for pos in lieu_variant.xpath("descendant::tei:rdg/@pos", namespaces=NSMAP)]
+        liste_de_pos = [pos.split(" ")[0] for pos in
+                        lieu_variant.xpath("descendant::tei:rdg/@pos", namespaces=NSMAP)]
         lemmes = [lemme for lemme in liste_de_lemmes if lemme != ""]
         pos = [pos for pos in liste_de_pos if pos != ""]
         analyses_regroupees = list(set([f"{pos}{lemme}" for pos, lemme in zip(pos, lemmes)]))
@@ -452,6 +453,7 @@ def calcul_similarite(fichier):
 
     with open(fichier.replace("final", "definitif"), "w+") as output_file:
         output_file.write(etree.tostring(fichier_parse, pretty_print=True).decode())
+    return embs
 
 
 

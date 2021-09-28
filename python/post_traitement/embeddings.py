@@ -1,10 +1,13 @@
 import json
-import numpy as np
 import torch
 import random
-from sklearn.decomposition import PCA
 
-import plotly
+import tqdm
+from sklearn.decomposition import PCA
+import itertools
+
+from scipy.integrate import quad
+import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objs as go
 
@@ -20,18 +23,20 @@ class Embeddings:
         # On récupère les embeddings
         self.embeddings = self.model_dict['embeddings.weight'].data
         self.embeddings.to(device)
+        self.vocab_length = len(self.embeddings)
         self.dimensionality = self.embeddings[0].shape[0]  # on cherche la dimensionalité du plongement de mots
         self.norm_vocab = dict((word, idx) for (word, idx) in self.vocab.items())
         self.rev_vocab = dict((idx, word) for (word, idx) in self.vocab.items())
+        self.similarities = list()
         self.mean_similarity = None
         self.median_similarity = None
-        self.random_mean_similarity()
+
 
     def random_mean_similarity(self):
         """
-        On crée la moyenne de 100 calculs de similarité entre des vecteurs
+        On crée la moyenne de n calculs de similarité entre des vecteurs
         choisis au hasard. Il y a une forte probabilité pour que cette moyenne
-        soit basse: en comparaison, une valeur plus importante peut marquer
+        corresponde à une moyenne proche de la dissimilarité: en comparaison, une valeur plus importante peut marquer
         une similarité entre deux mots du vocabulaire. À l'inverse,
         une valeur proche ou inférieure à cette moyenne marquerait une dissimilitudes entre
         les deux formes.
@@ -42,17 +47,36 @@ class Embeddings:
             random.randint(0, len(self.vocab) - 1)
         )
             for _ in range(10000)]
-        similarities = []
 
         for a, b in test_population:
             a_as_vector = self.embeddings[a]
             b_as_vector = self.embeddings[b]
-            similarities.append(
+            self.similarities.append(
                 self.cosine_similarity(a_as_vector, b_as_vector).item()
             )
-        print(similarities)
-        self.mean_similarity = np.mean(similarities)
-        self.median_similarity = np.median(similarities)
+        print(self.similarities)
+        self.mean_similarity = np.mean(self.similarities)
+        self.median_similarity = np.median(self.similarities)
+
+    def courbe_de_gauss(self):
+        self.similarities = [round(value, 3) for value in self.similarities]
+        distributions = dict()
+
+        for value in self.similarities:
+            try:
+                distributions[value] += 1
+            except:
+                distributions[value] = 1
+        print(distributions)
+
+        similarities = list(distributions.keys())
+        occurrences = list(distributions.values())
+        print(occurrences)
+        print(max(occurrences))
+        print(list(zip(similarities, occurrences)))
+        plt.figure()
+        plt.scatter(similarities, occurrences)
+        plt.show()
 
     def dot_product(self, a, b):
         a = a.to(self.device)
