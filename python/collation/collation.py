@@ -358,6 +358,13 @@ def typologie_variantes(liste_lemmes, liste_pos):
                     type_de_variante = 'personne'
             else:
                 type_de_variante = 'genre'
+        # On essaie d'identifier les variantes d'auxiliarité, pour les ignorer éventuellement, Freeling
+        # n'étant pas très efficace sur ce point.
+        elif all(pos.startswith('V') for pos in liste_pos):
+            if all(pos[1] in ['A', 'M', 'S'] for pos in liste_pos) and all(pos[2:] == liste_pos[0][2:] for pos in liste_pos):
+                type_de_variante = "auxiliarite"
+            else:
+                type_de_variante = "morphosyntactique"
         else:
             type_de_variante = 'morphosyntactique'
     elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
