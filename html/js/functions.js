@@ -21,7 +21,8 @@ $(function () {
     $(".annotation").click(function () {
         var annotation = this.childNodes[0].nodeValue;
         console.log(annotation);
-        navigator.clipboard.writeText(annotation);
+        var xml_attribute = ' pos="' + annotation + '"'
+        navigator.clipboard.writeText(xml_attribute);
     });
 });
 /*Fonction qui permet de copier dans le presse-papier la valeur de l'analyse pour faciliter la correction*/

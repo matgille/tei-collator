@@ -36,9 +36,10 @@ class Tokenizer:
         for element in liste_elements_vides:
             element.set("{http://www.w3.org/XML/1998/namespace}id", self.generateur_id())
 
-        liste_w = root.xpath("//tei:w", namespaces=tei)
-        for w in liste_w:
-            w.set("{http://www.w3.org/XML/1998/namespace}id", self.generateur_id())
+        # On inclut les tei:pc pour faciliter le debuggage
+        token_list = root.xpath("//node()[self::tei:w or self::tei:pc]", namespaces=tei)
+        for token in token_list:
+            token.set("{http://www.w3.org/XML/1998/namespace}id", self.generateur_id())
         with open(temoin, "w+") as sortie_xml:
             string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
             sortie_xml.write(str(string))
