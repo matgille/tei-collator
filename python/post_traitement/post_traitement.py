@@ -1,6 +1,8 @@
 import math
 import pickle
 import re
+
+import tqdm
 from lxml import etree
 import glob
 import operator
@@ -29,19 +31,67 @@ def injection_intelligente(chapitre, elements_and_position, liste_temoins):
     :return: None
     """
 
+    with open(f".debug/injection.txt", "w+") as debug_file:
+        debug_file.truncate(0)
+
+    print("Extracting elements from all witnesses")
     listes_d_elements = recuperation_elements(div_n=chapitre,
                                               tei_elements_and_positions=elements_and_position)
 
+    print("Reinjecting elements in the other witnesses:")
     for witness in liste_temoins:
         reinjection_elements(target_file=witness,
                              elements_list=listes_d_elements)
+        # on regarde le nombre d'exemples qui n'ont pas été injectés par temoin
+        verification_injections(elements_a_injecter=listes_d_elements, temoin_a_verifier=witness)
 
     # On nettoie les fichiers
     for file in glob.glob(f"divs/div{chapitre}/*injected.xml"):
-        print(file)
         shutil.move(file, file.replace("injected", "final"))
 
 
+def verification_injections(elements_a_injecter, temoin_a_verifier):
+    """
+    Cette fonction vérifie le nombre d'éléments injectés
+    Elle retourne le nombre d'éléments inejctés et leur id.
+    """
+
+    debug_file = open(f".debug/injection.txt", "a")
+
+    tei_namespace = 'http://www.tei-c.org/ns/1.0'
+    NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+
+    elements_a_verifier = [(element, temoin_origine, original_anchor) for
+                           original_anchor, element, temoin_origine, position in elements_a_injecter if
+                           temoin_origine not in temoin_a_verifier]
+    temoin_a_verifier = temoin_a_verifier.replace("final", "injected")
+    with open(temoin_a_verifier, "r") as input_file:
+        try:
+            arbre_a_verifier = etree.parse(input_file)
+        except etree.XMLSyntaxError as e:
+            print(f"Parsing error on witness {temoin_a_verifier}:")
+            print(e)
+            exit(0)
+
+    # On compte le nombre d'éléments à injecter, moins ceux du propre témoin
+    target_length = len(elements_a_verifier)
+    correct_injections = 0
+    debug_file.write(f"\n\n\nVerifying {temoin_a_verifier}\n")
+    for element, temoin_origine, original_anchor in elements_a_verifier:
+        element_name: str = element.xpath("local-name()")
+        id_element: str = element.xpath("@xml:id")[0]
+        parsed: list = arbre_a_verifier.xpath(f"//node()[@xml:id='{id_element}']", namespaces=NSMAP1)
+        if len(parsed) == 1:
+            correct_injections += 1
+            debug_file.write(
+                f"Correct injection: element {element_name}, id {id_element} (from {temoin_origine})\n")
+        else:
+            debug_file.write(
+                f"Error: element {element_name}, id {id_element} (from {temoin_origine}, anchor {original_anchor})\n")
+
+    print(f"Treating: {temoin_a_verifier.split('/')[-1]}: ✓ ({correct_injections}/{target_length})")
+    debug_file.write(
+        f"{correct_injections} out of {target_length} target injections for witness {temoin_a_verifier}\n")
 
 
 ### ATTENTION, l'injection ne peut pas marcher en l'état absolument correctement.
@@ -56,11 +106,13 @@ def reinjection_elements(target_file, elements_list):
     """
     tei_namespace = 'http://www.tei-c.org/ns/1.0'
     NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+    current_xml_tree = etree.parse(target_file)
 
     # Chaque élément de la liste est de la forme: id de l'ancre, objet lxml, témoin d'origine, position de l'ancre
     # par rapport à l'élément à injecter
     for item in elements_list:
         anchor_id, element, temoin, position = item
+        element_id = element.xpath("@xml:id")[0]
         if temoin in target_file:
             pass
         else:
@@ -68,40 +120,34 @@ def reinjection_elements(target_file, elements_list):
                 operation = operator.sub  # et on injectera donc avant ce tei:w (index(tei:w) - 1)
             else:
                 operation = operator.add  # et on injectera donc après ce tei:w (index(tei:w) + 1)
-
-            current_xml_tree = etree.parse(target_file)
-            witness_id_courant = "_".join(
-                current_xml_tree.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[0:2])
-            print(f"\n---------------------------\n--- Injection ({witness_id_courant}) ---\n"
-                  f"---------------------------\n")
-            element_name = element.xpath("local-name()")
-            element_id = element.xpath("@xml:id")
-            print(
-                f"Élément à injecter : {element_name} (id {element_id}; ancre: {anchor_id}); témoin d\'origine: {temoin}")
-            element.set("injected", "injected")  # il faudra nettoyer ça à la fin de la boucle.
-            element.set("corresp", f'#{temoin}')  # on indique de quel témoin provient l'élément.
-            # Il y a un bug ici: puisque l'on modifie à la volée les textes, à chaque fois qu'on change de témoin
-            # ça pose problème et le témoin dans le corresp est faux, ce qui
-            # va biaiser la suite du processus... Il faut que cette fonction produise un nouveau document de sortie
-            # On passe si le témoin de la réinjection est le même que le témoin de la note
-            try:
-                word_to_change = current_xml_tree.xpath(f'//tei:w[@xml:id=\'{anchor_id}\']', namespaces=NSMAP1)[0]
-                item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append
-                # -element-after-another-element
-                # print(operation)
-                index = operation(item_element.index(word_to_change), 1)  # https://stackoverflow.com/a/54559513
-                # print(f'index => {index}')
-                if index == -1:
-                    index = 0
-                item_element.insert(index, element)
-            except Exception as e:
-                print(
-                    f"Il y a un problème (omission?) dans {target_file.split('/')[-1]} qui empêche l'injection de {anchor_id}:"
-                    f"\n {traceback.format_exc()}"
-                    f"Témoin originel: {temoin}.\n\n")
+            existing_element = len(current_xml_tree.xpath(f"//node()[@xml:id='{element_id}']")) == 1
+            if existing_element:
+                pass
+            else:
+                witness_id_courant = "_".join(
+                    current_xml_tree.xpath(f'//tei:div[@type=\'chapitre\']/@xml:id', namespaces=NSMAP1)[0].split("_")[
+                    0:2])
+                element_name = element.xpath("local-name()")
+                element_id = element.xpath("@xml:id")[0]
+                element.set("injected", "injected")  # il faudra nettoyer ça à la fin de la boucle.
+                element.set("corresp", f'#{temoin}')  # on indique de quel témoin provient l'élément.
+                # Il y a un bug ici: puisque l'on modifie à la volée les textes, à chaque fois qu'on change de témoin
+                # ça pose problème et le témoin dans le corresp est faux, ce qui
+                # va biaiser la suite du processus... Il faut que cette fonction produise un nouveau document de sortie
+                # On passe si le témoin de la réinjection est le même que le témoin de la note
+                try:
+                    word_to_change = current_xml_tree.xpath(f'//tei:w[@xml:id=\'{anchor_id}\']', namespaces=NSMAP1)[0]
+                    item_element = word_to_change.getparent()  # https://stackoverflow.com/questions/7474972/python-lxml-append-element-after-another-element
+                    index = operation(item_element.index(word_to_change), 1)  # https://stackoverflow.com/a/54559513
+                    if index == -1:
+                        index = 0
+                    item_element.insert(index, element)
+                except Exception as e:
+                    pass
 
     with open(target_file.replace("final", "injected"), "w") as output_file:
         output_file.write(etree.tostring(current_xml_tree).decode())
+
 
 def recuperation_elements(div_n: str, tei_elements_and_positions: list) -> List[tuple]:
     """
@@ -114,13 +160,12 @@ def recuperation_elements(div_n: str, tei_elements_and_positions: list) -> List[
     Où:
     - le premier élément du tuple est l'ancre: l'élément du texte source où insérer l'élément à injecter
     - l'objet lxml.Element est l'élément à injecter
-    - le sigle le fichier dans lequel injecter l'élément
+    - le sigle le fichier duquel provient l'élément
     - la position la position de l'ancre par rapport à l'élément à injecter.
     """
     treated_list = []
 
     for item in tei_elements_and_positions:
-        print(item)
         element, position = item
         if position == "before":
             following_or_preceding = "following"  # on va chercher le tei:w suivant
