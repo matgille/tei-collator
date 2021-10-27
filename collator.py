@@ -144,7 +144,12 @@ def main():
         print("Alignement avec CollateX.")
 
         fichiers_xml = os.listdir(chemin)
-        collation.alignement_parallele(fichiers_xml, chemin, saxon, correction, parametres.alignement, parametres.parallel_process_number)
+        aligner = collation.Aligner(liste_fichiers_xml=fichiers_xml,
+                                    chemin=chemin,
+                                    moteur_transformation_xsl=saxon,
+                                    correction_mode=correction, parametres_alignement=parametres.alignement,
+                                    nombre_de_coeurs=parametres.parallel_process_number)
+        aligner.alignement_parallele()
         chemin_chapitre = f"divs/div{i}"
         chemin_fichier_json = f"{chemin_chapitre}/final.json"
 

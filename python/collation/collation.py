@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import multiprocessing as mp
 
-
 from lxml import etree
 import glob
 import collatex
@@ -27,38 +26,7 @@ def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
     print('Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n')
 
 
-# Étape avant la collation: transformation en json selon la structure voulue par CollateX.
-# Voir https://collatex.net/doc/#json-input
-def transformation_json(saxon, output_fichier_json, input_fichier_xml, correction):
-    param_correction = f"correction={correction}"
-    subprocess.run(['java', '-jar', saxon, output_fichier_json, input_fichier_xml,
-                    'xsl/pre_alignement/transformation_json.xsl', param_correction])
 
-
-def alignement(fichier_a_collationer, numero, chemin, correction, alignement='global'):
-    """
-        Alignement CollateX, puis regroupement des leçons communes en lieux variants
-    """
-    if correction:
-        alignement = 'mam'
-    with open(fichier_a_collationer,
-              'r') as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
-        entree_json1 = entree_json0.read()
-    # Export au format JSON (permet de conserver les xml:id)
-    try:
-        json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
-    except Exception as e:
-        print(f'error in json [{fichier_a_collationer}]: \n {e}')
-    # JSON: https://stackoverflow.com/a/29827074
-    if alignement == 'global':
-        resultat_json = collatex.collate(json_str, output='json', segmentation=True)
-    else:
-        resultat_json = collatex.collate(json_str, output='json', segmentation=False)
-        # segmentation=False permet une collation au mot-à-mot:
-        # http://interedition.github.io/collatex/pythonport.html
-    nom_fichier_sortie = f'{chemin}/alignement_collatex{numero}.json'
-    with open(nom_fichier_sortie, 'w') as sortie_json:
-        sortie_json.write(resultat_json)
 
 
 def apparat_final(fichier_entree, chemin, log=False):
@@ -334,7 +302,8 @@ def typologie_variantes(liste_lemmes, liste_pos):
 
     ## Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
     # de corriger dans le XML ou car il n'y a pas d'intérêt à la variante.
-    filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca'), ('él', 'el'), ('esta', 'está', 'ésta'), ('grande', 'gran')]
+    filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca'), ('él', 'el'),
+                     ('esta', 'está', 'ésta'), ('grande', 'gran')]
     # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante graphique.
     # Ici il faut se rappeler qu'il y a une différence entre les formes
     type_de_variante = None
@@ -352,7 +321,7 @@ def typologie_variantes(liste_lemmes, liste_pos):
         if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
             type_de_variante = 'filtre'
         elif all(pos.startswith('NC') for pos in liste_pos):
-        # On rappelle la structure de l'étiquette du nom: NCMS000 pour un nom masculin singulier
+            # On rappelle la structure de l'étiquette du nom: NCMS000 pour un nom masculin singulier
             if all(pos[2] == liste_pos[0][2] for pos in liste_pos):
                 if all(pos[3] == liste_pos[0][3] for pos in liste_pos):
                     type_de_variante = "indetermine"
@@ -363,7 +332,8 @@ def typologie_variantes(liste_lemmes, liste_pos):
         # On essaie d'identifier les variantes d'auxiliarité, pour les ignorer éventuellement, Freeling
         # n'étant pas très efficace sur ce point.
         elif all(pos.startswith('V') for pos in liste_pos):
-            if all(pos[1] in ['A', 'M', 'S'] for pos in liste_pos) and all(pos[2:] == liste_pos[0][2:] for pos in liste_pos):
+            if all(pos[1] in ['A', 'M', 'S'] for pos in liste_pos) and all(
+                    pos[2:] == liste_pos[0][2:] for pos in liste_pos):
                 type_de_variante = "auxiliarite"
             else:
                 type_de_variante = "morphosyntactique"
@@ -387,27 +357,76 @@ def typologie_variantes(liste_lemmes, liste_pos):
     return type_de_variante
 
 
-def alignement_collatex(fichier_xml, chemin, saxon, correction, parametres_alignement):
-    pattern = re.compile("juxtaposition_[1-9]{1,2}.*xml")
-    if pattern.match(fichier_xml):
-        fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
-        numero = fichier_sans_extension.split("_")[1]
-        fichier_json = f"{fichier_sans_extension}.json"
-        fichier_json_complet = f"{chemin}/{fichier_json}"
-        output_fichier_json = f"-o:{chemin}/{fichier_json}"
-        input_fichier_xml = f"{chemin}/{fichier_xml}"
-        # Étape avant la collation: transformation en json selon la structure voulue par CollateX
-        print(f"Json transformation for {fichier_sans_extension}")
-        transformation_json(saxon, output_fichier_json, input_fichier_xml, correction)
+class Aligner:
+    def __init__(self, liste_fichiers_xml: list, chemin: str, moteur_transformation_xsl: str, correction_mode: bool,
+                 parametres_alignement: str,
+                 nombre_de_coeurs):
+        self.nombre_de_coeurs = nombre_de_coeurs
+        self.liste_fichiers_xml = liste_fichiers_xml
+        self.chemin = chemin
+        self.moteur_transformation_xsl = moteur_transformation_xsl
+        self.correction_mode = correction_mode
+        self.parametres_alignement = parametres_alignement
 
-        # Alignement avec CollateX. Il en ressort du JSON, encore
-        print(f"Alignement for {fichier_sans_extension}")
-        alignement(fichier_json_complet, numero, chemin, parametres_alignement, correction)
+    def transformation_json(self, input_fichier_xml, output_fichier_json):
+        """
+        Étape avant la collation: transformation en json selon la structure voulue par CollateX.
+        Voir https://collatex.net/doc/#json-input
+        """
+        param_correction = f"correction={self.correction_mode}"
+        subprocess.run(['java', '-jar', self.moteur_transformation_xsl, output_fichier_json, input_fichier_xml,
+                        'xsl/pre_alignement/transformation_json.xsl', param_correction])
 
+    def alignement(self, fichier_a_collationer, numero):
+        """
+            Alignement CollateX, puis regroupement des leçons communes en lieux variants
+        """
+        alignement = self.parametres_alignement
+        # on réécrit la variable en cas de mode correction
+        if self.correction_mode:
+            alignement = 'mam'
 
-def alignement_parallele(liste_fichiers_xml, chemin, saxon, correction, parametres_alignement, nombre_de_coeurs):
-    with mp.Pool(processes=nombre_de_coeurs) as pool:
-        # https://www.kite.com/python/answers/how-to-map-a-function-with-
-        # multiple-arguments-to-a-multiprocessing-pool-in-python
-        data = [(fichier_xml, chemin, saxon, correction, parametres_alignement) for fichier_xml in liste_fichiers_xml]
-        pool.starmap(alignement_collatex, data)
+        with open(fichier_a_collationer,
+                  'r') as entree_json0:  # ouvrir le fichier en mode lecture et le mettre dans une variable
+            entree_json1 = entree_json0.read()
+        # Export au format JSON (permet de conserver les xml:id)
+        try:
+            json_str = json.loads(entree_json1)  # permet de mieux gérer les sauts de ligne pour le
+        except Exception as e:
+            print(f'error in json [{fichier_a_collationer}]: \n {e}')
+        # JSON: https://stackoverflow.com/a/29827074
+        if alignement == 'global':
+            resultat_json = collatex.collate(json_str, output='json', segmentation=True)
+        else:
+            resultat_json = collatex.collate(json_str, output='json', segmentation=False)
+            # segmentation=False permet une collation au mot-à-mot:
+            # http://interedition.github.io/collatex/pythonport.html
+        nom_fichier_sortie = f'{self.chemin}/alignement_collatex{numero}.json'
+        with open(nom_fichier_sortie, 'w') as sortie_json:
+            sortie_json.write(resultat_json)
+
+    def alignement_collatex(self, fichier_xml):
+        pattern = re.compile("juxtaposition_[1-9]{1,2}.*xml")
+        if pattern.match(fichier_xml):
+            fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
+            numero = fichier_sans_extension.split("_")[1]
+            fichier_json = f"{fichier_sans_extension}.json"
+            fichier_json_complet = f"{self.chemin}/{fichier_json}"
+            output_fichier_json = f"-o:{self.chemin}/{fichier_json}"
+            input_fichier_xml = f"{self.chemin}/{fichier_xml}"
+            # Étape avant la collation: transformation en json selon la structure voulue par CollateX
+            self.transformation_json(input_fichier_xml, output_fichier_json)
+
+            # Alignement avec CollateX. Il en ressort du JSON, encore
+            self.alignement(fichier_json_complet, numero)
+
+    def alignement_parallele(self):
+        with mp.Pool(processes=self.nombre_de_coeurs) as pool:
+            # https://www.kite.com/python/answers/how-to-map-a-function-with-
+            # multiple-arguments-to-a-multiprocessing-pool-in-python
+            data = [
+                (fichier_xml,)
+                for fichier_xml in
+                self.liste_fichiers_xml
+            ]
+            pool.starmap(self.alignement_collatex, data)
