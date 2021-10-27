@@ -45,9 +45,12 @@ def main():
     parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
     parser.add_argument("-ao", "--align_only", default=False, help="Exit after alignment.")
     parser.add_argument("-cp", "--createpdf", default=False, help="Produce pdf and exit.")
+    parser.add_argument("-io", "--injectiononly", default=False, help="Debug option: performs injection and exits")
+
     args = parser.parse_args()
     correction = args.correction
     log = correction
+    inject_only = args.injectiononly
     lemmatize_only = args.lemmatizeonly
     pdf_only = args.createpdf
     align_only = args.align_only
@@ -63,6 +66,16 @@ def main():
           "de la ligne de commande.")
     print(f'Lemmatisation seule: {lemmatize_only} \n')
     print(f'Mode correction: {correction} \n ---- \n')
+    print(f'Injection seule: {inject_only} \n ---- \n')
+
+    if inject_only:
+        chemin = f"divs/div{division}"
+        liste_fichiers_finaux = utils.chemin_fichiers_finaux(division)
+        tuples_elements_position = parametres.reinjection.items()
+        post_traitement.injection_intelligente(chapitre=division,
+                                               elements_and_position=tuples_elements_position,
+                                               liste_temoins=liste_fichiers_finaux)
+        exit(0)
 
     if pdf_only:
         chemin = f"divs/div{division}"
@@ -127,31 +140,11 @@ def main():
 
     for i in portee:
         chemin = f"divs/div{str(i)}"
-        # liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
-        # embs = post_traitement.embeddings
-        # for fichier in liste_fichiers_finaux:
-            # embs = post_traitement.calcul_similarite(fichier)
-        # embs.courbe_de_gauss()
-        # exit(0)
         print(f"Traitement de la division {str(i)}")
         print("Alignement avec CollateX.")
-        for fichier_xml in os.listdir(chemin):
-            # Ici on travaille sur des petits fichiers qui correspondent aux divisions indiquées en paramètres
-            # pour éviter d'avoir des apparats qui se chevauchent
-            pattern = re.compile("juxtaposition_[1-9]{1,2}.*xml")
-            if pattern.match(fichier_xml):
-                fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
-                numero = fichier_sans_extension.split("_")[1]
-                fichier_json = f"{fichier_sans_extension}.json"
-                fichier_json_complet = f"{chemin}/{fichier_json}"
-                output_fichier_json = f"-o:{chemin}/{fichier_json}"
-                input_fichier_xml = f"{chemin}/{fichier_xml}"
-                # Étape avant la collation: transformation en json selon la structure voulue par CollateX
-                collation.transformation_json(saxon, output_fichier_json, input_fichier_xml, correction)
 
-                # Alignement avec CollateX. Il en ressort du JSON, encore
-                collation.alignement(fichier_json_complet, numero, chemin, parametres.alignement, correction)
-
+        fichiers_xml = os.listdir(chemin)
+        collation.alignement_parallele(fichiers_xml, chemin, saxon, correction, parametres.alignement, parametres.parallel_process_number)
         chemin_chapitre = f"divs/div{i}"
         chemin_fichier_json = f"{chemin_chapitre}/final.json"
 
@@ -225,14 +218,15 @@ def main():
 
         # Ici on indique d'autres éléments tei à réinjecter.
         if parametres.reinjection:
-            for element, position in parametres.reinjection.items():
-                post_traitement.injection_en_masse(chapitre=division, element_tei=element, position=position,
+            tuples_elements_position = parametres.reinjection.items()
+            post_traitement.injection_intelligente(chapitre=division,
+                                                   elements_and_position=tuples_elements_position,
                                                    liste_temoins=liste_fichiers_finaux)
 
         # Raffinage des apparats: on rassemble les lieux variants
         for fichier in liste_fichiers_finaux:
             post_traitement.raffinage_apparats(fichier, i)
-            post_traitement.calcul_similarite(fichier)
+            # post_traitement.calcul_similarite(fichier)
 
         # Tests de conformité
         print(f'Tests en cours...')

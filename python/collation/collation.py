@@ -4,6 +4,8 @@ import os
 import re
 import shutil
 import subprocess
+import multiprocessing as mp
+
 
 from lxml import etree
 import glob
@@ -332,7 +334,7 @@ def typologie_variantes(liste_lemmes, liste_pos):
 
     ## Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
     # de corriger dans le XML ou car il n'y a pas d'intérêt à la variante.
-    filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca')]
+    filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca'), ('él', 'el'), ('esta', 'está', 'ésta'), ('grande', 'gran')]
     # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante graphique.
     # Ici il faut se rappeler qu'il y a une différence entre les formes
     type_de_variante = None
@@ -383,3 +385,29 @@ def typologie_variantes(liste_lemmes, liste_pos):
         print(liste_lemmes)
 
     return type_de_variante
+
+
+def alignement_collatex(fichier_xml, chemin, saxon, correction, parametres_alignement):
+    pattern = re.compile("juxtaposition_[1-9]{1,2}.*xml")
+    if pattern.match(fichier_xml):
+        fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
+        numero = fichier_sans_extension.split("_")[1]
+        fichier_json = f"{fichier_sans_extension}.json"
+        fichier_json_complet = f"{chemin}/{fichier_json}"
+        output_fichier_json = f"-o:{chemin}/{fichier_json}"
+        input_fichier_xml = f"{chemin}/{fichier_xml}"
+        # Étape avant la collation: transformation en json selon la structure voulue par CollateX
+        print(f"Json transformation for {fichier_sans_extension}")
+        transformation_json(saxon, output_fichier_json, input_fichier_xml, correction)
+
+        # Alignement avec CollateX. Il en ressort du JSON, encore
+        print(f"Alignement for {fichier_sans_extension}")
+        alignement(fichier_json_complet, numero, chemin, parametres_alignement, correction)
+
+
+def alignement_parallele(liste_fichiers_xml, chemin, saxon, correction, parametres_alignement, nombre_de_coeurs):
+    with mp.Pool(processes=nombre_de_coeurs) as pool:
+        # https://www.kite.com/python/answers/how-to-map-a-function-with-
+        # multiple-arguments-to-a-multiprocessing-pool-in-python
+        data = [(fichier_xml, chemin, saxon, correction, parametres_alignement) for fichier_xml in liste_fichiers_xml]
+        pool.starmap(alignement_collatex, data)
