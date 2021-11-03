@@ -16,8 +16,6 @@
 
 
     <xsl:template match="/">
-        <xsl:message>Correction mode: <xsl:value-of
-                select="$correction"/></xsl:message>
         <xsl:text>{
         "witnesses" : [</xsl:text>
         <xsl:apply-templates/>
