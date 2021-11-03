@@ -2,6 +2,8 @@ import subprocess
 import sys
 import re
 import glob
+import traceback
+
 import torch
 from lxml import etree
 import os
@@ -36,7 +38,6 @@ class CorpusALemmatiser:
             :param division: la division à traiter
             """
         fichier = os.path.basename(temoin)
-        print(f"Lemmatisation de {temoin}\n")
         fichier_sans_extension = os.path.splitext(fichier)[0]
         fichier_xsl = "xsl/lemmatisation/transformation_pre_lemmatisation.xsl"
         chemin_vers_fichier = f"temoins_tokenises_regularises/{str(fichier)}"
@@ -78,10 +79,12 @@ class CorpusALemmatiser:
                 try:
                     _, lemme_position, pos_position, *autres_analyses = texte_lemmatise[index]
                 except Exception as ecxp:
-                    xml_id = mot.xpath("@xml:id", namespaces=self.nsmap)[0]
-                    print(f"Error in file {fichier}, token {xml_id}: \n {ecxp}. \n Last token of the file must be a "
+                    print(f"Error in file {fichier}: \n {ecxp}. \n Last token of the file must be a "
                           f"punctuation mark. Otherwise, you should search for nested tei:w. Be careful of not adding "
                           f"any tei:w in the header !")
+                    print("You should check for empty tei:w in tokenized files.")
+                    print(f"{mot}, {[previous_token.text for previous_token in tokens[index - 10: index]]}")
+                    xml_id = mot.xpath("@xml:id", namespaces=self.nsmap)[0]
                     exit(1)
 
                 # On injecte les analyses.
