@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import time
-import re
 import json
 from halo import Halo
 import subprocess
@@ -67,6 +66,11 @@ def main():
     print(f'Lemmatisation seule: {lemmatize_only} \n')
     print(f'Mode correction: {correction} \n ---- \n')
     print(f'Injection seule: {inject_only} \n ---- \n')
+    alignement = parametres.alignement
+    if alignement == "global":
+        print("WARNING: l'alignement global ne fonctionne pas encore (xml:id identiques sur les non-apparats). "
+              "On switche à un alignement mot à mot.\n\n ---- \n\n")
+        parametres.alignement = "mam"
 
     if inject_only:
         chemin = f"divs/div{division}"
@@ -135,21 +139,26 @@ def main():
         arg_plus_1 = argument + 1
         portee = range(argument, arg_plus_1)
 
-
-    collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
+    corpus_preparator = collation.CorpusPreparation(saxon=saxon,
+                                                    temoin_leader=parametres.temoin_leader,
+                                                    type_division=parametres.type_division,
+                                                    element_base=parametres.element_base,
+                                                    liste_temoins=utils.chemin_temoins_tokenises_regularises())
+    # collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
 
     for i in portee:
         chemin = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
         print("Alignement avec CollateX.")
-
+        corpus_preparator.run(i)
         fichiers_xml = os.listdir(chemin)
         aligner = collation.Aligner(liste_fichiers_xml=fichiers_xml,
                                     chemin=chemin,
                                     moteur_transformation_xsl=saxon,
-                                    correction_mode=correction, parametres_alignement=parametres.alignement,
+                                    correction_mode=correction,
+                                    parametres_alignement=parametres.alignement,
                                     nombre_de_coeurs=parametres.parallel_process_number)
-        aligner.alignement_parallele()
+        aligner.run()
         chemin_chapitre = f"divs/div{i}"
         chemin_fichier_json = f"{chemin_chapitre}/final.json"
 
@@ -220,7 +229,7 @@ def main():
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
         liste_sigles = utils.sigles()
         liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
-
+        sorties.similarity_eval_set_creator(i)
         # Ici on indique d'autres éléments tei à réinjecter.
         if parametres.reinjection:
             tuples_elements_position = parametres.reinjection.items()

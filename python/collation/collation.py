@@ -1,32 +1,32 @@
-import fnmatch
 import json
 import os
 import re
-import shutil
 import subprocess
 import multiprocessing as mp
+
+import python.utils.utils as utils
 
 from lxml import etree
 import glob
 import collatex
 from halo import Halo
-import random
-import string
 
 
-def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
+class CorpusPreparation:
+    def __init__(self, saxon, temoin_leader, type_division, element_base, liste_temoins):
+        self.saxon = saxon
+        self.temoin_leader = temoin_leader
+        self.type_division = type_division
+        self.element_base = element_base
+        self.liste_temoins = liste_temoins
 
-
-def preparation_corpus(saxon, temoin_leader, scinder_par, element_base):
-    with Halo(text='Scission du corpus, création de dossiers et de fichiers par chapitre', spinner='dots'):
-        cmd = f'java -jar {saxon} temoins_tokenises_regularises/{temoin_leader}.xml xsl/pre_alignement/preparation_corpus.xsl ' \
-              f'temoin_leader={temoin_leader} scinder_par={scinder_par} element_base={element_base}'
-        subprocess.run(cmd.split())
-    print('Scission du corpus, création de dossiers et de fichiers par chapitre ✓ \n')
-
-
-
+    def run(self, div_number):
+        # TODO: on peut accéler le processus en supprimant la fonction collection() et en passant par du pooling par division
+        with Halo(text=f'Scission du corpus, création de dossiers et de fichiers par chapitre sur {div_number}', spinner='dots'):
+            cmd = f'java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement' \
+                  f'/preparation_corpus.xsl ' \
+                  f'temoin_leader={self.temoin_leader} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
+            subprocess.run(cmd.split())
 
 
 def apparat_final(fichier_entree, chemin, log=False):
@@ -105,7 +105,7 @@ def apparat_final(fichier_entree, chemin, log=False):
 
             # Étape 1: déterminer si il y a variation ou pas
             for key, value in dic.items():
-                id_token, lecon_depart, temoin, lemme, pos = value[0], value[1], value[2], value[3], value[4]
+                id_token, lecon_depart, temoin, lemme, pos = value
                 liste_lecons.append((lecon_depart, lemme, pos))
 
             if len(liste_lecons) > 0:
@@ -132,7 +132,7 @@ def apparat_final(fichier_entree, chemin, log=False):
                 liste_lemme = []
                 liste_pos = []
                 for key, value in dic.items():
-                    id_token, lecon_depart, temoin, lemme, pos = value[0], value[1], value[2], value[3], value[4]
+                    id_token, lecon_depart, temoin, lemme, pos = value
                     # attention à bien faire la comparaison SSI le lemme/pos existe
                     # ajouter le lemme à la liste
                     liste_lemme.append(lemme)
@@ -184,14 +184,14 @@ def apparat_final(fichier_entree, chemin, log=False):
                     xml_id = value[0]
                     rdg = etree.SubElement(app, tei + 'rdg')
                     # on indique que tous les témoins proposent la leçon
-                    rdg.set('id', generateur_id())
+                    rdg.set('id', utils.generateur_id())
                     rdg.set('wit', temoins_complets)
                     rdg.set('{http://www.w3.org/XML/1998/namespace}id', xml_id)
                 else:
                     lecon = str(key)
                     xml_id, temoin, lemmes, pos = value[0], value[1], value[2], value[3]
                     rdg = etree.SubElement(app, tei + 'rdg')
-                    rdg.set('id', generateur_id())
+                    rdg.set('id', utils.generateur_id())
                     rdg.set('lemma', lemmes)
                     rdg.set('pos', pos)
                     rdg.set('wit', temoin)
@@ -206,14 +206,13 @@ def apparat_final(fichier_entree, chemin, log=False):
                     nombre_temoins = temoin.count('#')
                     nombre_mots = len(liste_w)
                     position_mot = liste_w.index(mot)
-                    position_finale = (nombre_temoins * (position_mot + 1))
                     xml_id_courant = '_'.join(liste_id[n::nombre_mots])  # on va distribuer les xml:id:
                     # abcd > ac, db pour 2 témoins qui lisent la même chose (ab et cd sont les identifiants des deux
                     # tokens identiques, donc il faut distribuer pour identifier le premier token, puis le second)
                     word = etree.SubElement(rdg, tei + 'w')
                     word.set('{http://www.w3.org/XML/1998/namespace}id', xml_id_courant)
                     word.text = mot
-                    n = n + 1
+                    n += 1
 
         # L'apparat est produit. Écriture du fichier xml
         sortie = '%s/apparat_collatex.xml' % chemin
@@ -227,49 +226,6 @@ def fileExists(file):
         print('%s: check' % file)
     else:
         print('%s: n\'est pas trouvé' % file)
-
-
-def nettoyage():
-    # TODO: ranger les fichiers dans des dossiers
-    with Halo(text='Nettoyage du dossier', spinner='dots'):
-        for i in ['tex', 'xml', 'aux', 'json']:
-            if not os.path.exists(i):
-                os.makedirs(i)
-        for file in os.listdir('.'):
-            path = os.path.join('', file)
-            if os.path.isdir(path):
-                continue
-            if fnmatch.fnmatch(file, '*.xml'):
-                new_path = 'xml/' + file
-                shutil.move(os.path.abspath(file), new_path)
-            elif fnmatch.fnmatch(file, '*.json'):
-                new_path = 'json/' + file
-                shutil.move(os.path.abspath(file), new_path)
-            elif fnmatch.fnmatch(file, '*.tex'):
-                new_path = 'tex/' + file
-                shutil.move(os.path.abspath(file), new_path)
-            elif fnmatch.fnmatch(file, '*.html') or fnmatch.fnmatch(file, '*.pdf'):
-                continue
-            else:
-                continue
-                # new_path = 'aux/' + file
-                # shutil.move(os.path.abspath(file), new_path)
-
-    print('Nettoyage du dossier ✓')
-
-
-def txt_to_liste(filename):
-    '''
-        Transforme le fichier txt produit par Freeling en liste de listes pour processage ultérieur.
-    '''
-    maliste = []
-    fichier = open(filename, 'r')
-    for line in fichier.readlines():
-        if not re.match(r'^\s*$',
-                        line):  # https://stackoverflow.com/a/3711884 élimination des lignes vides (séparateur de phrase)
-            resultat = re.split(r'\s+', line)
-            maliste.append(resultat)
-    return maliste
 
 
 def typologie_variantes(liste_lemmes, liste_pos):
@@ -420,7 +376,7 @@ class Aligner:
             # Alignement avec CollateX. Il en ressort du JSON, encore
             self.alignement(fichier_json_complet, numero)
 
-    def alignement_parallele(self):
+    def run(self):
         with mp.Pool(processes=self.nombre_de_coeurs) as pool:
             # https://www.kite.com/python/answers/how-to-map-a-function-with-
             # multiple-arguments-to-a-multiprocessing-pool-in-python
