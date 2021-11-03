@@ -5,20 +5,14 @@ import os
 import subprocess
 from lxml import etree
 
+import python.utils.utils as utils
+
 
 class Tokenizer:
     def __init__(self, saxon: int):
         self.saxon = saxon
 
-    def generateur_lettre_initiale(self, size=1, chars=string.ascii_lowercase):
-        # éviter les nombres en premier caractère de
-        # l'@xml:id (interdit)
-        return ''.join(random.choice(chars) for _ in range(size))
-
-    def generateur_id(self, size=6, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
-        return self.generateur_lettre_initiale() + ''.join(random.choice(chars) for _ in range(size))
-
-    def ajout_xml_id(self, temoin):
+    def ajout_xml_id(self, temoin:str):
         """Création des xml:id pour chaque token.
         TODO: trouver un
         moyen de pouvoir actualiser la transcription sans avoir à
@@ -34,17 +28,22 @@ class Tokenizer:
         # on va marquer les balises autofermantes pour être sûr de les injecter correctement après.
         liste_elements_vides = root.xpath("//tei:*[not(child::node())]", namespaces=tei)
         for element in liste_elements_vides:
-            element.set("{http://www.w3.org/XML/1998/namespace}id", self.generateur_id())
+            element.set("{http://www.w3.org/XML/1998/namespace}id", utils.generateur_id())
 
         # On inclut les tei:pc pour faciliter le debuggage
         token_list = root.xpath("//node()[self::tei:w or self::tei:pc]", namespaces=tei)
         for token in token_list:
-            token.set("{http://www.w3.org/XML/1998/namespace}id", self.generateur_id())
+            token.set("{http://www.w3.org/XML/1998/namespace}id", utils.generateur_id())
         with open(temoin, "w+") as sortie_xml:
-            string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
-            sortie_xml.write(str(string))
+            tree_as_string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+            sortie_xml.write(str(tree_as_string))
 
-    def tokenisation(self, path, correction=False):
+    def tokenisation(self, path: str, correction: bool = False):
+        """
+        Tokénise le corpus
+        :path: le chemin vers les fichiers d'entrée
+        :correction: le mode correction
+        """
         with Halo(text='Tokénisation du corpus parallélisé.', spinner='dots'):
             subprocess.run(["java", "-jar", self.saxon, "-xi:on", path,
                             "xsl/pre_alignement/tokenisation.xsl"])
