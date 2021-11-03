@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import time
 import json
 from halo import Halo
@@ -144,14 +145,15 @@ def main():
                                                     type_division=parametres.type_division,
                                                     element_base=parametres.element_base,
                                                     liste_temoins=utils.chemin_temoins_tokenises_regularises())
-    # collation.preparation_corpus(saxon, parametres.temoin_leader, parametres.scinder_par, parametres.element_base)
 
     for i in portee:
         chemin = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
-        print("Alignement avec CollateX.")
         corpus_preparator.run(i)
-        fichiers_xml = os.listdir(chemin)
+        pattern = re.compile(f"divs/div{i}/juxtaposition_\d+\.xml")
+        fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin}/*.xml") if re.match(pattern, fichier)]
+        print(fichiers_xml)
+        print("Alignement avec CollateX.")
         aligner = collation.Aligner(liste_fichiers_xml=fichiers_xml,
                                     chemin=chemin,
                                     moteur_transformation_xsl=saxon,

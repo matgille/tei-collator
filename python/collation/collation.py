@@ -12,22 +12,6 @@ import collatex
 from halo import Halo
 
 
-class CorpusPreparation:
-    def __init__(self, saxon, temoin_leader, type_division, element_base, liste_temoins):
-        self.saxon = saxon
-        self.temoin_leader = temoin_leader
-        self.type_division = type_division
-        self.element_base = element_base
-        self.liste_temoins = liste_temoins
-
-    def run(self, div_number):
-        # TODO: on peut accéler le processus en supprimant la fonction collection() et en passant par du pooling par division
-        with Halo(text=f'Scission du corpus, création de dossiers et de fichiers par chapitre sur {div_number}', spinner='dots'):
-            cmd = f'java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement' \
-                  f'/preparation_corpus.xsl ' \
-                  f'temoin_leader={self.temoin_leader} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
-            subprocess.run(cmd.split())
-
 
 def apparat_final(fichier_entree, chemin, log=False):
     """
@@ -313,6 +297,23 @@ def typologie_variantes(liste_lemmes, liste_pos):
     return type_de_variante
 
 
+class CorpusPreparation:
+    def __init__(self, saxon, temoin_leader, type_division, element_base, liste_temoins):
+        self.saxon = saxon
+        self.temoin_leader = temoin_leader
+        self.type_division = type_division
+        self.element_base = element_base
+        self.liste_temoins = liste_temoins
+
+    def run(self, div_number):
+        with Halo(text=f'Scission du corpus, création de dossiers et de fichiers par chapitre sur {div_number}', spinner='dots'):
+            cmd = f'java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement' \
+                  f'/preparation_corpus.xsl ' \
+                  f'temoin_leader={self.temoin_leader} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
+            subprocess.run(cmd.split())
+            print("Préparation du corpus pour alignment ✓")
+
+
 class Aligner:
     def __init__(self, liste_fichiers_xml: list, chemin: str, moteur_transformation_xsl: str, correction_mode: bool,
                  parametres_alignement: str,
@@ -362,19 +363,17 @@ class Aligner:
             sortie_json.write(resultat_json)
 
     def alignement_collatex(self, fichier_xml):
-        pattern = re.compile("juxtaposition_[1-9]{1,2}.*xml")
-        if pattern.match(fichier_xml):
-            fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
-            numero = fichier_sans_extension.split("_")[1]
-            fichier_json = f"{fichier_sans_extension}.json"
-            fichier_json_complet = f"{self.chemin}/{fichier_json}"
-            output_fichier_json = f"-o:{self.chemin}/{fichier_json}"
-            input_fichier_xml = f"{self.chemin}/{fichier_xml}"
-            # Étape avant la collation: transformation en json selon la structure voulue par CollateX
-            self.transformation_json(input_fichier_xml, output_fichier_json)
+        fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
+        numero = fichier_sans_extension.split("_")[1]
+        fichier_json = f"{fichier_sans_extension}.json"
+        fichier_json_complet = f"{self.chemin}/{fichier_json}"
+        output_fichier_json = f"-o:{self.chemin}/{fichier_json}"
+        input_fichier_xml = f"{self.chemin}/{fichier_xml}"
+        # Étape avant la collation: transformation en json selon la structure voulue par CollateX
+        self.transformation_json(input_fichier_xml, output_fichier_json)
 
-            # Alignement avec CollateX. Il en ressort du JSON, encore
-            self.alignement(fichier_json_complet, numero)
+        # Alignement avec CollateX. Il en ressort du JSON, encore
+        self.alignement(fichier_json_complet, numero)
 
     def run(self):
         with mp.Pool(processes=self.nombre_de_coeurs) as pool:
