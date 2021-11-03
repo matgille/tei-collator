@@ -1,6 +1,13 @@
+import fnmatch
 import glob
+import os
 import re
+import shutil
+import string
 import subprocess
+import random
+
+from halo import Halo
 
 
 def nettoyage_liste_positions(liste_de_tuples):
@@ -33,6 +40,35 @@ def run_subprocess(liste):
     subprocess.run(liste)
 
 
+def nettoyage():
+    # TODO: ranger les fichiers dans des dossiers
+    with Halo(text='Nettoyage du dossier', spinner='dots'):
+        for i in ['tex', 'xml', 'aux', 'json']:
+            if not os.path.exists(i):
+                os.makedirs(i)
+        for file in os.listdir('.'):
+            path = os.path.join('', file)
+            if os.path.isdir(path):
+                continue
+            if fnmatch.fnmatch(file, '*.xml'):
+                new_path = 'xml/' + file
+                shutil.move(os.path.abspath(file), new_path)
+            elif fnmatch.fnmatch(file, '*.json'):
+                new_path = 'json/' + file
+                shutil.move(os.path.abspath(file), new_path)
+            elif fnmatch.fnmatch(file, '*.tex'):
+                new_path = 'tex/' + file
+                shutil.move(os.path.abspath(file), new_path)
+            elif fnmatch.fnmatch(file, '*.html') or fnmatch.fnmatch(file, '*.pdf'):
+                continue
+            else:
+                continue
+                # new_path = 'aux/' + file
+                # shutil.move(os.path.abspath(file), new_path)
+
+    print('Nettoyage du dossier ✓')
+
+
 def txt_to_liste(filename):
     """
     Transforme le fichier txt produit par Freeling ou pie en liste de listes pour processage ultérieur.
@@ -48,6 +84,15 @@ def txt_to_liste(filename):
             output_list.append(ligne_splittee)
     return output_list
 
+
+def generateur_lettre_initiale(chars=string.ascii_lowercase):
+    # Génère une lettre aléatoire
+    return random.choice(chars)[0]
+
+def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
+    random_letter = generateur_lettre_initiale()
+    random_string = ''.join(random.choice(chars) for _ in range(size))
+    return random_letter + random_string
 
 def sigles():
     """
@@ -67,3 +112,10 @@ def chemin_temoins_tokenises():
     Cette fonction retourne la liste des chemins vers les fichiers tokénisés
     """
     return [fichier for fichier in glob.glob('temoins_tokenises/*.xml')]
+
+
+def chemin_temoins_tokenises_regularises():
+    """
+    Cette fonction retourne la liste des chemins vers les fichiers tokénisés
+    """
+    return [fichier for fichier in glob.glob('temoins_tokenises_regularises/*.xml')]
