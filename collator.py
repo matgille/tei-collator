@@ -42,6 +42,7 @@ def main():
     parser.add_argument("-d", "--division", help="Division to be treated.")
     parser.add_argument("-corr", "--correction", default=False,
                         help="Correction mode (outputs more information in xml files).")
+    parser.add_argument("-to", "--tokenizeonly", default=False, help="Exit after tokenization.")
     parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
     parser.add_argument("-ao", "--align_only", default=False, help="Exit after alignment.")
     parser.add_argument("-cp", "--createpdf", default=False, help="Produce pdf and exit.")
@@ -52,6 +53,7 @@ def main():
     log = correction
     inject_only = args.injectiononly
     lemmatize_only = args.lemmatizeonly
+    tokenize_only = args.tokenizeonly
     pdf_only = args.createpdf
     align_only = args.align_only
     fichier_de_parametres = args.parameters
@@ -68,10 +70,11 @@ def main():
     print(f'Mode correction: {correction} \n ---- \n')
     print(f'Injection seule: {inject_only} \n ---- \n')
     alignement = parametres.alignement
-    if alignement == "global":
+    if alignement == "global" and not align_only:
         print("WARNING: l'alignement global ne fonctionne pas encore (xml:id identiques sur les non-apparats). "
               "On switche à un alignement mot à mot.\n\n ---- \n\n")
         parametres.alignement = "mam"
+
 
     if inject_only:
         chemin = f"divs/div{division}"
@@ -101,6 +104,11 @@ def main():
         else:
             pass
 
+    if tokenize_only:
+        tokeniser = tokenisation.Tokenizer(saxon, temoin_leader=parametres.temoin_leader)
+        tokeniser.tokenisation(parametres.corpus_path, correction)
+        exit(0)
+
     if parametres.tokeniser:
         reponse = input(
             "Vous êtes en train de réécrire les fichiers et de relancer la lemmatisation. Continuer ? [o/n]\n")
@@ -109,7 +117,7 @@ def main():
         else:
             exit(0)
         print(parametres.corpus_path)
-        tokeniser = tokenisation.Tokenizer(saxon)
+        tokeniser = tokenisation.Tokenizer(saxon, temoin_leader=parametres.temoin_leader)
         tokeniser.tokenisation(parametres.corpus_path, correction)
 
     if parametres.xmlId and not parametres.tokeniser:  # si le corpus est tokénisé mais sans xml:id
@@ -147,31 +155,30 @@ def main():
                                                     liste_temoins=utils.chemin_temoins_tokenises_regularises())
 
     for i in portee:
-        chemin = f"divs/div{str(i)}"
+        chemin_fichiers = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
         corpus_preparator.run(i)
         pattern = re.compile(f"divs/div{i}/juxtaposition_\d+\.xml")
-        fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin}/*.xml") if re.match(pattern, fichier)]
-        print(fichiers_xml)
+        fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if re.match(pattern, fichier)]
         print("Alignement avec CollateX.")
+
         aligner = collation.Aligner(liste_fichiers_xml=fichiers_xml,
-                                    chemin=chemin,
+                                    chemin=chemin_fichiers,
                                     moteur_transformation_xsl=saxon,
                                     correction_mode=correction,
                                     parametres_alignement=parametres.alignement,
                                     nombre_de_coeurs=parametres.parallel_process_number)
         aligner.run()
-        chemin_chapitre = f"divs/div{i}"
-        chemin_fichier_json = f"{chemin_chapitre}/final.json"
 
+        chemin_fichier_json = f"{chemin_fichiers}/final.json"
         # On va fusionner les fichiers individuels collationnés en un seul fichier.
         with open(chemin_fichier_json, "w") as out_json_file:
             dictionnaire_sortie = {'table': [], 'witnesses': []}
-            nombre_de_par = len(glob.glob(f"{chemin_chapitre}/alignement_collatex*.json"))  # on veut ordonner la
+            nombre_de_par = len(glob.glob(f"{chemin_fichiers}/alignement_collatex*.json"))  # on veut ordonner la
             # fusion des
             # documents pour le tableau d'alignement ensuite
             for par in range(nombre_de_par):
-                fichier = f"{chemin_chapitre}/alignement_collatex{par + 1}.json"
+                fichier = f"{chemin_fichiers}/alignement_collatex{par + 1}.json"
                 with open(fichier, 'r') as file:
                     dictionnaire_entree = json.loads(file.read())
                     nombre_temoins = len(dictionnaire_entree['table'])  # nombre_temoins est le nombre de témoins
@@ -190,7 +197,7 @@ def main():
         # On compare les lieux variants et on en déduit les <app>
         with Halo(text='Création des apparats', spinner='dots'):
             # Étape suivante: transformer le JSON en xml. Pour cela on peut utiliser dict2xml.
-            chemin_alignement = f"{chemin_chapitre}/alignement_collatex.xml"
+            chemin_alignement = f"{chemin_fichiers}/alignement_collatex.xml"
             with open(chemin_alignement, "w+") as sortie_xml:
                 with open(chemin_fichier_json, 'r') as fichier_json_a_xmliser:
                     obj = json.loads(fichier_json_a_xmliser.read())
@@ -200,25 +207,27 @@ def main():
             chemin_regroupement = "xsl/post_alignement/regroupement.xsl"
             # Regroupement des lieux variants (témoin A puis témoin B puis témoin C
             # > lieu variant 1: A, B, C ; lieu variant 2: A, B, C)
-            cmd = f"java -jar {saxon} -o:{chemin_chapitre}/aligne_regroupe.xml {chemin_chapitre}/alignement_collatex.xml " \
+            cmd = f"java -jar {saxon} -o:{chemin_fichiers}/aligne_regroupe.xml {chemin_fichiers}/alignement_collatex.xml " \
                   f"{chemin_regroupement}"
             subprocess.run(cmd.split())
 
             # C'est à ce niveau que l'étape de correction devrait avoir lieu. Y réfléchir.
             # Création de l'apparat: transformation de aligne_regroupe.xml en JSON
             chemin_xsl_apparat = "xsl/post_alignement/creation_apparat.xsl"
-            cmd = f"java -jar {saxon} -o:{chemin_chapitre}/apparat_final.json {chemin_chapitre}/aligne_regroupe.xml " \
+            cmd = f"java -jar {saxon} -o:{chemin_fichiers}/apparat_final.json {chemin_fichiers}/aligne_regroupe.xml " \
                   f"{chemin_xsl_apparat}"
             subprocess.run(cmd.split())
             # Création de l'apparat: suppression de la redondance, identification des lieux variants,
             # regroupement des lemmes
 
-        collation.apparat_final(f'{chemin}/apparat_final.json', chemin, log)
+        collationeur = collation.Collateur(log=False,
+                                           chemin_fichiers=chemin_fichiers)
+        collationeur.collate(f'apparat_final.json')
         print("Création des apparats ✓")
 
         # Création du tableau d'alignement pour visualisation
         if parametres.tableauxAlignement:
-            sorties.tableau_alignement(saxon, chemin)
+            sorties.tableau_alignement(saxon, chemin_fichiers)
         if align_only:
             t1 = time.time()
             temps_total = t1 - t0
@@ -226,7 +235,7 @@ def main():
             exit(0)
 
         # Réinjection des apparats.
-        post_traitement.injection(saxon, chemin, i, parametres.parallel_process_number)
+        post_traitement.injection(saxon, chemin_fichiers, i, parametres.parallel_process_number)
 
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
         liste_sigles = utils.sigles()
@@ -261,7 +270,7 @@ def main():
     if parametres.latex and not parametres.fusion_documents:
         for fichier in liste_fichiers_finaux:
             print(fichier)
-            sorties.transformation_latex(saxon, fichier, False, chemin)
+            sorties.transformation_latex(saxon, fichier, False, chemin_fichiers)
 
     sorties.nettoyage("divs")
     t1 = time.time()
