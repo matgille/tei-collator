@@ -47,7 +47,9 @@
         <xsl:variable name="wits" select="tei:rdg/@wit"/>
         <xsl:for-each select="descendant::tei:w">
             <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-                <xsl:attribute name="xml:id" select="@xml:id"/>
+                <!-- Ne marchera pas avec l alignement global puiqu id identiques. Voir comment gerer ça.-->
+                <xsl:attribute name="xml:id" select="parent::tei:rdg/@xml:id"/>
+                <!-- Ne marchera pas avec l alignement global. Voir comment gerer ça.-->
                 <xsl:attribute name="wit" select="$wits"/>
                 <xsl:value-of select="."/>
             </xsl:element>
