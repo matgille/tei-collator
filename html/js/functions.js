@@ -17,6 +17,7 @@ $(function () {
 
 
 /*Fonction qui permet de copier dans le presse-papier la valeur de l'analyse pour faciliter la correction*/
+/*TODO: annotation = pos ET lemmes: il faut dissocier les deux pour coller le bon attribut.*/
 $(function () {
     $(".annotation").click(function () {
         var annotation = this.childNodes[0].nodeValue;
