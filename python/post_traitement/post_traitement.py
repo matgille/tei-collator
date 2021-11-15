@@ -93,6 +93,8 @@ def verification_injections(elements_a_injecter, temoin_a_verifier):
     debug_file.write(
         f"{correct_injections} out of {target_length} target injections for witness {temoin_a_verifier}\n")
 
+    debug_file.close()
+
 
 ### ATTENTION, l'injection ne peut pas marcher en l'état absolument correctement.
 # En effet, l'alignement n'est pas assez fin pour permettre de réinjecter les éléments au token près,
@@ -284,6 +286,70 @@ def gestion_inversions(chemin, sensibilité=3):
     pass
 
 
+def injection_omissions(temoins:list, element_base:str):
+    '''
+    Cette fonction récupère tous les apparats contenant des omissions
+    '''
+
+    tei_namespace = 'http://www.tei-c.org/ns/1.0'
+    NSMAP = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
+
+    # Première étape: on récupère toutes les omissions
+    liste_omissions = []
+    for temoin in temoins:
+        print(temoin)
+        with open(temoin, "r") as input_xml:
+            f = etree.parse(input_xml)
+            apps_with_omission =  f.xpath("//tei:app[descendant::tei:rdg[not(node())]]", namespaces=NSMAP)
+
+        for apparat in apps_with_omission:
+            temoins_affectes = apparat.xpath("descendant::tei:rdg[not(node())]/@wit", namespaces=NSMAP)[0].replace("#", "").split()
+            try:
+                preceding_sibling = apparat.xpath("preceding-sibling::node()[self::tei:app|self::tei:w]", namespaces=NSMAP)[-1]
+                anchor = preceding_sibling.xpath("descendant-or-self::node()/attribute::*[name()='xml:id' or name()='id']", namespaces=NSMAP)[0]
+                element_name = preceding_sibling.xpath("descendant-or-self::node()/attribute::*[name()='xml:id' or name()='id']/parent::*", namespaces=NSMAP)[0]
+                # https://stackoverflow.com/a/51972010
+                element_name = etree.QName(element_name).localname
+            except:
+                element_name = element_base
+                anchor = apparat.xpath(f"ancestor::tei:{element_name}/@n", namespaces=NSMAP)[0]
+
+            liste_omissions.append((temoins_affectes, apparat, anchor, element_name))
+
+        print(len(liste_omissions))
+
+    # Deuxième étape, on réinjecte
+    for temoin in temoins:
+        with open(temoin, "r") as input_xml:
+            f = etree.parse(input_xml)
+            sigle = "_".join(f.xpath("@xml:id")[0].split("_")[0:2])
+            print(f"Treating {sigle}")
+
+        for omission in liste_omissions:
+            target_witness, target_element, anchor_id, anchor_name = omission
+            target_element.set("injected", "True")
+            if sigle not in target_witness:
+                continue
+            else:
+                id_target_element = target_element.xpath("descendant::tei:rdg/@id", namespaces=NSMAP)[0]
+                if f.xpath(f"boolean(descendant::tei:rdg[@id = '{id_target_element}'])", namespaces=NSMAP):
+                    continue
+                else:
+                    if anchor_name == "rdg":
+                        anchor_element = f.xpath(f"descendant::tei:app[descendant::tei:rdg[@id = '{anchor_id}']]", namespaces=NSMAP)[0]
+                        anchor_parent = anchor_element.getparent()
+                        anchor_parent.insert(anchor_parent.index(anchor_element) + 1, target_element)
+                    elif anchor_name == "w":
+                        anchor_element = f.xpath(f"descendant::tei:w[@xml:id = '{anchor_id}']", namespaces=NSMAP)[0]
+                        anchor_parent = anchor_element.getparent()
+                        anchor_parent.insert(anchor_parent.index(anchor_element) + 1, target_element)
+                    elif anchor_name == element_base:
+                        anchor_element = f.xpath(f"descendant::tei:{element_base}[@n = '{anchor_id}']", namespaces=NSMAP)[0]
+                        anchor_element.insert(0, target_element)
+
+        with open(temoin, "w") as input_xml:
+            input_xml.write(etree.tostring(f, pretty_print=True).decode())
+
 def gestion_lacunes(chemin, target_path, sensibilite=3):
     """
     Définition de lacune:
@@ -366,31 +432,6 @@ def injection_python(chemin, chapitre):
             output_file.write(etree.tostring(witness).decode())
 
 
-def injection_omissions(temoin_a_injecter, chemin):
-    """
-    Cette fonction permet d'injecter les leçons ommises par chaque témoin, qui sont ignorées par le témoin.
-    :return:None
-    """
-    # idée: on prend apparat_collatex et on regarde tous les tei:rdg avec notre témoin qui est vide, pour le réinjecter.
-    # Problème ici: si on change de division par exemple, ça va être problématique.
-    print("On injecte les omissions")
-    tei_namespace = 'http://www.tei-c.org/ns/1.0'
-    NSMAP1 = {'tei': tei_namespace}
-    # On récupère le sigle du témoin
-    with open(temoin_a_injecter, "r") as opened_temoin:
-        parsed_temoin = etree.parse(opened_temoin)
-        sigle = "_".join(parsed_temoin.xpath("//tei:div/@xml:id", namespaces=NSMAP1)[0].split("_")[0:2])
-        print(sigle)
-    # Et on va chercher les listes d'apparats où le témoin commet une omission et leur emplacement / tei:w
-    with open(f"{chemin}/apparat_collatex.xml", "r") as apparat_collatex:
-        parsed_apparat_collatex = etree.parse(apparat_collatex)
-        # Passer à du contains plutôt en cas d'omission par plusieurs témoins
-        liste_omissions = parsed_apparat_collatex.xpath(
-            f'//tei:app[tei:rdg[translate(@wit, \'#\', \'\')={sigle}][not(tei:w)]]', namespaces=NSMAP1)
-        liste_emplacement = [omission.xpath(f'preceding::tei:app/tei:rdg[1]/@xml:id', namespaces=NSMAP1)[0] for omission
-                             in liste_omissions]
-        liste_finale = zip(liste_omissions, liste_emplacement)
-        print(liste_finale)
 
 
 def injection(saxon, chemin, chapitre, coeurs):
