@@ -119,3 +119,10 @@ def chemin_temoins_tokenises_regularises():
     Cette fonction retourne la liste des chemins vers les fichiers tokénisés
     """
     return [fichier for fichier in glob.glob('temoins_tokenises_regularises/*.xml')]
+
+
+def fileExists(file):
+    if os.path.exists(file):
+        print('%s: check' % file)
+    else:
+        print('%s: n\'est pas trouvé' % file)
