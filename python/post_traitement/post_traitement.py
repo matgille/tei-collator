@@ -316,7 +316,6 @@ def injection_omissions(temoins:list, element_base:str):
 
             liste_omissions.append((temoins_affectes, apparat, anchor, element_name))
 
-        print(len(liste_omissions))
 
     # Deuxième étape, on réinjecte
     for temoin in temoins:
@@ -327,7 +326,7 @@ def injection_omissions(temoins:list, element_base:str):
 
         for omission in liste_omissions:
             target_witness, target_element, anchor_id, anchor_name = omission
-            target_element.set("injected", "True")
+            target_element.set("subtype", "omission")
             if sigle not in target_witness:
                 continue
             else:
@@ -349,6 +348,21 @@ def injection_omissions(temoins:list, element_base:str):
 
         with open(temoin, "w") as input_xml:
             input_xml.write(etree.tostring(f, pretty_print=True).decode())
+
+    # On vérifie que ça a marché: il faudrait le même nombre d'apparats partout.
+    number_of_omissions = []
+    for temoin in temoins:
+        with open(temoin, "r") as input_xml:
+            f = etree.parse(input_xml)
+        number_of_apps = len(f.xpath("//tei:app", namespaces=NSMAP))
+        print(number_of_apps)
+        number_of_omissions.append(number_of_apps)
+
+    if len(set(number_of_omissions)) == 1:
+        print("Injection went well")
+    else:
+        print("Oh oh.")
+
 
 def gestion_lacunes(chemin, target_path, sensibilite=3):
     """
