@@ -16,8 +16,6 @@
 
 
     <xsl:template match="/">
-        <xsl:message>Correction mode: <xsl:value-of
-                select="$correction"/></xsl:message>
         <xsl:text>{
         "witnesses" : [</xsl:text>
         <xsl:apply-templates/>
@@ -36,26 +34,36 @@
         <xsl:for-each select="descendant::tei:w[text()]">
             <xsl:text>{"t": "</xsl:text>
             <xsl:value-of select="normalize-space(.)"/>
-            <!--pour éviter des sauts de ligne qui sont vraiment pas appréciés par le validateur JSON-->
+            <!--pour éviter des sauts de ligne qui ne sont vraiment pas appréciés par le validateur JSON-->
             <xsl:text> "</xsl:text>
             <xsl:if test="@lemma">
                 <xsl:text>,</xsl:text>
                 <xsl:text>"n": "</xsl:text>
-                <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs-->
                 <xsl:choose>
-                    <xsl:when test="$correction = 'True'">
-                        <xsl:value-of
-                            select="concat(@lemma, '|', @pos, '|')"/>
-                        <!--on supprime les + qui marquent l'agglutination selon EAGLES et Freeling, pour un meilleur alignement.-->
-                        <!--<xsl:value-of
-                    select="translate(@lemma, '+', ' ')"/>-->
-                        <!--Éventuellement aller plus loin et ne mettre que la catégorie grammaticale?-->
-                        <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs: peut être moins efficace ?-->
-                        <!--Ajouter une règle de normalisation sur le POS si c'est un nom propre-->
-                        <!--Voir pourquoi l'alignement global ne marche plus.-->
+                    <!--On commence par normaliser sur les parties du discours si l'on est en face d'une entité nommée.-->
+                    <xsl:when test="starts-with(@pos, 'NP')">
+                        <xsl:value-of select="@pos"/>
                     </xsl:when>
                     <xsl:otherwise>
-                        <xsl:value-of select="@lemma"/>
+                        <xsl:choose>
+                            <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs-->
+                            <xsl:when
+                              test="$correction = 'True'">
+                              <xsl:value-of
+                              select="concat(@lemma, '|', @pos, '|')"/>
+                              <!--on supprime les + qui marquent l'agglutination selon EAGLES et Freeling, pour un meilleur alignement.-->
+                              <!--<xsl:value-of
+                    select="translate(@lemma, '+', ' ')"/>-->
+                              <!--Éventuellement aller plus loin et ne mettre que la catégorie grammaticale?-->
+                              <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs: peut être moins efficace ?-->
+                              <!--Ajouter une règle de normalisation sur le POS si c'est un nom propre-->
+                              <!--Voir pourquoi l'alignement global ne marche plus.-->
+                            </xsl:when>
+                            <xsl:otherwise>
+                              <xsl:value-of select="@lemma"
+                              />
+                            </xsl:otherwise>
+                        </xsl:choose>
                     </xsl:otherwise>
                 </xsl:choose>
                 <xsl:text>" </xsl:text>
@@ -95,10 +103,10 @@
         <xsl:value-of select="@n"/>
         <xsl:text>",
         "tokens" : [</xsl:text>
-        <xsl:text>{"t": "empty"</xsl:text>
+        <xsl:text>{"t": ""</xsl:text>
         <xsl:if test="@lemma">
             <xsl:text>,</xsl:text>
-            <xsl:text>"n": "ø" </xsl:text>
+            <xsl:text>"n": "" </xsl:text>
         </xsl:if>
         <xsl:text>,</xsl:text>
         <xsl:text>"xml:id" : "none</xsl:text>

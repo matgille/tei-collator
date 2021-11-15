@@ -22,3 +22,8 @@ test_results/
 venv/
 lemmatisation.json
 sans_lemmatisation.json
+logs/
+embeddings_results/
+.debug/
+parametres/sans_lemmatisation_debug.json
+

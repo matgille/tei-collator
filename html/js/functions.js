@@ -10,30 +10,45 @@ $(document).ready(function () {
 var show_lemma = true
 
 $(function () {
- $(".forme").click(function () {
- $(this).css("background-color", "grey")
- });
- });
+    $(".forme").click(function () {
+        $(this).css("background-color", "grey")
+    });
+});
+
+
+/*Fonction qui permet de copier dans le presse-papier la valeur de l'analyse pour faciliter la correction*/
+/*TODO: annotation = pos ET lemmes: il faut dissocier les deux pour coller le bon attribut.*/
+$(function () {
+    $(".annotation").click(function () {
+        var annotation = this.childNodes[0].nodeValue;
+        console.log(annotation);
+        var xml_attribute = ' pos="' + annotation + '"'
+        navigator.clipboard.writeText(xml_attribute);
+    });
+});
+/*Fonction qui permet de copier dans le presse-papier la valeur de l'analyse pour faciliter la correction*/
+
+
 
 /*
-$(function () {
-    $(".texte").mouseover(function () {
-        console.log("Texte cliqué");
-        var ide = this.id;
-        console.log(ide);
-        var cible = "#ann_" + ide;
-        console.log(cible);
-        $(cible).css("visibility", "visible");
-    });
-});
+ $(function () {
+ $(".texte").mouseover(function () {
+ console.log("Texte cliqué");
+ var ide = this.id;
+ console.log(ide);
+ var cible = "#ann_" + ide;
+ console.log(cible);
+ $(cible).css("visibility", "visible");
+ });
+ });
 
 
-$(function () {
-    $(".texte").mouseout(function () {
-        $(".annotation").css("visibility", "hidden");
-    });
-});
-*/
+ $(function () {
+ $(".texte").mouseout(function () {
+ $(".annotation").css("visibility", "hidden");
+ });
+ });
+ */
 
 
 $(function () {
@@ -90,13 +105,13 @@ function scrollTo(id, shift) {
     }
 }
 
-$(document).scroll(function(){
+$(document).scroll(function () {
     var scroll_left = $(this).scrollLeft();
     var client_width = document.body.clientWidth;
     var scroll_width = document.body.scrollWidth;
-    var scrollPercentage=100*scroll_left/scroll_width/(1-client_width/scroll_width);
-    $('#log').html(scrollPercentage.toFixed(2)+'%');
-    console.log(scrollPercentage.toFixed(2)+'%');
+    var scrollPercentage = 100 * scroll_left / scroll_width /(1 - client_width / scroll_width);
+    $('#log').html(scrollPercentage.toFixed(2) + '%');
+    console.log(scrollPercentage.toFixed(2) + '%');
 });
 
 function tournezMenages() {

@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns="http://www.w3.org/1999/xhtml"
-    xmlns:tei="http://www.tei-c.org/ns/1.0"
+    xmlns="http://www.w3.org/1999/xhtml" xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
     <!--Feuille de transformation pour créer une table d'alignement en HTML pour faciliter le commentaire-->
     <!--Je suis parti pour gagner du temps d'une base de David Birnbaum 
         ici: http://collatex.obdurodon.org/xml-json-conversion.xhtml-->
 
-    <xsl:output method="html" indent="yes"
-        doctype-system="about:legacy-compat"/>
+    <xsl:output method="html" indent="yes" doctype-system="about:legacy-compat"/>
     <xsl:strip-space elements="*"/>
     <xsl:template match="/">
         <html>
@@ -63,6 +60,9 @@
                         font-size: 10px;
                         font-weight: bold;
                     }
+                    .ann_lemma {
+                        font-style: italics;
+                    }
                     .legende {
                         width: 600px;
                         position: fixed;
@@ -87,30 +87,28 @@
             <body id="body">
                 <div>
                     <table id="container">
-                        <xsl:apply-templates select="texte"
-                        />
+                        <xsl:apply-templates select="texte"/>
                     </table>
                 </div>
-                <button id="pause" style="position:fixed;"
-                    true="false">Défile</button>
+                <button id="pause" style="position:fixed;" true="false"
+                    >Défile</button>
 
 
                 <div class="legende">
                     <table>
                         <tr>
                             <td class="variante1">
-                              <span>Variante</span>
+                                <span>Variante</span>
                             </td>
                             <td class="variante2">
-                              <span>Lemme différent</span>
+                                <span>Lemme différent</span>
                             </td>
                             <td class="grammatical">
-                              <span>Variante
-                              morphosyntactique (pos
-                              différent)</span>
+                                <span>Variante morphosyntactique (pos
+                                    différent)</span>
                             </td>
                             <td>
-                              <span id="log">0%</span>
+                                <span id="log">0%</span>
                             </td>
                         </tr>
                     </table>
@@ -138,8 +136,7 @@
             <td class="fitwidth texte">
                 <xsl:attribute name="id">
                     <xsl:value-of
-                        select="translate(tei:rdg/tei:w/@xml:id, '_', '')"
-                    />
+                        select="translate(tei:rdg/tei:w/@xml:id, '_', '')"/>
                 </xsl:attribute>
                 <xsl:value-of select="tei:rdg/tei:w"/>
                 <xsl:if test="tei:rdg/om">
@@ -148,20 +145,19 @@
             </td>
         </tr>
         <tr>
-            <xsl:for-each
-                select="//tei:rdg[position() = $position]">
+            <xsl:for-each select="//tei:rdg[position() = $position]">
 
                 <!--Créer une règle pour mettre les lieux variants avec une omission d'une certaine couleur. Éventuellement, si on détecte une omission, refaire un tour d'évaluation.-->
 
                 <!--Form comparison-->
 
                 <xsl:variable name="first_form"
-                    select="concat('(', string-join(translate(string-join(tei:w/text()), 'áéíóúýv', 'aeiouyu'), '-'), ')')"/>
+                    select="concat('(', string-join(translate(string-join(tei:w/text()), 'áéíóúýv', 'áéíóúýv'), '-'), ')')"/>
                 <!--Avec cette expression on va pouvoir isoler les pos d'une même leçon pour pouvoir les comparer entre elles-->
                 <xsl:variable name="all_forms" select="
                         string-join(for $i in (parent::tei:app/tei:rdg[position() > 1])
                         return
-                            concat('(', string-join(translate(string-join($i/tei:w/text()), 'áéíóúýv', 'aeiouyu'), '-'), ')'), '|')"/>
+                            concat('(', string-join(translate(string-join($i/tei:w/text()), 'áéíóúýv', 'áéíóúýv'), '-'), ')'), '|')"/>
                 <xsl:variable name="form">
                     <xsl:choose>
                         <xsl:when
@@ -215,60 +211,46 @@
 
                 <xsl:variable name="comparison_value">
                     <xsl:choose>
-                        <!--Si toutes les formes sont égales, pas besoin d'aller corriger les pos ou les lemmes.-->
-                        <xsl:when test="$form = 'True'"
+                        <xsl:when
+                            test="$pos = 'True' and $lemma = 'True'"
                             >fitwidth texte</xsl:when>
                         <xsl:otherwise>
-                            <xsl:if
-                              test="$pos = 'False' and $lemma = 'False'"
-                              >fitwidth texte
-                              variante1</xsl:if>
-                            <xsl:if
-                              test="$pos = 'False' and $lemma = 'True'"
-                              >fitwidth texte
-                              grammatical</xsl:if>
-                            <xsl:if
-                              test="$pos = 'True' and $lemma = 'True'"
-                              >fitwidth texte</xsl:if>
-                            <xsl:if
-                              test="$pos = 'True' and $lemma = 'False'"
-                              >fitwidth texte
-                              variante2</xsl:if>
+                            <xsl:if test="$pos = 'False' and $lemma = 'False'"
+                                >fitwidth texte variante1</xsl:if>
+                            <xsl:if test="$pos = 'False' and $lemma = 'True'"
+                                >fitwidth texte grammatical</xsl:if>
+                            <xsl:if test="$pos = 'True' and $lemma = 'False'"
+                                >fitwidth texte variante2</xsl:if>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
 
-                <xsl:element name="td"
-                    namespace="http://www.w3.org/1999/xhtml">
-                    <xsl:attribute name="class"
-                        select="$comparison_value"/>
+                <xsl:element name="td" namespace="http://www.w3.org/1999/xhtml">
+                    <xsl:attribute name="class" select="$comparison_value"/>
                     <xsl:if test="tei:w">
                         <xsl:attribute name="id">
                             <xsl:value-of
-                              select="translate(string-join(tei:w/@xml:id), '_', '')"
+                                select="translate(string-join(tei:w/@xml:id), '_', '')"
                             />
                         </xsl:attribute>
                         <span class="forme">
                             <xsl:value-of select="tei:w"/>
                         </span>
-                        <span class="annotation"
+                        <span
                             id="ann_{translate(string-join(tei:w/@xml:id), '_', '')}">
-                            <span class="ann_lemma">
-                              <i>
-                              <xsl:value-of
-                              select="tei:w/@lemma"/>
-                              </i>
+                            <span class="ann_lemma annotation">
+                                <xsl:value-of select="tei:w/@lemma"/>
+
                             </span>
-                            <span class="ann_pos">
-                              <xsl:value-of
-                              select="tei:w/@pos"/>
+                            <span class="ann_pos annotation">
+                                <xsl:value-of select="tei:w/@pos"/>
                             </span>
                         </span>
                     </xsl:if>
                     <xsl:if test="om">
                         <xsl:attribute name="id">
                             <xsl:value-of
-                              select="concat('om_', count(preceding::om) + 1)"
+                                select="concat('om_', count(preceding::om) + 1)"
                             />
                         </xsl:attribute>
                         <i>omisit</i>

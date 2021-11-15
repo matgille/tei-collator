@@ -3,7 +3,7 @@ from json_minify import json_minify
 import multiprocessing as mp
 
 
-class parameters_importing:
+class Parametres:
     def __init__(self, file):
         """
         On initialise l'instance avec les paramètres qui sont dans le fichier json indiqué.
@@ -22,7 +22,7 @@ class parameters_importing:
         self.reinjection = self.settings['reinjection']
         self.temoin_leader = self.settings['fichier_leader'].split(".")[0]
         self.element_base = self.settings['scission']['element_base']
-        self.scinder_par = self.settings['scission']['scinder_par']
+        self.type_division = self.settings['scission']['scinder_par']
         self.corpus_path = self.settings['localisation_fichiers']
         self.files_path = self.settings['chemin_vers_TEI']
         self.alignement = self.settings['alignement']

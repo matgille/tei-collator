@@ -24,7 +24,7 @@
         </xsl:result-document>
     </xsl:template>-->
 
-    <xsl:template match="tei:teiHeader | tei:fw | tei:note | tei:del | tei:hi[@rend = 'lettrine']"/>
+    <xsl:template match="tei:teiHeader | tei:fw | tei:note | tei:del | tei:hi[@rend = 'initiale']"/>
 
     <xsl:template match="tei:w">
         <xsl:value-of select="translate(., 'áéíóúý', 'aeiouy')"/>
