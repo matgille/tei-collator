@@ -79,6 +79,7 @@ def main():
     if inject_only:
         chemin = f"divs/div{division}"
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(division)
+        post_traitement.injection_omissions(liste_fichiers_finaux, parametres.element_base)
         tuples_elements_position = parametres.reinjection.items()
         post_traitement.injection_intelligente(chapitre=division,
                                                elements_and_position=tuples_elements_position,
@@ -243,6 +244,7 @@ def main():
         sorties.similarity_eval_set_creator(i)
         # Ici on indique d'autres éléments tei à réinjecter.
         if parametres.reinjection:
+            post_traitement.injection_omissions(liste_fichiers_finaux, parametres.element_base)
             tuples_elements_position = parametres.reinjection.items()
             post_traitement.injection_intelligente(chapitre=division,
                                                    elements_and_position=tuples_elements_position,
