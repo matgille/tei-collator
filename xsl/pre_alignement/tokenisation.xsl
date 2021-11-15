@@ -30,7 +30,7 @@
     </xsl:variable>
 
 
-    <xsl:template match="comment()" mode="#all">
+    <xsl:template match="comment()" mode="premierePasse">
         <xsl:comment>
         <xsl:value-of select="."/>
     </xsl:comment>
@@ -96,7 +96,7 @@
     <!--Il faut faire la même chose avec les unclear|damage|add-->
     <!--Qu'est-ce que le texte: c'est ici ce que tu va processer. Donc un élément éliminé marqué par un <del> n'est pas le texte-->
     <!--Meilleure idée: plutôt que les supprimer, les traiter comme une note (pas de tokénisation donc)-->
-    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'initiale']"
+    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'initiale'][not(ancestor::tei:w)]"
         mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of
@@ -155,7 +155,7 @@
     </xsl:template>
 
 
-    <xsl:template match="tei:choice" mode="secondePasse">
+    <xsl:template match="tei:choice[not(parent::tei:w)]" mode="secondePasse">
         <!--Si on a un corr avec plusieurs mots, ça peut planter. Reprendre le code.-->
         <!--Mais est-ce que sémantiquement un corr avec plusieurs mots a du sens ?-->
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">

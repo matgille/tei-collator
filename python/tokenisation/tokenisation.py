@@ -9,8 +9,9 @@ import python.utils.utils as utils
 
 
 class Tokenizer:
-    def __init__(self, saxon: int):
+    def __init__(self, saxon: int, temoin_leader:str):
         self.saxon = saxon
+        self.temoin_leader = temoin_leader
 
     def ajout_xml_id(self, temoin:str):
         """Création des xml:id pour chaque token.
@@ -51,6 +52,6 @@ class Tokenizer:
                 fichier_xml = f"temoins_tokenises/{transcription_individuelle}"
                 self.ajout_xml_id(fichier_xml)
             param_correction = f"correction={correction}"
-            subprocess.run(["java", "-jar", self.saxon, "-xi:on", "temoins_tokenises/Sal_J.xml",
+            subprocess.run(["java", "-jar", self.saxon, "-xi:on", f"temoins_tokenises/{self.temoin_leader}.xml",
                             "xsl/pre_alignement/regularisation.xsl", param_correction])
         print("Tokénisation et régularisation du corpus pour alignement ✓")
