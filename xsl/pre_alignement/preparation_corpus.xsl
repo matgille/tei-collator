@@ -47,11 +47,13 @@
                 </xsl:element>
             </xsl:result-document>
         </xsl:for-each>
+        
+        
         <!--On a besoin d'avoir le corpus à la fois régularisé pour collatex (suppresion des choice, etc) mais on 
         veut conserver la structuration d'origine pour la réinjection: on va créer un fichier
         juxtaposition_orig qui va nous servir de fichier base pour réinjecter les informations contextuelles.-->
         <xsl:for-each
-            select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = $temoin_leader]//tei:div[@type = $type_division][@n = $numero_div]">
+            select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI[@xml:id = $temoin_leader]//tei:div[@type = $type_division][@n = $numero_div]">
             <xsl:result-document
                 href="divs/div{$numero_div}/juxtaposition_orig.xml">
                 <xsl:element name="groupe">
