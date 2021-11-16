@@ -123,6 +123,9 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
 
     <xsl:template
         match="tei:note[@subtype = 'lexicale'][not(parent::tei:head)] | tei:note[@type = 'particulier'] | tei:note[@type = 'general']">
+        <xsl:text>\label{</xsl:text>
+        <xsl:value-of select="@xml:id"/>
+        <xsl:text>}</xsl:text>
         <xsl:text>\footnote{</xsl:text>
         <xsl:choose>
             <xsl:when test="@corresp">
@@ -292,7 +295,44 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
-    
+
+    <xsl:template match="tei:ref[@type = 'interne']">
+        <xsl:variable name="target" select="translate(@target, '#', '')"/>
+        <xsl:if
+            test="not(//tei:*[@xml:id = $target][ancestor-or-self::tei:graphic])">
+            <xsl:choose>
+                <xsl:when test="@subtype = 'section'">
+                    <xsl:text>\nameref{</xsl:text>
+                </xsl:when>
+                <xsl:when test="@subtype = 'note'">
+                    <xsl:text>\footref{</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text>\nameref{</xsl:text>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:value-of select="$target"/>
+            <xsl:text>}, page \pageref{</xsl:text>
+            <xsl:value-of select="$target"/>
+            <xsl:text>}</xsl:text>
+        </xsl:if>
+        <xsl:if test="//tei:*[@xml:id = $target][ancestor-or-self::tei:graphic]">
+            <xsl:text>figure \ref{</xsl:text>
+            <xsl:value-of select="$target"/>
+            <xsl:text>}</xsl:text>
+        </xsl:if>
+        <!--
+        <xsl:if
+            test="//tei:*[@xml:id = $target][ancestor-or-self::tei:graphic][node()]">
+            <xsl:apply-templates/>
+            <xsl:text> (figure \ref{</xsl:text>
+            <xsl:value-of select="$target"/>
+            <xsl:text>}, page \pageref{</xsl:text>
+            <xsl:value-of select="$target"/>
+            <xsl:text>})</xsl:text>
+        </xsl:if>-->
+    </xsl:template>
+
 
     <xsl:template match="tei:ref[@type = 'biblio'][not(@rend)]">
         <!--Créer une règle pour gérer les multiples appels de références, avec un analyse-string-->
@@ -761,6 +801,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
             select="substring-after($temoin_courant, '_')"/>
         <xsl:text> \Anote{</xsl:text>
         <!-- test: UNCLEAR entre crochets avec un ?-->
+        <!--Ici il faut ajouter un omm. dans l'apparat sans que ça se voie dans le corps du texte.-->
         <xsl:apply-templates
             select="descendant::tei:rdg[contains(translate(@wit, '#', ''), $temoin_courant)]"/>
         <xsl:text>}{</xsl:text>
