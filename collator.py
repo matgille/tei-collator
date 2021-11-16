@@ -9,6 +9,7 @@ import glob
 import logging
 import argparse
 import dicttoxml
+import multiprocessing as mp
 
 dicttoxml.LOG.setLevel(logging.ERROR)
 
@@ -47,6 +48,7 @@ def main():
     parser.add_argument("-ao", "--align_only", default=False, help="Exit after alignment.")
     parser.add_argument("-cp", "--createpdf", default=False, help="Produce pdf and exit.")
     parser.add_argument("-io", "--injectiononly", default=False, help="Debug option: performs injection and exits")
+    parser.add_argument("-To", "--testonly", default=False, help="Performs tests and exit.")
 
     args = parser.parse_args()
     correction = args.correction
@@ -54,6 +56,7 @@ def main():
     inject_only = args.injectiononly
     lemmatize_only = args.lemmatizeonly
     tokenize_only = args.tokenizeonly
+    test_only = args.testonly
     pdf_only = args.createpdf
     align_only = args.align_only
     fichier_de_parametres = args.parameters
@@ -75,11 +78,23 @@ def main():
               "On switche à un alignement mot à mot.\n\n ---- \n\n")
         parametres.alignement = "mam"
 
+    liste_sigles = utils.sigles()
+    if test_only:
+        print(f'Tests en cours...')
+        tests.test_word_alignment(division)
+        for sigle in liste_sigles:
+            tests.tokentest(sigle, division)
+            tests.witness_test(sigle, division)
+        exit(0)
 
     if inject_only:
         chemin = f"divs/div{division}"
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(division)
         post_traitement.injection_omissions(liste_fichiers_finaux, parametres.element_base)
+        post_traitement.injection_ponctuation_parallele(chemin=chemin,
+                                                        coeurs=parametres.parallel_process_number,
+                                                        type_division=parametres.type_division,
+                                                        n_division=division)
         tuples_elements_position = parametres.reinjection.items()
         post_traitement.injection_intelligente(chapitre=division,
                                                elements_and_position=tuples_elements_position,
@@ -89,7 +104,7 @@ def main():
     if pdf_only:
         chemin = f"divs/div{division}"
         print("On produit les fichiers pdf.")
-        for fichier in glob.glob(f'{chemin}/apparat_*_*final.xml'):
+        for fichier in glob.glob(f'{chemin}/apparat_*_*injected_punct.xml'):
             print(fichier)
             sorties.transformation_latex(saxon, fichier, False, chemin)
         sorties.nettoyage("divs")
@@ -236,19 +251,27 @@ def main():
             exit(0)
 
         # Réinjection des apparats.
-        post_traitement.injection(saxon, chemin_fichiers, i, parametres.parallel_process_number)
+        post_traitement.injection(saxon=saxon,
+                                  chemin=chemin_fichiers,
+                                  n_division=i,
+                                  coeurs=parametres.parallel_process_number,
+                                  type_division=parametres.type_division)
 
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
-        liste_sigles = utils.sigles()
         liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
         sorties.similarity_eval_set_creator(i)
         # Ici on indique d'autres éléments tei à réinjecter.
         if parametres.reinjection:
             post_traitement.injection_omissions(liste_fichiers_finaux, parametres.element_base)
+            post_traitement.injection_ponctuation_parallele(chemin=chemin_fichiers,
+                                                            coeurs=parametres.parallel_process_number,
+                                                            type_division=parametres.type_division,
+                                                            n_division=i)
             tuples_elements_position = parametres.reinjection.items()
             post_traitement.injection_intelligente(chapitre=division,
                                                    elements_and_position=tuples_elements_position,
                                                    liste_temoins=liste_fichiers_finaux)
+
 
         # Raffinage des apparats: on rassemble les lieux variants
         for fichier in liste_fichiers_finaux:
@@ -258,8 +281,9 @@ def main():
         # Tests de conformité
         print(f'Tests en cours...')
         for sigle in liste_sigles:
-            tests.tokentest(sigle, i)
+            tests.tokentest(i)
             tests.witness_test(sigle, i)
+            tests.test_word_alignment(sigle, i)
 
     if parametres.fusion_documents:
         for temoin in liste_fichiers_tokenises:
@@ -272,7 +296,7 @@ def main():
     if parametres.latex and not parametres.fusion_documents:
         for fichier in liste_fichiers_finaux:
             print(fichier)
-            sorties.transformation_latex(saxon, fichier, False, chemin_fichiers)
+            sorties.transformation_latex(saxon, fichier.replace("final", "injected"), False, chemin_fichiers)
 
     sorties.nettoyage("divs")
     t1 = time.time()
