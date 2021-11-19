@@ -89,7 +89,7 @@ plus suppression de la redondance-->
                             <!--Si le token trouvé a été traité (il appartient à un rdg qui compte un autre
                             w traité auparavant), on ne fait rien-->
                             <xsl:when
-                                test="contains(parent::tei:rdg/@xml:id, $token_precedent)">
+                                test="contains(parent::tei:rdg/@n, $token_precedent)">
                                 <xsl:text>Redondance</xsl:text>
                             </xsl:when>
                             <!--Si le token trouvé a été traité-->

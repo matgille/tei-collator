@@ -4,11 +4,10 @@ fichier précédent avec la transcription tokenisée originelle.
 Résultat: un fichier final qui marche !-->
 
 <!--TODO: ajouter une règle pour choper les notes de type général !-->
-<xsl:stylesheet
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:tei="http://www.tei-c.org/ns/1.0"
-    exclude-result-prefixes="xs" version="2.0">
+    xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="xs"
+    version="2.0">
     <xsl:output method="xml"/>
     <xsl:strip-space elements="*"/>
 
@@ -19,6 +18,7 @@ Résultat: un fichier final qui marche !-->
         <xsl:text>/</xsl:text>
     </xsl:param>
     <xsl:param name="chemin_sortie2" select="''"/>
+    <xsl:param name="element_base">p</xsl:param>
     <xsl:param name="sigle" select="'Sal_J'"/>
 
 
@@ -45,15 +45,10 @@ Résultat: un fichier final qui marche !-->
 
     <!--On prend chaque token, et si un élément de ponctuation suit, on copie le token et la ponctuation-->
     <xsl:template match="tei:w[not(@xml:id = 'none')]">
-        <xsl:variable name="ms"
-            select="ancestor::*:temoin/@n"/>
+        <xsl:variable name="ms" select="ancestor::*:temoin/@n"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
-        <!--Attention ici, on romp l'universalisation du code-->
         <xsl:variable name="paragraphe"
-            select="ancestor::tei:p/@n"/>
-        <!--Attention ici, on romp l'universalisation du code-->
-        <xsl:variable name="temoins"
-            >../../temoins_tokenises?select=*.xml</xsl:variable>
+            select="ancestor::node()[local-name() = $element_base]/@n"/>
         <xsl:variable name="temoin_tokenise"
             select="concat('../../temoins_tokenises/', $sigle, '.xml')"/>
 
@@ -88,13 +83,11 @@ Résultat: un fichier final qui marche !-->
         Vérifier que ça ne casse rien  + mettre à part ? -->
     <xsl:template
         match="tei:*[not(self::tei:p)][count(child::node()) = 1][child::tei:app]">
-        <xsl:element name="app"
-            namespace="http://www.tei-c.org/ns/1.0">
+        <xsl:element name="app" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:attribute name="type">
                 <xsl:value-of select="tei:app/@type"/>
             </xsl:attribute>
-            <xsl:element name="rdg"
-                namespace="http://www.tei-c.org/ns/1.0">
+            <xsl:element name="rdg" namespace="http://www.tei-c.org/ns/1.0">
                 <xsl:attribute name="id">
                     <xsl:value-of
                         select="descendant::tei:rdg[contains(@wit, concat('#', $sigle))]/@id"

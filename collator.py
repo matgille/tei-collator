@@ -17,7 +17,9 @@ import python.collation.collation as collation
 import python.tokenisation.tokenisation as tokenisation
 import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
-import python.post_traitement.post_traitement as post_traitement
+import python.injections.injections as injections
+import python.semantic_analysis.embeddings as embeddings
+import python.semantic_analysis.similarity as similarity
 import python.settings
 import python.tests.tests as tests
 import python.utils.utils as utils
@@ -50,6 +52,7 @@ def main():
     parser.add_argument("-io", "--injectiononly", default=False, help="Debug option: performs injection and exits")
     parser.add_argument("-To", "--testonly", default=False, help="Performs tests and exit.")
 
+    ##### Settings
     args = parser.parse_args()
     correction = args.correction
     log = correction
@@ -61,6 +64,8 @@ def main():
     align_only = args.align_only
     fichier_de_parametres = args.parameters
     division = args.division
+    #####
+
     if division is None:
         division = "*"
 
@@ -78,6 +83,9 @@ def main():
               "On switche à un alignement mot à mot.\n\n ---- \n\n")
         parametres.alignement = "mam"
 
+    synonyms_datasets = parametres.create_synonym_dataset
+    compute_similarity = parametres.compute_similarity
+
     liste_sigles = utils.sigles()
     if test_only:
         print(f'Tests en cours...')
@@ -90,15 +98,16 @@ def main():
     if inject_only:
         chemin = f"divs/div{division}"
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(division)
-        post_traitement.injection_omissions(liste_fichiers_finaux, parametres.element_base)
-        post_traitement.injection_ponctuation_parallele(chemin=chemin,
-                                                        coeurs=parametres.parallel_process_number,
-                                                        type_division=parametres.type_division,
-                                                        n_division=division)
-        tuples_elements_position = parametres.reinjection.items()
-        post_traitement.injection_intelligente(chapitre=division,
-                                               elements_and_position=tuples_elements_position,
-                                               liste_temoins=liste_fichiers_finaux)
+        Injector = injections.Injector(debug=True,
+                                       div_n=division,
+                                       elements_to_inject=parametres.reinjection.items(),
+                                       liste_temoins=liste_fichiers_finaux,
+                                       saxon=saxon,
+                                       chemin=chemin,
+                                       coeurs=parametres.parallel_process_number,
+                                       element_base=parametres.element_base,
+                                       type_division=parametres.type_division)
+        Injector.run_injections()
         exit(0)
 
     if pdf_only:
@@ -173,9 +182,10 @@ def main():
     for i in portee:
         chemin_fichiers = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
-        corpus_preparator.run(i)
+        corpus_preparator.prepare(i)
         pattern = re.compile(f"divs/div{i}/juxtaposition_\d+\.xml")
-        fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if re.match(pattern, fichier)]
+        fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if
+                        re.match(pattern, fichier)]
         print("Alignement avec CollateX.")
 
         aligner = collation.Aligner(liste_fichiers_xml=fichiers_xml,
@@ -190,10 +200,10 @@ def main():
         # On va fusionner les fichiers individuels collationnés en un seul fichier.
         with open(chemin_fichier_json, "w") as out_json_file:
             dictionnaire_sortie = {'table': [], 'witnesses': []}
-            nombre_de_par = len(glob.glob(f"{chemin_fichiers}/alignement_collatex*.json"))  # on veut ordonner la
+            par_nb = len(glob.glob(f"{chemin_fichiers}/alignement_collatex*.json"))  # on veut ordonner la
             # fusion des
             # documents pour le tableau d'alignement ensuite
-            for par in range(nombre_de_par):
+            for par in range(par_nb):
                 fichier = f"{chemin_fichiers}/alignement_collatex{par + 1}.json"
                 with open(fichier, 'r') as file:
                     dictionnaire_entree = json.loads(file.read())
@@ -237,8 +247,9 @@ def main():
             # regroupement des lemmes
 
         collationeur = collation.Collateur(log=False,
-                                           chemin_fichiers=chemin_fichiers)
-        collationeur.collate(f'apparat_final.json')
+                                           chemin_fichiers=chemin_fichiers,
+                                           div_n=division)
+        collationeur.run()
         print("Création des apparats ✓")
 
         # Création du tableau d'alignement pour visualisation
@@ -251,39 +262,40 @@ def main():
             exit(0)
 
         # Réinjection des apparats.
-        post_traitement.injection(saxon=saxon,
-                                  chemin=chemin_fichiers,
-                                  n_division=i,
-                                  coeurs=parametres.parallel_process_number,
-                                  type_division=parametres.type_division)
+        injections.injection_apparats(saxon=saxon,
+                                      chemin=chemin_fichiers,
+                                      n_division=i,
+                                      coeurs=parametres.parallel_process_number,
+                                      type_division=parametres.type_division)
 
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
         liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
-        sorties.similarity_eval_set_creator(i)
+
+        Injecteur = injections.Injector(debug=False,
+                                        div_n=division,
+                                        elements_to_inject=parametres.reinjection.items(),
+                                        liste_temoins=liste_fichiers_finaux,
+                                        saxon=saxon,
+                                        chemin=chemin_fichiers,
+                                        coeurs=parametres.parallel_process_number,
+                                        element_base=parametres.element_base,
+                                        type_division=parametres.type_division)
+        Injecteur.run_injections()
         # Ici on indique d'autres éléments tei à réinjecter.
-        if parametres.reinjection:
-            post_traitement.injection_omissions(liste_fichiers_finaux, parametres.element_base)
-            post_traitement.injection_ponctuation_parallele(chemin=chemin_fichiers,
-                                                            coeurs=parametres.parallel_process_number,
-                                                            type_division=parametres.type_division,
-                                                            n_division=i)
-            tuples_elements_position = parametres.reinjection.items()
-            post_traitement.injection_intelligente(chapitre=division,
-                                                   elements_and_position=tuples_elements_position,
-                                                   liste_temoins=liste_fichiers_finaux)
 
+        if compute_similarity:
+            liste_fichiers_finale = glob.glob(f"{chemin_fichiers}/*_injected_punct.xml")
+            similarity.compute_similarity(liste_fichiers_finale)
 
-        # Raffinage des apparats: on rassemble les lieux variants
-        for fichier in liste_fichiers_finaux:
-            post_traitement.raffinage_apparats(fichier, i)
-            # post_traitement.calcul_similarite(fichier)
+        if synonyms_datasets:
+            similarity.similarity_eval_set_creator(i)
 
         # Tests de conformité
         print(f'Tests en cours...')
         for sigle in liste_sigles:
-            tests.tokentest(i)
+            tests.tokentest(sigle, i)
             tests.witness_test(sigle, i)
-            tests.test_word_alignment(sigle, i)
+            tests.test_word_alignment(i)
 
     if parametres.fusion_documents:
         for temoin in liste_fichiers_tokenises:

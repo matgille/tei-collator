@@ -20,7 +20,7 @@ class CorpusPreparation:
         self.element_base = element_base
         self.liste_temoins = liste_temoins
 
-    def run(self, div_number):
+    def prepare(self, div_number):
         """
         Cette fonction sépare chaque division en autant d'éléments base (exemple, en 10 paragraphes)
         qui seront donnés à CollateX pour alignement; elle produit aussi un fichier global qui rassemble l
@@ -109,9 +109,16 @@ class Aligner:
 
 
 class Collateur:
-    def __init__(self, log: bool, chemin_fichiers):
+    def __init__(self, log: bool, chemin_fichiers, div_n):
         self.log = log
         self.chemin_fichiers = chemin_fichiers
+        self.div_n = div_n
+        self.tei_ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
+
+    def run(self):
+        self.collate(f'apparat_final.json')
+        # Continuer ici
+        self.raffinage_apparats(f'divs/div{self.div_n}/apparat_collatex.xml')
 
     def collate(self, fichier_entree):
         """
@@ -270,7 +277,7 @@ class Collateur:
                         # on indique que tous les témoins proposent la leçon
                         rdg.set('id', utils.generateur_id())
                         rdg.set('wit', temoins_complets)
-                        rdg.set('{http://www.w3.org/XML/1998/namespace}id', xml_id)
+                        rdg.set('n', xml_id)
                     else:
                         lecon = str(key)
                         xml_id, temoin, lemmes, pos = value[0], value[1], value[2], value[3]
@@ -279,7 +286,7 @@ class Collateur:
                         rdg.set('lemma', lemmes)
                         rdg.set('pos', pos)
                         rdg.set('wit', temoin)
-                        rdg.set('{http://www.w3.org/XML/1998/namespace}id',
+                        rdg.set('n',
                                 f'{xml_id}')  # ensemble des id des tokens, pour la
                         # suppression de la redondance plus tard
                         # Re-créer les noeuds tei:w
@@ -382,5 +389,75 @@ class Collateur:
                   f"\n{liste_lemmes}\n{liste_pos}")
             type_de_variante = "indetermine"
 
-
         return type_de_variante
+
+    def raffinage_apparats(self, fichier):
+        """
+        Cette fonction permet de raffiner les apparats en rassemblant les variantes graphiques au sein d'un apparat qui
+        comporte des variantes "vraies" ou morphosyntactiques. On va créer des tei:rdgGroup qui rassembleront les rdg.
+        À intégrer à la classe Collateur puisque c'est une partie de la collation.
+        Cette fonction réécrit le fichier d'entrée.
+        """
+        # TODO: fusionner cette fonction avec la fonction de création d'apparat ?
+        # TODO: il reste un problème dans le cas suivant (en amont): chaîne identique, (lemme?|)pos différent.
+        parser = etree.XMLParser(load_dtd=True,
+                                 resolve_entities=True)
+        f = etree.parse(fichier, parser=parser)  # https://lxml.de/tutorial.html#namespaces
+        root = f.getroot()
+        liste_apps = root.xpath(f"//tei:app[not(@type='graphique')]", namespaces=self.tei_ns)
+        for apparat in liste_apps:
+            lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=self.tei_ns)
+            # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat.
+            if len(lecon) <= 2:
+                pass
+
+            # Sinon, les choses deviennent intéressantes
+            else:
+                liste_de_lecons = apparat.xpath(f"tei:rdg", namespaces=self.tei_ns)
+                liste_annotations = []
+                for lecon in liste_de_lecons:
+                    texte = " ".join(lecon.xpath("descendant::tei:w/descendant::text()", namespaces=self.tei_ns))
+                    identifiant_rdg = lecon.xpath("@id", namespaces=self.tei_ns)[0]
+                    lemme = lecon.xpath("@lemma")[0]
+                    pos = lecon.xpath("@pos")[0]
+                    pos_reduit = pos.split(" ")[0]
+                    lemme_reduit = "_".join(lemme.split("_")[:len(pos_reduit.split("_"))])
+                    liste_annotations.append((identifiant_rdg, pos_reduit, lemme_reduit))
+
+                # On identifie les variants graphiques au sein
+                # du lieu variant ( = les paires Pos/Lemmes qui se répètent)
+                liste_d_analyses = set([(pos, lemma) for identifiant, pos, lemma in liste_annotations])
+                dictionnaire_de_regroupement = {}
+                for i in liste_d_analyses:
+                    for j in liste_annotations:  # on va récupérer l'identifiant
+                        if all(x in j for x in i):
+                            identifiant, pos, lemma = j
+                            # https://www.geeksforgeeks.org/python-check-if-one-tuple-is-subset-of-other/
+                            try:
+                                dictionnaire_de_regroupement[i].append(identifiant)
+                            except KeyError:
+                                dictionnaire_de_regroupement[i] = [identifiant]
+                            # Le dictionnaire est de la forme: {(pos, lemmes): [liste des identifiants]]}
+
+                # Ce qui nous intéresse, c'est de produire les groupes: on ne garde que les valeurs
+                # du dictionnaire
+                rdg_groups = list(dictionnaire_de_regroupement.values())
+
+                # On va pouvoir maintenant créer des rdgGroups autour des tei:rdg que l'on a identifiés
+                # comme similaires.
+
+                # Créons donc des tei:rdgGrp parents pour ces groupes
+                for group in rdg_groups:
+                    tei_namespace = 'http://www.tei-c.org/ns/1.0'
+                    namespace = '{%s}' % tei_namespace
+                    rdg_grp = etree.SubElement(apparat, namespace + 'rdgGrp')
+                    for identifiant in group:
+                        try:
+                            orig_rdg = apparat.xpath(f"tei:rdg[@id = '{identifiant}']", namespaces=self.tei_ns)[0]
+                        except IndexError as error:
+                            print(f"Index error. Rdg's id: {identifiant}. \nError: {error}")
+                        rdg_grp.append(orig_rdg)
+
+        with open(fichier, 'w+') as sortie_xml:
+            output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
+            sortie_xml.write(str(output))

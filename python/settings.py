@@ -32,6 +32,9 @@ class Parametres:
         self.tableauxAlignement = self.settings['sortie']['tableaux_alignement']
         self.latex = self.settings['sortie']['LaTeX']
 
+        self.compute_similarity = self.settings['compute_similarity']
+        self.create_synonym_dataset = self.settings['create_synonym_dataset']
+
         if isinstance(self.settings['parallel_process_number'], int):
             self.parallel_process_number = self.settings['parallel_process_number']
         elif self.settings['parallel_process_number'] is None:
