@@ -45,7 +45,7 @@ class Injector:
         self.type_division = type_division
 
     def run_injections(self):
-        # self.injection_apparats()
+        self.injection_apparats()
         self.injection_omissions()
         self.injection_ponctuation_parallele()
         self.injection_intelligente()
@@ -214,7 +214,9 @@ class Injector:
         if len(set(number_of_omissions)) == 1:
             print(f"Injection went well (all witnesses have the same number of tei:apps: {number_of_apps}).\n")
         else:
-            print("Oh oh.")
+            print(f"Something went bad with omission injection:\n"
+                  f"{number_of_omissions}.\n"
+                  f"")
 
     def injection_ponctuation_parallele(self):
         """

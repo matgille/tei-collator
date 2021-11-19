@@ -4,8 +4,8 @@ import lxml.etree as etree
 import torch
 import random
 
-from networkx.drawing.tests.test_pylab import plt
-from pygments.lexers import go
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from sklearn.decomposition import PCA
 import numpy as np
 

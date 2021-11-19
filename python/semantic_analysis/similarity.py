@@ -1,7 +1,7 @@
 import itertools
 import math
 
-import embeddings as embeddings
+import python.semantic_analysis.embeddings as embeddings
 import lxml.etree as etree
 
 import itertools
@@ -30,7 +30,9 @@ def compute_similarity(fichier):
         similarity_file.truncate(0)
 
     # On processe les entrées pour sortir les paires à comparer, en supprimant la redondance et les omissions.
-    embs = embeddings.Embeddings(model='python/post_traitement/model_embeddings.pt', device='cpu')
+    embs = embeddings.Embeddings(model='python/semantic_analysis/model_embeddings.pt',
+                                 vocab='python/semantic_analysis/vocab.json',
+                                 device='cpu')
 
     # On va garder dans une liste la métrique pour tous les couples de mots
     global_similarity_list = []

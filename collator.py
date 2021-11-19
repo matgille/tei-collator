@@ -18,7 +18,6 @@ import python.tokenisation.tokenisation as tokenisation
 import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
 import python.injections.injections as injections
-import python.semantic_analysis.embeddings as embeddings
 import python.semantic_analysis.similarity as similarity
 import python.settings
 import python.tests.tests as tests
@@ -51,9 +50,12 @@ def main():
     parser.add_argument("-cp", "--createpdf", default=False, help="Produce pdf and exit.")
     parser.add_argument("-io", "--injectiononly", default=False, help="Debug option: performs injection and exits")
     parser.add_argument("-To", "--testonly", default=False, help="Performs tests and exit.")
+    parser.add_argument("-so", "--similarityonly", default=False, help="Performs similarity computation and exit.")
+
 
     ##### Settings
     args = parser.parse_args()
+    similarity_only = args.similarityonly
     correction = args.correction
     log = correction
     inject_only = args.injectiononly
@@ -94,6 +96,11 @@ def main():
             tests.tokentest(sigle, division)
             tests.witness_test(sigle, division)
         exit(0)
+
+    if similarity_only:
+        for fichier in glob.glob(f"divs/div{division}/*_injected_punct.xml"):
+            similarity.compute_similarity(fichier)
+    exit(0)
 
     if inject_only:
         chemin = f"divs/div{division}"
@@ -261,18 +268,9 @@ def main():
             print(f"Fait en {round(temps_total)} secondes. \n")
             exit(0)
 
-        # Réinjection des apparats.
-        injections.injection_apparats(saxon=saxon,
-                                      chemin=chemin_fichiers,
-                                      n_division=i,
-                                      coeurs=parametres.parallel_process_number,
-                                      type_division=parametres.type_division)
-
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
-        liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
-
         Injecteur = injections.Injector(debug=False,
-                                        div_n=division,
+                                        div_n=i,
                                         elements_to_inject=parametres.reinjection.items(),
                                         liste_temoins=liste_fichiers_finaux,
                                         saxon=saxon,
@@ -283,13 +281,15 @@ def main():
         Injecteur.run_injections()
         # Ici on indique d'autres éléments tei à réinjecter.
 
-        if compute_similarity:
-            liste_fichiers_finale = glob.glob(f"{chemin_fichiers}/*_injected_punct.xml")
-            similarity.compute_similarity(liste_fichiers_finale)
+        if similarity_only:
+            for fichier in glob.glob(f"{chemin_fichiers}/*_injected_punct.xml"):
+                similarity.compute_similarity(fichier)
+            exit(0)
 
         if synonyms_datasets:
             similarity.similarity_eval_set_creator(i)
 
+        liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
         # Tests de conformité
         print(f'Tests en cours...')
         for sigle in liste_sigles:

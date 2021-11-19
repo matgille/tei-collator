@@ -25,14 +25,13 @@ class CorpusPreparation:
         Cette fonction sépare chaque division en autant d'éléments base (exemple, en 10 paragraphes)
         qui seront donnés à CollateX pour alignement; elle produit aussi un fichier global qui rassemble l
         """
-        with Halo(text=f'Scission du corpus, création de dossiers et de fichiers par chapitre sur {div_number}',
-                  spinner='dots'):
-            # Produit à la fois "juxtaposition_\d.xml" et "juxtaposition_orig.xml"
-            cmd = f'java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement' \
-                  f'/preparation_corpus.xsl ' \
-                  f'temoin_leader={self.temoin_leader} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
-            subprocess.run(cmd.split())
-            print("\nPréparation du corpus pour alignment ✓")
+        print(f'Scission du corpus, création de dossiers et de fichiers par chapitre sur {div_number}.')
+        # Produit à la fois "juxtaposition_\d.xml" et "juxtaposition_orig.xml"
+        cmd = f'java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement' \
+              f'/preparation_corpus.xsl ' \
+              f'temoin_leader={self.temoin_leader} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
+        subprocess.run(cmd.split())
+        print("\nPréparation du corpus pour alignment ✓")
 
 
 class Aligner:
