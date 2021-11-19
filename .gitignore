@@ -26,4 +26,6 @@ logs/
 embeddings_results/
 .debug/
 parametres/sans_lemmatisation_debug.json
+similarity_dict.list
+similarity_results.txt
 
