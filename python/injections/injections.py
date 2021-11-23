@@ -36,7 +36,7 @@ class Injector:
         self.div_n = div_n
         self.elements_to_inject = elements_to_inject
         self.processed_list = []  # ->  List[tuple]
-        self.liste_temoins = utils.chemin_fichiers_finaux(div_n)
+        self.liste_temoins = None
         self.ns_decl = {'tei': 'http://www.tei-c.org/ns/1.0'}  # pour la recherche d'éléments avec la méthode xpath
         self.saxon = saxon
         self.chemin = chemin
@@ -119,12 +119,11 @@ class Injector:
         print("Injecting omitted text in each witness:")
         # Première étape: on récupère toutes les omissions
         liste_omissions = []
-        print(self.liste_temoins)
+        self. liste_temoins = utils.chemin_fichiers_finaux(self.div_n)
         for temoin in self.liste_temoins:
             with open(temoin, "r") as input_xml:
                 f = etree.parse(input_xml)
                 apps_with_omission = f.xpath("//tei:app[descendant::tei:rdg[not(node())]]", namespaces=self.ns_decl)
-                print(apps_with_omission)
 
             for apparat in apps_with_omission:
                 temoins_affectes = apparat.xpath("descendant::tei:rdg[not(node())]/@wit", namespaces=self.ns_decl)[
