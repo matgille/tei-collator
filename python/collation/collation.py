@@ -454,7 +454,11 @@ class Collateur:
                         try:
                             orig_rdg = apparat.xpath(f"tei:rdg[@id = '{identifiant}']", namespaces=self.tei_ns)[0]
                         except IndexError as error:
-                            print(f"Index error. Rdg's id: {identifiant}. \nError: {error}")
+                            print(etree.tostring(apparat, pretty_print=True).decode())
+                            print(f"Raffinage des apparats sur {fichier}.\n"
+                                  f"Index error. Rdg's id: {identifiant}. \n"
+                                  f"Error: {error}. Exiting.")
+                            exit(0)
                         rdg_grp.append(orig_rdg)
 
         with open(fichier, 'w+') as sortie_xml:

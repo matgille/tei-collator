@@ -20,7 +20,7 @@ import python.utils.utils as utils
 
 
 class Injector:
-    def __init__(self, debug, div_n, elements_to_inject, liste_temoins, saxon, chemin, coeurs, element_base,
+    def __init__(self, debug, div_n, elements_to_inject, saxon, chemin, coeurs, element_base,
                  type_division):
         """
         Classe injecteur: réalise les injections de ponctuation, des omissions et des éléments spécifiés
@@ -36,7 +36,7 @@ class Injector:
         self.div_n = div_n
         self.elements_to_inject = elements_to_inject
         self.processed_list = []  # ->  List[tuple]
-        self.liste_temoins = liste_temoins
+        self.liste_temoins = utils.chemin_fichiers_finaux(div_n)
         self.ns_decl = {'tei': 'http://www.tei-c.org/ns/1.0'}  # pour la recherche d'éléments avec la méthode xpath
         self.saxon = saxon
         self.chemin = chemin
@@ -74,11 +74,13 @@ class Injector:
 
         # seconde étape: noeuds non textuels
         print("\n---- INJECTION 2: suppression de la redondance ----")
-        fichiers_apparat = f'{self.chemin}/apparat_*_*.xml'
+        regular_expression = "apparat_[A-Z][a-z]{2}_[A-Z]_[0-9]{1,2}.xml"
+        regular_expression_with_path = re.compile(f'{self.chemin}/{regular_expression}')
         # fichier de sortie: "*outb.xml"
-        liste = glob.glob(fichiers_apparat)
+        liste = glob.glob(f"{self.chemin}/*.xml")
+        filtered_list = [element for element in liste if re.match(regular_expression_with_path, element)]
         chemin_injection2 = "xsl/post_alignement/injection_apparats2.xsl"
-        self.parallel_transformation(chemin_injection2, param_division, liste, regexp=r'.*[0-9].xml')
+        self.parallel_transformation(chemin_injection2, param_division, filtered_list)
 
         print("\n---- INJECTION 2bis: suppression de la redondance ----")
         chemin_injection3 = "xsl/post_alignement/injection_apparats3.xsl"
@@ -96,24 +98,15 @@ class Injector:
         self.parallel_transformation(chemin_injection_lacunes, param_division, liste)
         print("Création des balises de lacunes ✓")
 
-    def parallel_transformation(self, chemin_xsl, param_chapitre, liste, regexp=None):
+    def parallel_transformation(self, chemin_xsl, param_chapitre, liste):
         pool = mp.Pool(processes=self.coeurs)
         command_list = []
-        if regexp is None:
-            for i in liste:
-                sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                        + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-                param_sigle = "sigle=" + sigle
-                command = ["java", "-jar", self.saxon, i, chemin_xsl, param_chapitre, param_sigle]
-                command_list.append(command)
-        else:
-            for i in liste:
-                if re.match(regexp, i):
-                    sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
-                            + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
-                    param_sigle = "sigle=" + sigle
-                    command = ["java", "-jar", self.saxon, i, chemin_xsl, param_chapitre, param_sigle]
-                    command_list.append(command)
+        for i in liste:
+            sigle = i.split("apparat_")[1].split(".xml")[0].split("_")[0] + "_" \
+                    + i.split("apparat_")[1].split(".xml")[0].split("_")[1]
+            param_sigle = "sigle=" + sigle
+            command = ["java", "-jar", self.saxon, i, chemin_xsl, param_chapitre, param_sigle]
+            command_list.append(command)
         pool.map(utils.run_subprocess, command_list)
 
     def injection_omissions(self):
@@ -126,10 +119,12 @@ class Injector:
         print("Injecting omitted text in each witness:")
         # Première étape: on récupère toutes les omissions
         liste_omissions = []
+        print(self.liste_temoins)
         for temoin in self.liste_temoins:
             with open(temoin, "r") as input_xml:
                 f = etree.parse(input_xml)
                 apps_with_omission = f.xpath("//tei:app[descendant::tei:rdg[not(node())]]", namespaces=self.ns_decl)
+                print(apps_with_omission)
 
             for apparat in apps_with_omission:
                 temoins_affectes = apparat.xpath("descendant::tei:rdg[not(node())]/@wit", namespaces=self.ns_decl)[
@@ -214,9 +209,10 @@ class Injector:
         if len(set(number_of_omissions)) == 1:
             print(f"Injection went well (all witnesses have the same number of tei:apps: {number_of_apps}).\n")
         else:
-            print(f"Something went bad with omission injection:\n"
+            print(f"Something went wrong with injection of the omissions:\n"
                   f"{number_of_omissions}.\n"
-                  f"")
+                  f"Exiting.")
+            exit(0)
 
     def injection_ponctuation_parallele(self):
         """
@@ -314,7 +310,13 @@ class Injector:
         # par rapport à l'élément à injecter
         for item in self.processed_list:
             anchor_id, element, temoin, position = item
-            element_id = element.xpath("@xml:id")[0]
+            try:
+                element_id = element.xpath("@xml:id")[0]
+            except IndexError as e:
+                print(f"Index error on element. Error: {e}\n")
+                print(etree.tostring(element, pretty_print=True).decode())
+                print(f"Exiting.")
+                exit(0)
             if temoin in target_file:
                 pass
             else:

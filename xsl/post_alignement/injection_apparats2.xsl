@@ -68,17 +68,17 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
+    
+    <xsl:variable name="document" select="document(concat($chemin_sortie2, 'temoins_tokenises/', $sigle, '.xml'))"/>
 
 
     <xsl:template match="tei:w">
         <xsl:variable name="sigle_ms" select="ancestor::tei:TEI/@xml:id"/>
         <xsl:variable name="xml_id" select="@xml:id"/>
-        <xsl:variable name="retour_au_texte"
-            select="concat($chemin_sortie2, 'temoins_tokenises/', $sigle, '.xml')"/>
         <!--Ici on récupère le token dans le document originel. Il n'y a pas de risque de créer
         plusieurs tei:w car on filtre d'abord par document, puis par l'xml:id-->
         <xsl:for-each select="tokenize(@xml:id, '_')">
-            <xsl:copy-of select="document($retour_au_texte)//tei:w[@xml:id = $xml_id]"/>
+            <xsl:copy-of select="$document//tei:w[@xml:id = $xml_id]"/>
         </xsl:for-each>
     </xsl:template>
 

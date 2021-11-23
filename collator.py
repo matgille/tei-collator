@@ -100,15 +100,13 @@ def main():
     if similarity_only:
         for fichier in glob.glob(f"divs/div{division}/*_injected_punct.xml"):
             similarity.compute_similarity(fichier)
-    exit(0)
+        exit(0)
 
     if inject_only:
         chemin = f"divs/div{division}"
-        liste_fichiers_finaux = utils.chemin_fichiers_finaux(division)
         Injector = injections.Injector(debug=True,
                                        div_n=division,
                                        elements_to_inject=parametres.reinjection.items(),
-                                       liste_temoins=liste_fichiers_finaux,
                                        saxon=saxon,
                                        chemin=chemin,
                                        coeurs=parametres.parallel_process_number,
@@ -189,6 +187,13 @@ def main():
     for i in portee:
         chemin_fichiers = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
+
+
+        if not tests.test_lemmatization(div_n=i,
+                                        div_type=parametres.type_division,
+                                        temoin_leader=parametres.temoin_leader):
+            print("This division is not lemmatized; exiting.")
+            exit(0)
         corpus_preparator.prepare(i)
         pattern = re.compile(f"divs/div{i}/juxtaposition_\d+\.xml")
         fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if
@@ -268,11 +273,9 @@ def main():
             print(f"Fait en {round(temps_total)} secondes. \n")
             exit(0)
 
-        liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
-        Injecteur = injections.Injector(debug=False,
+        Injecteur = injections.Injector(debug=True,
                                         div_n=i,
                                         elements_to_inject=parametres.reinjection.items(),
-                                        liste_temoins=liste_fichiers_finaux,
                                         saxon=saxon,
                                         chemin=chemin_fichiers,
                                         coeurs=parametres.parallel_process_number,
