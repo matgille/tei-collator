@@ -353,7 +353,10 @@ class Collateur:
                 if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
                     type_de_variante = 'filtre'
                 else:
-                    type_de_variante = 'lexicale'
+                    if "" in list(set(liste_lemmes)):
+                        type_de_variante = 'omission'
+                    else:
+                        type_de_variante = 'lexicale'
         elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
             # On peut avoir un lemme identique et un pos qui change ('como' p.ex)
             if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):

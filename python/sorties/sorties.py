@@ -6,6 +6,9 @@ from lxml import etree
 import itertools
 
 
+import python.utils.utils as utils
+
+
 def transformation_latex(saxon, fichier_xml, fusion, chemin='divs'):
     '''
     Production des fichiers pdf
@@ -31,11 +34,8 @@ def transformation_latex(saxon, fichier_xml, fusion, chemin='divs'):
     with open(fichier_tex_seul, "w") as output_tex_file:
         output_tex_file.write(tex_file)
     print(f'current dir: {os.getcwd()}')
-    subprocess.run(["xelatex", "-quiet", f"-output-directory={chemin}", fichier_tex_seul])
-    subprocess.run(["biber", fichier_sans_extension])
-    subprocess.run(["xelatex", "-quiet", f"-output-directory={chemin}", fichier_tex_seul])
-    subprocess.run(["xelatex", "-quiet", f"-output-directory={chemin}", fichier_tex_seul])
-
+    utils.clean_spaces(fichier_tex_seul)
+    subprocess.run(["latexmk", "-xelatex", f"-output-directory={chemin}", fichier_tex_seul])
 
 
 def fusion_documents_tei(temoin_a_traiter):

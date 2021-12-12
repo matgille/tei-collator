@@ -280,7 +280,7 @@
 
     <xsl:template match="/">
         <xsl:for-each
-            select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
+            select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])][not(@subtype='version_a')]">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
             <xsl:result-document href="temoins_tokenises/{$nom_fichier}.xml">
                 <xsl:apply-templates

@@ -111,14 +111,15 @@ def main():
                                        chemin=chemin,
                                        coeurs=parametres.parallel_process_number,
                                        element_base=parametres.element_base,
-                                       type_division=parametres.type_division)
+                                       type_division=parametres.type_division,
+                                       lacuna_sensibility=parametres.lacuna_sensibility)
         Injector.run_injections()
         exit(0)
 
     if pdf_only:
         chemin = f"divs/div{division}"
         print("On produit les fichiers pdf.")
-        for fichier in glob.glob(f'{chemin}/apparat_*_*injected_punct.xml'):
+        for fichier in glob.glob(f'{chemin}/apparat_**_*injected_punct.lacuned.xml'):
             print(fichier)
             sorties.transformation_latex(saxon, fichier, False, chemin)
         sorties.nettoyage("divs")
@@ -185,6 +186,10 @@ def main():
                                                     liste_temoins=utils.chemin_temoins_tokenises_regularises())
 
     for i in portee:
+
+        # We first remove all files in the corresponding dir to avoid any possible interference and bug
+        utils.remove_files(f"divs/div{str(i)}/*")
+
         chemin_fichiers = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
 
@@ -273,15 +278,16 @@ def main():
             print(f"Fait en {round(temps_total)} secondes. \n")
             exit(0)
 
-        Injecteur = injections.Injector(debug=True,
+        injecteur = injections.Injector(debug=True,
                                         div_n=i,
                                         elements_to_inject=parametres.reinjection.items(),
                                         saxon=saxon,
                                         chemin=chemin_fichiers,
                                         coeurs=parametres.parallel_process_number,
                                         element_base=parametres.element_base,
-                                        type_division=parametres.type_division)
-        Injecteur.run_injections()
+                                        type_division=parametres.type_division,
+                                        lacuna_sensibility=parametres.lacuna_sensibility)
+        injecteur.run_injections()
         # Ici on indique d'autres éléments tei à réinjecter.
 
         if similarity_only:
@@ -293,6 +299,7 @@ def main():
             similarity.similarity_eval_set_creator(i)
 
         liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
+        liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
         # Tests de conformité
         print(f'Tests en cours...')
         for sigle in liste_sigles:
@@ -305,13 +312,13 @@ def main():
             sigle = temoin.split('/')[1].split(".xml")[0]
             sorties.fusion_documents_tei(sigle)
         if parametres.latex:
-            for fichier in glob.glob('divs/*.xml'):
-                sorties.transformation_latex(saxon, fichier, True)
+            for fichier in liste_fichiers_finaux:
+                sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct"), True)
 
     if parametres.latex and not parametres.fusion_documents:
         for fichier in liste_fichiers_finaux:
             print(fichier)
-            sorties.transformation_latex(saxon, fichier.replace("final", "injected"), False, chemin_fichiers)
+            sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct.lacuned"), False, chemin_fichiers)
 
     sorties.nettoyage("divs")
     t1 = time.time()

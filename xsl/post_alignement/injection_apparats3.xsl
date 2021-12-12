@@ -43,18 +43,18 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="tei:app[@type = 'not_apparat']">
+    <!--<xsl:template match="tei:app[@type = 'not_apparat']">
         <xsl:variable name="wits" select="tei:rdg/@wit"/>
         <xsl:for-each select="descendant::tei:w">
             <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-                <!-- Ne marchera pas avec l alignement global puiqu id identiques. Voir comment gerer ça.-->
+                <!-\- Ne marchera pas avec l alignement global puiqu id identiques. Voir comment gerer ça.-\->
                 <xsl:attribute name="xml:id" select="parent::tei:rdg/@n"/>
-                <!-- Ne marchera pas avec l alignement global. Voir comment gerer ça.-->
+                <!-\- Ne marchera pas avec l alignement global. Voir comment gerer ça.-\->
                 <xsl:attribute name="wit" select="$wits"/>
                 <xsl:value-of select="."/>
             </xsl:element>
         </xsl:for-each>
-    </xsl:template>
+    </xsl:template>-->
 
     <!--Ici on rétablit les tei:w/@xml:id qu'on avait perdus précédemment, en reprenant le fichier apparat_X_X.xml.-->
     <xsl:template match="tei:w">

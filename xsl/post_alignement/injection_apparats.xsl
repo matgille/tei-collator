@@ -3,9 +3,8 @@
 plus suppression de la redondance-->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="xs"
-    version="2.0">
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
+    exclude-result-prefixes="xs" version="2.0">
     <xsl:output method="xml"/>
     <xsl:strip-space elements="*"/>
     <!--Feuille qui réinjecte à l'aide des identifiants de token l'apparat dans chaque transcription individuelle, 
@@ -81,15 +80,13 @@ plus suppression de la redondance-->
 
 
         <xsl:variable name="recuperation_apparat">
-            <xsl:for-each
-                select="document($apparat_chapitre)//tei:rdg[contains(@wit, $ms)]/tei:w">
+            <xsl:for-each select="document($apparat_chapitre)//tei:rdg[contains(@wit, $ms)]/tei:w">
                 <xsl:choose>
                     <xsl:when test="contains(@xml:id, $xml_id)">
                         <xsl:choose>
                             <!--Si le token trouvé a été traité (il appartient à un rdg qui compte un autre
                             w traité auparavant), on ne fait rien-->
-                            <xsl:when
-                                test="contains(parent::tei:rdg/@n, $token_precedent)">
+                            <xsl:when test="contains(parent::tei:rdg/@n, $token_precedent)">
                                 <xsl:text>Redondance</xsl:text>
                             </xsl:when>
                             <!--Si le token trouvé a été traité-->
@@ -132,13 +129,14 @@ plus suppression de la redondance-->
     <!--Création des différents fichiers xml par témoin-->
     <xsl:template match="*:temoin">
         <xsl:variable name="sigle" select="translate(@n, '#', '')"/>
-        <xsl:result-document
-            href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}.xml">
+        <xsl:result-document href="{$chemin_sortie}apparat_{$sigle}_{$chapitre}.xml">
             <xsl:element name="div" namespace="http://www.tei-c.org/ns/1.0">
                 <xsl:attribute name="type">chapitre</xsl:attribute>
                 <xsl:attribute name="n" select="$chapitre"/>
-                <xsl:attribute name="xml:id"
-                    select="concat($sigle, '_3_3_', $chapitre)"/>
+                <xsl:attribute name="corresp">
+                    <xsl:value-of select="concat('#', $sigle)"/>
+                </xsl:attribute>
+                <xsl:attribute name="xml:id" select="concat($sigle, '_3_3_', $chapitre)"/>
                 <xsl:apply-templates/>
             </xsl:element>
         </xsl:result-document>

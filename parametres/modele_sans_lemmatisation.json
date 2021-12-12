@@ -14,6 +14,7 @@
   "reinjection": {"tei:note[@type='general']": "after", // quels éléments réinjecter, et leur position par rapport au tei:w ancre
                   "tei:note[@type='particulier'][@subtype='variante']":"after",
                  "tei:milestone[@unit][ancestor::tei:div[contains(@xml:id, 'Sev_Z')]]": "before"},
+  "sensibilite_lacunes": 4,
   "corpus": { // état du corpus avant processage
     "tokenized" : true,
     "xmlIdentifiers" : true, // chaque token est-il associé à son xml:id ?
