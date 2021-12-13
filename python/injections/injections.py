@@ -256,7 +256,7 @@ class Injector:
             # on regarde le nombre d'exemples qui n'ont pas été injectés par temoin
             self.verification_injections(temoin_a_verifier=witness)
 
-    def lacuna_identification(self, chemin, node=None, n_it=0, output_file=None):
+    def lacuna_identification(self, chemin, tree=None, n_it=0, output_file=None):
         """
         Définition de lacune: une suite d'éléments d'apparats qui contiennent un élément vide
         Cette fonction regroupe les apparats marqués commes des ommissions dans un tei:seg pointant vers l'analyse d'omission.
@@ -265,14 +265,14 @@ class Injector:
         """
         if chemin:
             with open(chemin, "r") as file:
-                xml_node = etree.parse(file)
-        elif node:
-            xml_node = node
+                xml_tree = etree.parse(file)
+        elif tree:
+            xml_tree = tree
 
         # Avec cette expression, on va chercher tous les tei:app[@type='omission'] qui suivent (directement ou pas=
         # un tei:app de type omission
 
-        apps = xml_node.xpath(
+        apps = xml_tree.xpath(
             "//tei:app[@type='omission'][not(ancestor::tei:seg)][preceding::tei:app[1][@type='omission']]",
             namespaces=self.ns_decl)
         positions = [int(app.xpath("count(preceding::tei:app)", namespaces=self.ns_decl)) for app in apps]
@@ -297,7 +297,7 @@ class Injector:
         if len(omissions) == 0:
             print("Done !")
             with open(output_file, "w") as output_file:
-                output_file.write(etree.tostring(xml_node).decode())
+                output_file.write(etree.tostring(xml_tree).decode())
             return
 
 
@@ -308,7 +308,7 @@ class Injector:
         #if position_inf != 0:
         #    position_inf += 1
         rang = range(position_inf, position_sup + 1)
-        omitted_apps = [xml_node.xpath(f"//tei:app[@type='omission'][count(preceding::tei:app) = {pos}]",
+        omitted_apps = [xml_tree.xpath(f"//tei:app[@type='omission'][count(preceding::tei:app) = {pos}]",
                                        namespaces=self.ns_decl)[0] for pos in rang]
         current_node_is_boundary = False
         omissions_list = []
@@ -324,7 +324,7 @@ class Injector:
                 current_node_is_boundary = True
         omissions_list.append(omitted_apps[-1])
 
-        first_omitted_app = xml_node.xpath(f"//tei:app[@type='omission'][count(preceding::tei:app) = {position_inf}]",
+        first_omitted_app = xml_tree.xpath(f"//tei:app[@type='omission'][count(preceding::tei:app) = {position_inf}]",
                                            namespaces=self.ns_decl)[0]
 
 
@@ -344,15 +344,18 @@ class Injector:
         omission_seg.insert(0, first_omitted_app)
 
 
-        # Gestion des attributs.
-        final_list = []
-        for apparat in omission_seg.xpath("descendant::tei:app", namespaces=self.ns_decl):
-            int_list = []
-            for reading in apparat.xpath("descendant::tei:rdg/@wit", namespaces=self.ns_decl):
-                int_list.append(set(reading.split()))
-            final_list.append(int_list)
         # On va tester ici si l'omission est continue du point de vue des témoins
-        binary_constant_omission = all(final_list[n] == final_list[0] for n in range(len(final_list)))
+        list_of_lists = []
+        for apparat in omission_seg.xpath("descendant::tei:app", namespaces=self.ns_decl):
+            list_of_sets = []
+            for reading in apparat.xpath("descendant::tei:rdg/@wit", namespaces=self.ns_decl):
+                list_of_sets.append(set(reading.split()))
+            list_of_lists.append(list_of_sets)
+        # On va tester ici si l'omission est continue du point de vue des témoins
+        # On a une liste listes de sets de la forme [[{A, B},{C}],[{A, B},{C}]]
+        # qui décrivent nos groupes de témoins
+        # On veut que toutes les listes soient égales entre elles
+        binary_constant_omission = all(list_of_lists[n] == list_of_lists[0] for n in range(len(list_of_lists)))
         if binary_constant_omission:
             # Type le plus simple d'omission: deux groupes constants tout au long du passage: il n'y a pas de variation
             # au sein du texte
@@ -376,13 +379,17 @@ class Injector:
             if all([witness in liste for liste in list_of_witnesses]):
                 constant_list.append(witness)
 
+        # La liste ne devrait pas être vide
         if len(constant_list) > 0:
             # Exclude indique les témoins qui omettent le texte (donc exclus du segment en quelque sorte)
             omission_seg.set("exclude", " ".join(constant_list))
+        # Si la liste est vide c'est que l'on a deux omissions différentes adjacentes
+        else:
+            print("Issue with omission: two different omissions must have been joined")
 
 
         # Et on relance la fonction, avec une valeur d'itération supplémentaire.
-        self.lacuna_identification(chemin=None, node=xml_node, n_it=n_it + 1, output_file=output_file)
+        self.lacuna_identification(chemin=None, node=xml_tree, n_it=n_it + 1, output_file=output_file)
 
     def recuperation_elements(self):
         """
