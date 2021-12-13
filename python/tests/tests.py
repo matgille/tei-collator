@@ -1,5 +1,7 @@
 import glob
 import unittest
+from functools import reduce
+
 from lxml import etree
 from lxml import isoschematron
 import os
@@ -10,6 +12,57 @@ NSMAP = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthod
 
 svrl_namespaces = 'http://purl.oclc.org/dsdl/svrl'
 svrlns = {'svrl': svrl_namespaces}
+
+
+def test_word_alignment(div):
+    """
+    Cette fonction permet d'aller chercher les éléments qui empêcheraient un bon alignement: ce sont les éléments
+    qui ne sont pas envoyés dans CollateX (tei:fw, tei:del, etc); si d'autre tei:w anormalement c'est qu'il y a un
+    problème quelque part.
+    """
+    xpath_expression = "//tei:w[not(ancestor::tei:app|ancestor::tei:head)]/@xml:id"
+    temoins = glob.glob(f'divs/div{div}/*_injected_punct.xml')
+    comparison_list = []
+    for i in temoins:
+        with open(i, "r") as input_xml_file:
+            f = etree.parse(input_xml_file)
+        comparison_list.append([result for result in f.xpath(xpath_expression, namespaces=NSMAP)])
+    # https://stackoverflow.com/a/25324329
+    comparison_sets = [set(list_id) for list_id in comparison_list]
+    difference = reduce(set.union, comparison_sets) - reduce(set.intersection, comparison_sets)
+    # print(difference)
+
+    good_tuple_list = []
+    for element in difference:
+        test = False
+        while not test:
+            for witness in temoins:
+                with open(witness, "r") as input_xml_file:
+                    f = etree.parse(input_xml_file)
+                presence = f.xpath(f"boolean(//tei:w[@xml:id = '{element}'])", namespaces=NSMAP)
+                if presence:
+                    good_tuple_list.append((witness, element))
+                    test = True
+
+    # print(f"Éléments tei:w qu'on ne retrouve que dans certains témoins: {good_tuple_list}")
+
+
+def test_lemmatization(div_n, div_type, temoin_leader):
+    """
+    This function checks whether the division has been lemmatized
+    """
+
+    with open(f"temoins_tokenises_regularises/{temoin_leader}.xml", "r") as input_xml_file:
+        f = etree.parse(input_xml_file)
+
+    target_div = f.xpath(f"//tei:div[@type='{div_type}'][@n = '{div_n}']", namespaces=NSMAP)[0]
+    first_token = target_div.xpath("descendant::tei:w[not(@mode='manuel')][1]", namespaces=NSMAP)[0]
+    try:
+        lemma = first_token.xpath("@lemma")[0]
+        pos = first_token.xpath("@pos")[0]
+    except:
+        return False
+    return True
 
 
 def witness_test(sigle, div):
@@ -112,7 +165,6 @@ def notes_test():
     pass
 
 
-
 def validation_xml(corpus, schematron):
     """
     Cette fonction valide le corpus et cherche des erreurs fatales pour éviter
@@ -143,5 +195,3 @@ def validation_xml(corpus, schematron):
         valid = False
 
     return valid, fatal_errors
-
-

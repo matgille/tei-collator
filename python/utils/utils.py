@@ -8,6 +8,7 @@ import subprocess
 import random
 
 from halo import Halo
+from joblib._multiprocessing_helpers import mp
 
 
 def nettoyage_liste_positions(liste_de_tuples):
@@ -85,6 +86,23 @@ def txt_to_liste(filename):
     return output_list
 
 
+def remove_files(files):
+    for file in glob.glob(files):
+        os.remove(file)
+
+def clean_spaces(file):
+    with open(file, "r") as input_file:
+        file_to_clean = input_file.read()
+
+    pattern_in_tag = re.compile("\{\s+")
+    pattern_spaces = re.compile("\s+")
+
+    file_to_clean = re.sub(pattern_in_tag, "{", file_to_clean)
+    file_to_clean = re.sub(pattern_spaces, " ", file_to_clean)
+
+    with open(file, "w") as output_file:
+        output_file.write(file_to_clean)
+
 def generateur_lettre_initiale(chars=string.ascii_lowercase):
     # Génère une lettre aléatoire
     return random.choice(chars)[0]
@@ -126,3 +144,8 @@ def fileExists(file):
         print('%s: check' % file)
     else:
         print('%s: n\'est pas trouvé' % file)
+
+
+def pool_function(function, args, coeurs):
+    pool = mp.Pool(processes=coeurs)
+    pool.map(function, args)

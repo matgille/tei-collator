@@ -71,8 +71,6 @@ def compute_similarity(fichier):
             similarity_file.write(f"Dict: {global_similarity_list}")
             similarity_file.write("\n\n Nouveau lieu variant. \n\n")
 
-    print(mean_similarity)
-    print(embs.median_similarity)
     liste_de_similarites = [similarity for similarity, _ in global_similarity_list if math.isnan(similarity) is False]
     similarite_maximum = np.max(np.array(liste_de_similarites))
     similarite_minimum = np.min(np.array(liste_de_similarites))
