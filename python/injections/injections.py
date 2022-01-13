@@ -1,20 +1,13 @@
-import math
-import pickle
 import re
+from ordered_set import OrderedSet
 
-import tqdm
 from lxml import etree
 import glob
 import operator
-import traceback
 import multiprocessing as mp
 import itertools
-import numpy as np
-import shutil
 from operator import itemgetter
 import subprocess
-
-from typing import List
 
 import python.utils.utils as utils
 
@@ -51,12 +44,14 @@ class Injector:
         self.injection_omissions()
         self.injection_ponctuation_parallele()
         self.injection_intelligente()
+        self.transposition_recognition()
         self.regroupement_omissions()
 
     def regroupement_omissions(self):
-        for fichier_xml in glob.glob(f"divs/div{self.div_n}/*_injected_punct.xml"):
+        print("Regroupement des omissions: *injected_punct.transposed.xml => *injected_punct.transposed.lacuned.xml")
+        for fichier_xml in glob.glob(f"divs/div{self.div_n}/*_injected_punct.transposed.xml"):
             print(f"Regroupement des omissions sur {fichier_xml.split('/')[-1]}")
-            self.lacuna_identification(fichier_xml, output_file=fichier_xml.replace('.xml', '.lacuned.xml'))
+            self.lacuna_identification(chemin=fichier_xml, output_file=fichier_xml.replace('.xml', '.lacuned.xml'))
 
     def injection_apparats(self):
         """
@@ -73,7 +68,7 @@ class Injector:
         param_division = f"chapitre={str(self.div_n)}"  # Premier paramètre passé à la xsl: le chapitre à processer
         param_chemin_sortie = f"chemin_sortie={self.chemin}/"  # Second paramètre: le chemin vers le fichier de sortie
         fichier_entree = f"{self.chemin}/juxtaposition_orig.xml"
-        # fichiers de sortie: "*apparat_*_*.xml"
+        # fichiers de sortie: "*apparat_$SIGLE_$DIV.xml"
         # with Halo(text="Injection des apparats dans chaque transcription individuelle", spinner='dots'):
         #  première étape de l'injection. Apparats, noeuds textuels et suppression de la redondance
         chemin_injection = "xsl/post_alignement/injection_apparats.xsl"
@@ -116,6 +111,100 @@ class Injector:
             command = ["java", "-jar", self.saxon, i, chemin_xsl, param_chapitre, param_sigle]
             command_list.append(command)
         pool.map(utils.run_subprocess, command_list)
+
+    def transposition_recognition(self):
+        """
+        Cette fonction détecte les transpositions de la forme inversion de mots
+        """
+        files = glob.glob(f"divs/div{self.div_n}/apparat_*_injected_punct.xml")
+
+        for file in files:
+            print(f"File {file}")
+            output_file = file.replace(".xml", ".transposed.xml")
+            with open(file, "r") as input_file:
+                f = etree.parse(input_file)
+
+            apps = f.xpath("//tei:app", namespaces=self.ns_decl)
+
+            # D'abord on crée des bigrammes, et on va comparer chaque bigramme avec le suivant
+            bigram_apps = [apps[i:i + 2] for i in range(len(apps))]
+
+            for index in range(len(bigram_apps)):
+                ordered_Set_list = []
+                set_list = []
+
+                # On crée des bigrammes de ces bigrammes
+                # (i.e., on aura trois apparats différents répartis dans deux couples)
+                # On en extrait les analyses morphosyntaxiques et on en supprime la redondance
+                for groupe_apparat in bigram_apps[index:index + 2]:
+                    ordered_set_tmp = []
+                    set_tmp = []
+                    for apparat in groupe_apparat:
+                        list_of_lemmas = "_".join(
+                            apparat.xpath("descendant::tei:rdg/@*[name()='lemma']", namespaces=self.ns_decl)).split("_")
+                        list_of_pos = " ".join(
+                            apparat.xpath("descendant::tei:rdg/@*[name()='pos']", namespaces=self.ns_decl)).split(" ")
+                        lemmas_and_pos = [pos + lemma for pos, lemma in list(zip(list_of_pos, list_of_lemmas))]
+                        with open("/home/mgl/Documents/debug_transp.txt", "a") as debug_file:
+                            debug_file.write("|".join(lemmas_and_pos))
+                            debug_file.write("\n")
+                        ordered_set_tmp.append(OrderedSet(lemmas_and_pos))
+                        set_tmp.append(set(lemmas_and_pos))
+                    ordered_Set_list.append(ordered_set_tmp)
+                    set_list.append(set_tmp)
+
+                # Résultat: une liste d'OrderedSets
+                # [
+                # [OrderedSet(['', 'AQ0CS0grande']), OrderedSet(['NCMS000cuidado'])], # premier, deuxième app
+                # [OrderedSet(['NCMS000cuidado']), OrderedSet(['AQ0CS0grande', ''])] # deuxième, troisième app
+                # ]
+
+                # Et une liste de sets
+                # [
+                # [{'', 'AQ0CS0grande'}, {'NCMS000cuidado'}], # premier, deuxième app
+                # [{'NCMS000cuidado'}, {'', 'AQ0CS0grande'}] # deuxième, troisième app
+                # ]
+
+                # Le but est de comparer un à un chaque élément (ordonnés) de ces listes. Si l'égalité est vraie pour les
+                # ensembles non ordonnés mais fausse pour les ensembles ordonnés, on a logiquement un changement d'ordre
+                # entre les éléments, donc une transposition.
+
+                # Il est possible que l'on laisse de côté certaines transpositions: si les sets ont la même longueur,
+                # on ne pourra pas ordonner les listes et donc les comparer.
+
+                # https://stackoverflow.com/a/7242838
+                ordered_set_equality = all(
+                    sorted(ordered_Set_list[n], key=len) == sorted(ordered_Set_list[0], key=len) for n in
+                    range(len(ordered_Set_list)))
+                unordered_set_equality = all(
+                    sorted(set_list[n], key=len) == sorted(set_list[0], key=len) for n in range(len(set_list)))
+
+                if not ordered_set_equality and unordered_set_equality:
+                    list_of_positions = [int(apparat.xpath("count(preceding::tei:app)", namespaces=self.ns_decl)) for
+                                         apparat in groupe_apparat]
+                    max_pos = max(list_of_positions)
+                    min_pos = min(list_of_positions) - 1
+                    print("Found a transposition")
+
+                    # https://stackoverflow.com/a/6045260
+                    concerned_apps = f.xpath(f"//tei:app", namespaces=self.ns_decl)[min_pos: max_pos + 1]
+                    first_app = concerned_apps[0]
+                    transposition_seg = etree.Element('{%s}' % self.tei_ns + 'seg')
+                    transposition_seg.set("ana", "#transposition")
+                    parent = first_app.getparent()
+                    parent.insert(parent.index(first_app), transposition_seg)
+
+                    # On va insérer tous les éléments trouvés dans le tei:seg
+                    for i in concerned_apps[0:]:
+                        transposition_seg.insert(-1, i)
+                    # On ajoute le premier élément de la liste, sinon il est ajouté à la fin,
+                    # bug que je ne comprends pas
+                    transposition_seg.insert(0, concerned_apps[0])
+                    # On ajoute la balise de borne inférieure
+                    transposition_seg.insert(0, first_app)
+
+            with open(output_file, "w") as output_file:
+                output_file.write(etree.tostring(f, pretty_print=True).decode())
 
     def injection_omissions(self):
         '''
@@ -166,7 +255,6 @@ class Injector:
 
             for omission in liste_omissions:
                 target_witness, app, anchor_id, anchor_name = omission
-                app.set("type", "omission")
                 if sigle not in target_witness:
                     continue
                 else:
@@ -272,8 +360,10 @@ class Injector:
         # Avec cette expression, on va chercher tous les tei:app[@type='omission'] qui suivent (directement ou pas=
         # un tei:app de type omission
 
+
+        # Attention on risque de déstructurer le document ici. Une omission peut courir sur deux paragraphes...
         apps = xml_tree.xpath(
-            "//tei:app[@type='omission'][not(ancestor::tei:seg)][preceding::tei:app[1][@type='omission']]",
+            "//tei:app[contains(@ana,'#omission')][not(ancestor::tei:seg)][preceding::tei:app[1][contains(@ana,'#omission')]]",
             namespaces=self.ns_decl)
         positions = [int(app.xpath("count(preceding::tei:app)", namespaces=self.ns_decl)) for app in apps]
         ranges = []
@@ -292,7 +382,6 @@ class Injector:
         # - etc.
         omissions = [(a - 1, b) for a, b in ranges if b - a >= (self.lacuna_sensibility - 1)]
 
-
         # Quand il n'y a plus de groupe identifié, on peut arrêter le processus récursif.
         if len(omissions) == 0:
             print("Done !")
@@ -300,15 +389,14 @@ class Injector:
                 output_file.write(etree.tostring(xml_tree).decode())
             return
 
-
         # Maintenant que l'on a les positions des omissions, on peut mettre tous les app dans un tei:listApp de type omission
         position_inf, position_sup = omissions[0]
 
         # Reprendre ici, il y a un bug
-        #if position_inf != 0:
+        # if position_inf != 0:
         #    position_inf += 1
         rang = range(position_inf, position_sup + 1)
-        omitted_apps = [xml_tree.xpath(f"//tei:app[@type='omission'][count(preceding::tei:app) = {pos}]",
+        omitted_apps = [xml_tree.xpath(f"//tei:app[contains(@ana, '#omission')][count(preceding::tei:app) = {pos}]",
                                        namespaces=self.ns_decl)[0] for pos in rang]
         current_node_is_boundary = False
         omissions_list = []
@@ -319,14 +407,16 @@ class Injector:
             current_node = current_node.getnext()
             if current_node is not None:
                 omissions_list.append(current_node)
-                current_node_is_boundary = current_node.xpath(f"boolean(self::tei:app[@type='omission'][count(preceding::tei:app) = {position_sup}])", namespaces=self.ns_decl)
+                current_node_is_boundary = current_node.xpath(
+                    f"boolean(self::tei:app[contains(@ana,'#omission')][count(preceding::tei:app) = {position_sup}])",
+                    namespaces=self.ns_decl)
             else:
                 current_node_is_boundary = True
         omissions_list.append(omitted_apps[-1])
 
-        first_omitted_app = xml_tree.xpath(f"//tei:app[@type='omission'][count(preceding::tei:app) = {position_inf}]",
-                                           namespaces=self.ns_decl)[0]
-
+        first_omitted_app = \
+        xml_tree.xpath(f"//tei:app[contains(@ana,'#omission')][count(preceding::tei:app) = {position_inf}]",
+                       namespaces=self.ns_decl)[0]
 
         # https://stackoverflow.com/a/6045260
         namespace = '{%s}' % self.tei_ns
@@ -335,14 +425,14 @@ class Injector:
         parent.insert(parent.index(first_omitted_app), omission_seg)
 
         # On va insérer tous les éléments trouvés dans le tei:seg
-        for i in omissions_list[0:]:
+        # for i in omissions_list[0:]:
+        for i in omissions_list:
             omission_seg.insert(-1, i)
         # On ajoute le premier élément de la liste, sinon il est ajouté à la fin,
         # bug que je ne comprends pas
-        omission_seg.insert(0, omissions_list[0])
+        # omission_seg.insert(0, omissions_list[0])
         # On ajoute la balise de borne inférieure
         omission_seg.insert(0, first_omitted_app)
-
 
         # On va tester ici si l'omission est continue du point de vue des témoins
         list_of_lists = []
@@ -361,35 +451,76 @@ class Injector:
             # au sein du texte
             omission_seg.set('ana', '#omission #binary')
             # @corresp indique le témoin qui conserve le texte omis
-            omission_seg.set('corresp', omission_seg.xpath("descendant::tei:rdg[node()]/@wit", namespaces=self.ns_decl)[0])
+            omission_seg.set('corresp',
+                             omission_seg.xpath("descendant::tei:rdg[node()]/@wit", namespaces=self.ns_decl)[0])
         else:
             omission_seg.set('ana', '#omission')
 
         # On va essayer d'identifier les témoins qui sont omis tout au long de la lacune.
-        list_of_witnesses = omission_seg.xpath("descendant::tei:app[1]/descendant::tei:rdg/@wit", namespaces=self.ns_decl)
+        list_of_witnesses = omission_seg.xpath("descendant::tei:app[1]/descendant::tei:rdg/@wit",
+                                               namespaces=self.ns_decl)
         list_of_witnesses = [element.split() for element in list_of_witnesses]
         output_list = []
         [output_list.extend(element) for element in list_of_witnesses]
         full_wit_list = set(output_list)
-        constant_list = []
+        omitted_wits_list = []
         for witness in full_wit_list:
             list_of_witnesses = []
-            for apparatus in omission_seg.xpath("descendant::tei:app/descendant::tei:rdg[not(node())]", namespaces=self.ns_decl):
+            for apparatus in omission_seg.xpath("descendant::tei:app/descendant::tei:rdg[not(node())]",
+                                                namespaces=self.ns_decl):
                 list_of_witnesses.append(" ".join(apparatus.xpath("@wit")).split())
             if all([witness in liste for liste in list_of_witnesses]):
-                constant_list.append(witness)
+                omitted_wits_list.append(witness)
 
         # La liste ne devrait pas être vide
-        if len(constant_list) > 0:
+        if len(omitted_wits_list) > 0:
             # Exclude indique les témoins qui omettent le texte (donc exclus du segment en quelque sorte)
-            omission_seg.set("exclude", " ".join(constant_list))
+            omitted_wits = " ".join(omitted_wits_list)
+            omission_seg.set("exclude", omitted_wits)
+
+            # On va maintenant supprimer les témoins omis puisqu'on en a déjà l'information
+            # dans le tei:seg parent
+            for excluded_wit in omitted_wits_list:
+                rdg_to_modify = omission_seg.xpath(f"descendant::tei:rdg[contains(@wit, '{excluded_wit}')]",
+                                                   namespaces=self.ns_decl)
+
+                for reading in rdg_to_modify:
+                    witnesses = reading.xpath("@wit")[0]
+                    pattern = re.compile(f"\s?{excluded_wit}")
+                    updated_wit_att = re.sub(pattern, '', witnesses)
+                    reading.set('wit', updated_wit_att)
+
+            # On supprime les tei:rdg vides
+            rdgs_to_delete = omission_seg.xpath(f"descendant::tei:rdg[@wit='']", namespaces=self.ns_decl)
+            for rdg in rdgs_to_delete:
+                rdg.getparent().remove(rdg)
+
+            # Et on supprime les tei:rdgGrp vides.
+            rdgGrps_to_delete = omission_seg.xpath(f"descendant::tei:rdgGrp[not(child::tei:rdg)]",
+                                                   namespaces=self.ns_decl)
+            for rdgGrp in rdgGrps_to_delete:
+                rdgGrp.getparent().remove(rdgGrp)
+
+            # Et on actualise enfin la typologie: s'il y a deux catégories (#omission #graphique p.ex),
+            # ce qui signifiait qu'un témoin ou plus était omis, on
+            # peut supprimer la première.
+            apps = omission_seg.xpath("descendant::tei:app[contains(@ana, ' ')]", namespaces=self.ns_decl)
+            for app in apps:
+                typology = app.xpath("@ana")[0]
+                app.set('ana', typology.replace('#omission ', ''))
+
+            # Enfin, on indique que l
+            apps = omission_seg.xpath("descendant::tei:app[@ana = '#omission'][count(child::tei:rdg) = 1]",
+                                      namespaces=self.ns_decl)
+            for app in apps:
+                app.set('ana', '#not_apparat')
+
         # Si la liste est vide c'est que l'on a deux omissions différentes adjacentes
         else:
             print("Issue with omission: two different omissions must have been joined")
 
-
         # Et on relance la fonction, avec une valeur d'itération supplémentaire.
-        self.lacuna_identification(chemin=None, node=xml_tree, n_it=n_it + 1, output_file=output_file)
+        self.lacuna_identification(chemin=None, tree=xml_tree, n_it=n_it + 1, output_file=output_file)
 
     def recuperation_elements(self):
         """
@@ -509,6 +640,7 @@ class Injector:
                     except Exception as e:
                         print(f"Injection failed for witness {sigla}")
                         print(f"Element failed: {element_name}. Id: {element_id}. Original witness: {temoin}")
+                        print(f"Anchor id: {anchor_id}")
                         print(word_to_change.xpath("@xml:id")[0])
 
         with open(target_file.replace("omitted_punct", "injected_punct"), "w") as output_file:
@@ -579,9 +711,18 @@ def injection_ponctuation(fichier, div_type, div_n):
     punctuation = f.xpath(f"//tei:pc[ancestor::tei:div[@type= '{div_type}'][@n = '{div_n}']]", namespaces=NSMAP1)
     # On va chercher tous les premiers éléments précédents avec un xml:id, sauf les pb et les cb qui peuvent être à l'intérieur
     # d'un tei:w et donc fausser le jeu.
-    preceding_element_id = [punct.xpath("preceding-sibling::node()[@xml:id][not(self::tei:lb|self::tei:pb)][1]/@xml:id",
-                                        namespaces=NSMAP1)[0]
-                            for punct in punctuation]
+
+    try:
+        preceding_element_id = [
+            punct.xpath("preceding-sibling::node()[@xml:id][not(self::tei:lb|self::tei:pb)][1]/@xml:id",
+                        namespaces=NSMAP1)[0] for punct in punctuation]
+    except IndexError as e:
+        print(f"Index error for punctuation retrieval: {e}")
+        print("The parser is looking for punctuation elements that are direct following"
+              "siblings of another element. Please make sure no punctuation element"
+              "starts a node.")
+        exit(0)
+
     assert len(preceding_element_id) == len(punctuation)
 
     punctuation_and_anchor = zip(punctuation, preceding_element_id)

@@ -73,9 +73,9 @@ class Aligner:
             print(f'error in json [{fichier_a_collationer}]: \n {e}')
         # JSON: https://stackoverflow.com/a/29827074
         if alignement == 'global':
-            resultat_json = collatex.collate(json_str, output='json', segmentation=True)
+            resultat_json = collatex.collate(json_str, output='json', segmentation=True, near_match=True)
         else:
-            resultat_json = collatex.collate(json_str, output='json', segmentation=False)
+            resultat_json = collatex.collate(json_str, output='json', segmentation=False, near_match=True, astar=False, detect_transpositions=False)
             # segmentation=False permet une collation au mot-à-mot:
             # http://interedition.github.io/collatex/pythonport.html
         nom_fichier_sortie = f'{self.chemin}/alignement_collatex{numero}.json'
@@ -252,7 +252,34 @@ class Collateur:
                             # Mise à jour la liste
                             liste_lecons.append(lecon_depart)
                     #
-                    type_apparat = self.typologie_variantes(liste_lemme, liste_pos)
+                    type_apparat = self.typologie_variantes(liste_lemmes=liste_lemme,
+                                                            liste_pos=liste_pos)
+
+                    # Si on a une omission, on refait un tour en supprimant les éléments vides
+                    if type_apparat == "omission":
+                        liste_lecons = [element for element in liste_lecons if element != ""]
+                        liste_lemme = [element for element in liste_lemme if element != ""]
+                        liste_pos = [element for element in liste_pos if element != ""]
+                        type_apparat = self.typologie_variantes(liste_lemmes=liste_lemme,
+                                                                liste_pos=liste_pos)
+                        if all(lecon == liste_lecons[0] for lecon in liste_lecons):
+                            type_apparat = '#omission'
+                        else:
+                            premier_type = 'omission'
+                            deuxieme_type = type_apparat
+                            if deuxieme_type == 'graphique':
+                                # Si il n'y a qu'un lemme dans la liste, on n'a pas une variation graphique mais simplement
+                                # une omission face à des leçons concordantes
+                                if len(liste_lemme) == 1:
+                                    type_apparat = f"#{premier_type}"
+                                    print("Cancelled type")
+                                else:
+                                    type_apparat = f"#{premier_type} #{deuxieme_type}"
+                            else:
+                                type_apparat = f"#{premier_type} #{deuxieme_type}"
+
+                    else:
+                        type_apparat = f"#{type_apparat}"
 
                     if self.log:
                         with open("logs/variant_log.txt", "a") as variants_log:
@@ -262,21 +289,23 @@ class Collateur:
                                                f"Pos: {' '.join(liste_pos)}\n\n")
 
                     if not apparat:
-                        app.set('type', 'not_apparat')
+                        app.set('ana', '#not_apparat')
                     else:
-                        app.set('type', type_apparat)
+                        app.set('ana', type_apparat)
                 # Une fois le dictionnaire de sortie produit, le transformer en XML.
                 temoins_complets = " ".join([f'#{fichier.split(".xml")[0].split("/")[-1]}'
                                              for fichier in glob.glob("temoins_tokenises_regularises/*.xml")])
                 for key, value in dict_sortie.items():
                     if not apparat:
+                        xml_id, temoin, lemmes, pos = value[0], value[1], value[2], value[3]
                         lecon = str(key)
-                        xml_id = value[0]
                         rdg = etree.SubElement(app, tei + 'rdg')
                         # on indique que tous les témoins proposent la leçon
                         rdg.set('id', utils.generateur_id())
                         rdg.set('wit', temoins_complets)
                         rdg.set('n', xml_id)
+                        rdg.set('lemma', lemmes)
+                        rdg.set('pos', pos)
                     else:
                         lecon = str(key)
                         xml_id, temoin, lemmes, pos = value[0], value[1], value[2], value[3]
@@ -330,10 +359,9 @@ class Collateur:
         #  changement de catégorie (= P <=> D, etc). Comme ça on affine le corpus sur tsv et pas sur
         #  xml.
 
-        # TODO: Créer une catégorie de variante discursive ? et/e - o/e ?
-
-        ### TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
-        ## TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
+        # TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
+        # TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
+        # TODO: en faire une fonction récursive pour refaire la typologie si on détecte une omission
 
         comparaison_lemme = all(elem == liste_lemmes[0] for elem in liste_lemmes[1:])
         comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos[1:])
@@ -341,7 +369,8 @@ class Collateur:
         ## Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
         # de corriger dans le XML ou car il n'y a pas d'intérêt à la variante.
         filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca'), ('él', 'el'),
-                         ('esta', 'está', 'ésta'), ('grande', 'gran')]
+                         ('esta', 'está', 'ésta'), ('grande', 'gran'), ('el', 'lo')]
+        filtre_nombres = re.compile("\d+")
         # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante graphique.
         # Ici il faut se rappeler qu'il y a une différence entre les formes
         type_de_variante = None
@@ -349,7 +378,7 @@ class Collateur:
             if all(pos.startswith('NP') for pos in liste_pos):
                 type_de_variante = 'entite_nommee'
             else:
-                # on cherche à vérifier que tous les lemmes (all) soºnt dans une des deux listes (any)
+                # on cherche à vérifier si pour une entrée tous les lemmes (all) sont compris dans un des couples (any)
                 if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
                     type_de_variante = 'filtre'
                 else:
@@ -358,8 +387,11 @@ class Collateur:
                     else:
                         type_de_variante = 'lexicale'
         elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
+            # On va identifier les variantes numérales, pas toujours intéressantes à montrer (ii° vs ii par exemple)
+            if all(re.match(filtre_nombres, lemme) for lemme in liste_lemmes):
+                type_de_variante = 'numérale'
             # On peut avoir un lemme identique et un pos qui change ('como' p.ex)
-            if any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
+            elif any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
                 type_de_variante = 'filtre'
             elif all(pos.startswith('NC') for pos in liste_pos):
                 # On rappelle la structure de l'étiquette du nom: NCMS000 pour un nom masculin singulier
@@ -390,7 +422,6 @@ class Collateur:
             print(f"Problème ici: variante indeterminée:"
                   f"\n{liste_lemmes}\n{liste_pos}")
             type_de_variante = "indetermine"
-
         return type_de_variante
 
     def raffinage_apparats(self, fichier):
@@ -406,7 +437,7 @@ class Collateur:
                                  resolve_entities=True)
         f = etree.parse(fichier, parser=parser)  # https://lxml.de/tutorial.html#namespaces
         root = f.getroot()
-        liste_apps = root.xpath(f"//tei:app[not(@type='graphique')]", namespaces=self.tei_ns)
+        liste_apps = root.xpath(f"//tei:app[not(@ana='#graphique')]", namespaces=self.tei_ns)
         for apparat in liste_apps:
             lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=self.tei_ns)
             # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat.
