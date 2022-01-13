@@ -26,8 +26,9 @@ class Tokenizer:
         tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
         f = etree.parse(temoin)
         root = f.getroot()
-        # on va marquer les balises autofermantes pour être sûr de les injecter correctement après.
-        liste_elements_vides = root.xpath("//tei:*[not(child::node())]", namespaces=tei)
+        # on va marquer les balises autofermantes pour être sûr de les injecter correctement après. On ignore les
+        # éléments qui ont déjà un identifiant.
+        liste_elements_vides = root.xpath("//tei:*[not(child::node())][not(@xml:id)]", namespaces=tei)
         for element in liste_elements_vides:
             element.set("{http://www.w3.org/XML/1998/namespace}id", utils.generateur_id())
 
