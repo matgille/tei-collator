@@ -36,11 +36,9 @@
     </xsl:comment>
     </xsl:template>
 
-    <xsl:template
-        match="tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
+    <xsl:template match="tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
         <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
-            <xsl:namespace name="tei"
-                >http://www.tei-c.org/ns/1.0</xsl:namespace>
+            <xsl:namespace name="tei">http://www.tei-c.org/ns/1.0</xsl:namespace>
             <xsl:attribute name="xml:id" select="@xml:id"/>
             <xsl:apply-templates/>
         </xsl:element>
@@ -53,6 +51,9 @@
             </xsl:if>
             <xsl:if test="@pos">
                 <xsl:attribute name="pos" select="@pos"/>
+            </xsl:if>
+            <xsl:if test="@synch">
+                <xsl:attribute name="synch" select="@synch"/>
             </xsl:if>
             <!--On ajoute cet attribut pour ne pas confondre ces tei:w avec ceux produits par le tokéniseur (cas de la correction de corpus);
             À supprimer après.-->
@@ -74,8 +75,7 @@
 
 
     <xsl:variable name="ResultatSecondePasse">
-        <xsl:apply-templates select="$ResultatPremierePasse" mode="secondePasse"
-        />
+        <xsl:apply-templates select="$ResultatPremierePasse" mode="secondePasse"/>
     </xsl:variable>
 
     <xsl:template match="@* | node()" mode="secondePasse">
@@ -99,31 +99,25 @@
     <xsl:template match="tei:hi[following-sibling::text()][@rend = 'initiale'][not(ancestor::tei:w)]"
         mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-            <xsl:copy-of
-                select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
+            <xsl:copy-of select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
             <xsl:copy-of select="."/>
-            <xsl:copy-of
-                select="following-sibling::tei:hi[@rend = 'lettre_capitulaire']"/>
-            <xsl:value-of
-                select="substring-before(following-sibling::text()[1], ' ')"/>
+            <xsl:copy-of select="following-sibling::tei:hi[@rend = 'lettre_capitulaire']"/>
+            <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
         </xsl:element>
     </xsl:template>
 
 
-    <xsl:template
-        match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']"
+    <xsl:template match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']"
         mode="secondePasse"/>
 
     <!--https://stackoverflow.com/questions/17468891/substring-after-last-character-in-xslt-->
-    <xsl:function name="cw:substring-after-last" as="xs:string"
-        xmlns:cw="chezwam">
+    <xsl:function name="cw:substring-after-last" as="xs:string" xmlns:cw="chezwam">
         <xsl:param name="value" as="xs:string?"/>
         <xsl:param name="separator" as="xs:string"/>
         <xsl:choose>
             <xsl:when test="contains($value, $separator)">
                 <xsl:value-of
-                    select="cw:substring-after-last(substring-after($value, $separator), $separator)"
-                />
+                    select="cw:substring-after-last(substring-after($value, $separator), $separator)"/>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:value-of select="$value"/>
@@ -159,14 +153,10 @@
         <!--Si on a un corr avec plusieurs mots, ça peut planter. Reprendre le code.-->
         <!--Mais est-ce que sémantiquement un corr avec plusieurs mots a du sens ?-->
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-            <xsl:value-of
-                select="substring-after(preceding-sibling::text()[-1], ' ')"/>
+            <xsl:value-of select="substring-after(preceding-sibling::text()[-1], ' ')"/>
             <xsl:copy-of select="."/>
-            <xsl:if
-                test="not(contains(',.;?!¡¿', substring-before(following-sibling::text()[1], ' ')))">
-                <xsl:value-of
-                    select="substring-before(following-sibling::text()[1], ' ')"
-                />
+            <xsl:if test="not(contains(',.;?!¡¿', substring-before(following-sibling::text()[1], ' ')))">
+                <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
             </xsl:if>
             <!--Attention à ne pas copier un élément de ponctuation par mégarde-->
         </xsl:element>
@@ -180,14 +170,12 @@
         <xsl:for-each select="tokenize(., '\s+')">
             <xsl:analyze-string select="." regex="([():,;¿?!¡.])">
                 <xsl:matching-substring>
-                    <xsl:element name="pc"
-                        namespace="http://www.tei-c.org/ns/1.0">
+                    <xsl:element name="pc" namespace="http://www.tei-c.org/ns/1.0">
                         <xsl:value-of select="regex-group(1)"/>
                     </xsl:element>
                 </xsl:matching-substring>
                 <xsl:non-matching-substring>
-                    <xsl:element name="w"
-                        namespace="http://www.tei-c.org/ns/1.0">
+                    <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
                         <xsl:value-of select="."/>
                     </xsl:element>
                 </xsl:non-matching-substring>
@@ -204,8 +192,7 @@
 
 
     <xsl:variable name="ResultatTroisiemePasse">
-        <xsl:apply-templates select="$ResultatSecondePasse"
-            mode="troisiemePasse"/>
+        <xsl:apply-templates select="$ResultatSecondePasse" mode="troisiemePasse"/>
     </xsl:variable>
 
 
@@ -215,8 +202,7 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template
-        match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
+    <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
 
 
@@ -280,11 +266,10 @@
 
     <xsl:template match="/">
         <xsl:for-each
-            select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])][not(@subtype='version_a')]">
+            select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])][not(@subtype = 'version_a')]">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
             <xsl:result-document href="temoins_tokenises/{$nom_fichier}.xml">
-                <xsl:apply-templates
-                    select="$ResultatTroisiemePasse//tei:TEI[@xml:id = $nom_fichier]"
+                <xsl:apply-templates select="$ResultatTroisiemePasse//tei:TEI[@xml:id = $nom_fichier]"
                     mode="quatriemePasse" xpath-default-namespace="tei"/>
             </xsl:result-document>
         </xsl:for-each>
