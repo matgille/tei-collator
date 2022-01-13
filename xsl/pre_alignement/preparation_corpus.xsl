@@ -21,10 +21,10 @@
         <!--On crée un fichier où les encodages sont juxtaposés, pour après le convertir en json
         selon ce que requiert CollateX-->
         <xsl:for-each
-            select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = $temoin_leader]//tei:div[@type = $type_division][@n = $numero_div]//*[name() = $element_base]">
+            select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = $temoin_leader]//tei:div[@type = $type_division][@n = $numero_div]//*[name() = $element_base or name() = 'head']">
             <xsl:variable name="ident_paragraphe" select="@n"/>
             <xsl:variable name="ident"
-                select="count(preceding::*[name() = $element_base][ancestor::tei:div[@type = $type_division][@n = $numero_div]]) + 1"/>
+                select="count((self::*|preceding::*)[name() = $element_base][ancestor::tei:div[@type = $type_division][@n = $numero_div]]) + 1"/>
             <xsl:result-document
                 href="divs/div{$numero_div}/juxtaposition_{$ident}.xml">
                 <xsl:element name="groupe">
@@ -35,7 +35,7 @@
                         <xsl:apply-templates/>
                     </xsl:element>
                     <xsl:for-each
-                        select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[not(@xml:id = $temoin_leader)]//tei:div[@type = $type_division][@n = $numero_div]//*[name() = $element_base][@n = $ident_paragraphe]">
+                        select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[not(@xml:id = $temoin_leader)]//tei:div[@type = $type_division][@n = $numero_div]//*[name() = $element_base or name()='head'][@n = $ident_paragraphe]">
                         <xsl:element name="temoin">
                             <xsl:attribute name="n">
                                 <xsl:value-of select="ancestor::tei:TEI/@xml:id"
