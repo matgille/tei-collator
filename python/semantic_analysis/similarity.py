@@ -23,7 +23,7 @@ def compute_similarity(fichier):
     with open(fichier, "r") as opened_file:
         fichier_parse = etree.parse(opened_file)
     print(fichier)
-    liste_d_apparats = fichier_parse.xpath("//tei:app[@type='lexicale'][count(descendant::tei:rdg) > 1]",
+    liste_d_apparats = fichier_parse.xpath("//tei:app[@ana='#lexicale'][count(descendant::tei:rdg) > 1]",
                                            namespaces=NSMAP)
 
     with open("embeddings_results/similarity_results.txt", "a") as similarity_file:
@@ -101,7 +101,7 @@ def similarity_eval_set_creator(chapitre):
     with open(f"divs/div{chapitre}/apparat_Mad_G_{chapitre}_final.xml", "r") as xml_file:
         f = etree.parse(xml_file)
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
-    apps_list = f.xpath("//tei:app[@type='lexicale']", namespaces=tei)
+    apps_list = f.xpath("//tei:app[@ana='#lexicale']", namespaces=tei)
     output_list = []
     for app in apps_list:
         rdg_list = app.xpath("descendant::tei:rdg", namespaces=tei)

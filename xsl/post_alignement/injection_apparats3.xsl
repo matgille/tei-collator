@@ -43,18 +43,7 @@
         </xsl:element>
     </xsl:template>
 
-    <!--<xsl:template match="tei:app[@type = 'not_apparat']">
-        <xsl:variable name="wits" select="tei:rdg/@wit"/>
-        <xsl:for-each select="descendant::tei:w">
-            <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
-                <!-\- Ne marchera pas avec l alignement global puiqu id identiques. Voir comment gerer ça.-\->
-                <xsl:attribute name="xml:id" select="parent::tei:rdg/@n"/>
-                <!-\- Ne marchera pas avec l alignement global. Voir comment gerer ça.-\->
-                <xsl:attribute name="wit" select="$wits"/>
-                <xsl:value-of select="."/>
-            </xsl:element>
-        </xsl:for-each>
-    </xsl:template>-->
+
 
     <!--Ici on rétablit les tei:w/@xml:id qu'on avait perdus précédemment, en reprenant le fichier apparat_X_X.xml.-->
     <xsl:template match="tei:w">
@@ -62,10 +51,12 @@
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <!--On supprime les @xml:id qui contiennent une ou plusieurs valeurs vides-->
             <xsl:if test="not(contains(@xml:id, 'none'))">
-                <xsl:if test="ancestor::tei:app[@type='not_apparat']">
+                <xsl:if test="ancestor::tei:app[@ana = '#not_apparat']">
                     <!--Ici on va ajouter les id des mots alignés.-->
                     <xsl:variable name="corresponding_id">
-                        <xsl:value-of select="translate(replace(document($retour_au_texte)//tei:w[contains(@xml:id, $xml_id)]/@xml:id, $xml_id, ''), '__', '')"></xsl:value-of>
+                        <xsl:value-of
+                            select="translate(replace(document($retour_au_texte)//tei:w[contains(@xml:id, $xml_id)]/@xml:id, $xml_id, ''), '__', '')"
+                        />
                     </xsl:variable>
                     <xsl:attribute name="corresp" select="$corresponding_id"/>
                 </xsl:if>

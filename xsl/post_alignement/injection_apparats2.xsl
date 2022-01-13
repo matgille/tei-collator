@@ -52,7 +52,7 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
                     <xsl:text>Found a redundant app: </xsl:text>
                     <xsl:value-of select="$xml_id"/>
                     <xsl:text>(</xsl:text>
-                    <xsl:value-of select="@type"/>
+                    <xsl:value-of select="@ana"/>
                     <xsl:text>) == </xsl:text>
                     <xsl:value-of select="$preceding_xml_id"/>
                 </xsl:message>
@@ -60,8 +60,8 @@ tokénisée (on va rétablir les éléments à l'intérieur des tei:w)-->
             </xsl:when>
             <xsl:otherwise>
                 <xsl:element name="app" namespace="http://www.tei-c.org/ns/1.0">
-                    <xsl:attribute name="type">
-                        <xsl:value-of select="@type"/>
+                    <xsl:attribute name="ana">
+                        <xsl:value-of select="@ana"/>
                     </xsl:attribute>
                     <xsl:apply-templates/>
                 </xsl:element>
