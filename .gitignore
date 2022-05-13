@@ -1,4 +1,6 @@
 .DS_Store
+results/
+corpus_lemmatise.xml
 etat_correction_temoins.md
 divs/
 .rng
