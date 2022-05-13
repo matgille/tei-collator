@@ -52,15 +52,31 @@ class Injector:
         self.regroupement_omissions()
 
     def regroupement_omissions(self):
+        """
+        Cette fonction lance l'identification des lacunes sur chaque témoin.
+        INPUTS: *transposed.xml
+        OUTPUTS: *transposed.lacuned.xml
+        """
         output_filename = "_injected.transposed.lacuned.xml"
         print(f"Regroupement des omissions: *injected.transposed.xml => *{output_filename}")
-        for fichier in glob.glob(f"divs/div{self.div_n}/*_injected.transposed.xml"):
+        files =  glob.glob(f"{self.chemin}/*.transposed.xml")
+        assert len(files) > 0
+
+        for fichier in files:
             self.lacuna_identification(chemin=fichier, output_file=fichier.replace('.xml', '.lacuned.xml'))
         print("Regroupement des omissions ✓")
 
     def injection_apparats(self):
+        """
+        Cette fonction prend chaque témoin tokénisé, et pour chaque tei:w, le remplace par le tei:app correspondant
+        dans le fichier collationné.
+        INPUTS: temoins_tokenises/*.xml + apparat_collatex.xml
+        OUTPUTS: *out.xml
+        """
         print("Injection des apparats dans les témoins d'origine")
         input_files = glob.glob("temoins_tokenises/*.xml")
+        assert len(input_files) > 0
+
         for file in input_files:
             sigle = file.split("/")[-1].split(".xml")[0]
             print(sigle)
@@ -79,8 +95,12 @@ class Injector:
                 dictionnary = {**dictionnary, **{identifiant: app for identifiant in identifiants_rdg}}
 
             # Première étape, récupérer tous les tei:w du fichier tokénisé en ne filtrant que la division qui nous intéresse.
-            current_division = fichier_tokenise.xpath(f"//tei:div[@n='{self.div_n}'][@type='{self.type_division}']",
+            try:
+                current_division = fichier_tokenise.xpath(f"//tei:div[@n='{self.div_n}'][@type='{self.type_division}']",
                                                       namespaces=self.ns_decl)[0]
+            # Quand la liste est vide, c'est que le témoin ne contient pas la division.
+            except IndexError:
+                continue
             words = current_division.xpath(f"descendant::tei:w",
                                            namespaces=self.ns_decl)
             IDs = current_division.xpath(f"descendant::tei:w/@xml:id", namespaces=self.ns_decl)
@@ -106,10 +126,10 @@ class Injector:
 
     def injection_noeuds_non_textuels(self):
         """
-        Le but de cette fonction est de réinjecter les apparats collationés et enrichis dans les fichiers tokénisés originels
-        puis d'aller enrichir chaque rdg des informations originelles.
-        INPUT: *omitted.xml
-        OUTPUT: *omitted_with_nodes.xml
+        Le but de cette fonction est d'aller enrichir chaque rdg des informations originelles contenues dans les tei:w
+        de chaque témoin.
+        INPUTS: *omitted.xml
+        OUTPUTS: *omitted.apparated.xml
         """
 
         print("Injection des noeuds non textuels")
@@ -117,7 +137,9 @@ class Injector:
         tei = '{%s}' % tei_namespace
         regular_expression = "apparat_[A-Z][a-z]{2,4}_[A-Z]_[0-9]{1,2}_omitted.xml"
         regular_expression_with_path = re.compile(f'{self.chemin}/{regular_expression}')
-        paths_fichiers_collationes_orig = glob.glob(f"{self.chemin}/apparat_*_omitted.xml")
+        paths_fichiers_collationes_orig = glob.glob(f"{self.chemin}/*_omitted.xml")
+        assert len(paths_fichiers_collationes_orig) > 0
+
         # On filtre avec l'expression régulière.
         paths_fichiers_collationes_orig = [element for element in paths_fichiers_collationes_orig
                                            if re.match(regular_expression_with_path, element)]
@@ -128,6 +150,15 @@ class Injector:
         for sigle in self.liste_sigles:
             tokenised_file = utils.parse_xml_file(f"temoins_tokenises/{sigle}.xml")
             annotated_file = utils.parse_xml_file(f"temoins_tokenises_regularises/{sigle}.xml")
+
+
+            try:
+                tokenised_file.xpath(f"//tei:div[@n='{self.div_n}'][@type='{self.type_division}']",
+                                                      namespaces=self.ns_decl)[0]
+            # Quand la liste est vide, c'est que le témoin ne contient pas la division.
+            except IndexError:
+                continue
+
             corresponding_ids = tokenised_file.xpath(
                 f"//tei:div[@type='{self.type_division}'][@n='{self.div_n}']/descendant::tei:w[node()[not("
                 "self::text())]]/@xml:id", namespaces=self.ns_decl)
@@ -155,6 +186,7 @@ class Injector:
             # On récupère tous les ids. On va aller regarder dans chaque id dans le document original si
             # il y a un noeud non textuel
             # On re-boucle sur les sigles
+            # TODO: gérer les témoins qui ne contiennent pas une division, au niveau de la liste d'entrée.
             for sigle_input in self.liste_sigles:
                 for id, (element, lemma, pos) in dict_of_files[sigle_input].items():
                     corresponding_rdg = \
@@ -187,7 +219,7 @@ class Injector:
                         corresponding_w.getparent().remove(corresponding_w)
                         corresponding_rdg.insert(0, element)
 
-            with open(f"{self.chemin}/apparat_{sigle_output}_{self.div_n}_omitted_with_nodes.xml", "w") as output_file:
+            with open(f"{self.chemin}/apparat_{sigle_output}_{self.div_n}_omitted.apparated.xml", "w") as output_file:
                 output_file.write(etree.tostring(fichier_collatione_orig, pretty_print=True).decode())
         print("Noeuds injectés !")
 
@@ -205,8 +237,11 @@ class Injector:
     def transposition_recognition(self):
         """
         Cette fonction détecte les transpositions de la forme inversion de mots
+        INPUTS: *injected.xml
+        OUTPUTS: *injected.transposed.xml
         """
-        files = glob.glob(f"divs/div{self.div_n}/apparat_*_injected.xml")
+        files = glob.glob(f"{self.chemin}/*injected.xml")
+        assert len(files) > 0
 
         for file in files:
             print(f"File {file}")
@@ -300,14 +335,15 @@ class Injector:
     def injection_omissions(self):
         '''
         Cette fonction récupère tous les apparats contenant des omissions.
-        Entrée: des fichiers "*final.xml"
-        Sortie: des fichiers "*omitted.xml"
+        INPUTS: des fichiers "*out.xml"
+        OUTPUTS: des fichiers "*omitted.xml"
         '''
 
         print("Injecting omitted text in each witness:")
         # Première étape: on récupère toutes les omissions
         liste_omissions = []
         liste_temoins = glob.glob(f"{self.chemin}/*out.xml")
+        assert len(liste_temoins) > 0
         for temoin in liste_temoins:
             with open(temoin, "r") as input_xml:
                 f = etree.parse(input_xml)
@@ -451,22 +487,19 @@ class Injector:
 
     def injection_intelligente(self):
         """
-        Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier. Elle produit les fichiers
-        "*_injected_punct.xml"
-        INPUT: *omitted.xml
-        OUTPUT: *injected.xml
-        :return: None
+        Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier.
+        INPUTS: *apparated.xml
+        OUTPUTS: *apparated.injected.xml
         """
 
         with open(f".debug/injection.txt", "w+") as debug_file:
             debug_file.truncate(0)
 
-        liste_temoins = glob.glob(f"{self.chemin}/*omitted.xml")
+        liste_temoins = utils.get_file_list(f"{self.chemin}/*omitted.apparated.xml")
 
         self.recuperation_elements()
-        print("Reinjecting elements in the other witnesses:")
+        print("Reinjecting non apparatus elements in the other witnesses:")
         for witness in liste_temoins:
-            print(witness)
             self.reinjection_elements(target_file=witness)
             # on regarde le nombre d'exemples qui n'ont pas été injectés par temoin
             self.verification_injections(temoin_a_verifier=witness)
@@ -641,7 +674,7 @@ class Injector:
             final_witness_list = []
             before_or_after = []
             level_list = []
-            for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/divs/div{self.div_n}/*omitted.xml"):
+            for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/{self.chemin}/*omitted.xml"):
                 sigla = file.split("/")[-1].split(f"_{self.div_n}")[0].replace("apparat_", "")
                 try:
                     current_tree = etree.parse(file)
@@ -775,7 +808,7 @@ class Injector:
                               "first)")
                         print(anchor_word.xpath("@xml:id")[0])
 
-        with open(target_file.replace("omitted", "injected"), "w") as output_file:
+        with open(target_file.replace("apparated", "apparated.injected"), "w") as output_file:
             output_file.write(etree.tostring(current_xml_tree).decode())
 
     def verification_injections(self, temoin_a_verifier):
@@ -788,7 +821,7 @@ class Injector:
         elements_a_verifier = [(element, temoin_origine, original_anchor) for
                                original_anchor, element, temoin_origine, position, level in self.processed_list if
                                temoin_origine not in temoin_a_verifier]
-        temoin_a_verifier = temoin_a_verifier.replace("omitted", "injected")
+        temoin_a_verifier = temoin_a_verifier.replace("apparated", "apparated.injected")
         with open(temoin_a_verifier, "r") as input_file:
             try:
                 arbre_a_verifier = etree.parse(input_file)

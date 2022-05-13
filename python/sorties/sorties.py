@@ -47,7 +47,7 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions):
     :param temoin_a_traiter: le témoin à traiter sans extension pour l'instant
     :return: None
     '''
-    for file in glob.glob(f"{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
+    for file in glob.glob(f"{chemin_fichiers}/*final.xml"):
         shutil.copy(file, f'divs/results')
     print(chemin_corpus)
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
@@ -95,10 +95,10 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions):
         # maître à l'aide de xi:include
         for i in range(1, 24):  # pas universel non plus, à corriger plus tard
             # fichier = f'divs/results/apparat_{id}_{i}_injected_punct.transposed.xml'
-            fichier = f'divs/results/apparat_{id}_{i}_injected_punct.transposed.lacuned.xml'
+            fichier = f'divs/results/apparat_{id}_{i}_final.xml'
             if os.path.exists(fichier):
                 partie = f.xpath("//div[@type='partie'][@n='3']", namespaces=tei)[0]
-                x_include = f"<xi:include href=\"../divs/results/{('/').join(fichier.split('/')[2:])}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
+                x_include = f"<xi:include href=\"../divs/results/{'/'.join(fichier.split('/')[2:])}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
                 partie.insert(i, etree.fromstring(x_include))
 
         with open(f'results/{id}.xml', "w") as xml_file:
