@@ -98,7 +98,8 @@ def similarity_eval_set_creator(chapitre):
     Cette fonction produit un document html simple pour estimer le degré de similarité au niveau des lieux variants
     """
 
-    with open(f"divs/div{chapitre}/apparat_Mad_G_{chapitre}_final.xml", "r") as xml_file:
+    # reprendre le chemin qui n'est pas le bon.
+    with open(f"divs/div{chapitre}/apparat_Mad_G_{chapitre}_out.xml", "r") as xml_file:
         f = etree.parse(xml_file)
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
     apps_list = f.xpath("//tei:app[@ana='#lexicale']", namespaces=tei)
