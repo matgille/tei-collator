@@ -15,6 +15,8 @@
 \usepackage[latin, english, french, spanish]{babel}
 \usepackage{lipsum}
 
+\usepackage{xcolor}
+
 %Diffrents types de guillemets selon la tradition du pays
 \usepackage{csquotes}
 %Diffrents types de guillemets selon la tradition du pays
@@ -36,6 +38,8 @@
 
 
 \usepackage{url}
+
+\usepackage{lettrine}
 
 %FAIRE DES BOITES
 \usepackage{mdframed}
@@ -99,7 +103,7 @@
 
 \newpagestyle{edition_vis_a_vis}{
 \setfoot{}{\thepage}{}
-\sethead[Chapitre \thechapter][Traduction][Version A]{Version B}{Traduction}{Chapitre \thechapter}
+\sethead[Chapitre \thechapter][Traduction][Version A bis]{Version B}{Traduction}{Chapitre \thechapter}
 \headrule}
 
 
@@ -107,6 +111,7 @@
 \sethead{Version B}{Glose}{Chapitre \thechapter}
 \setfoot[][][]{}{\thepage}{}
 \headrule}
+
 
 
 
@@ -196,8 +201,21 @@
 \usepackage[series={A,B,C,D},noend,noeledsec,noledgroup]{reledmac}
 \usepackage{reledpar}
 \renewcommand{\footfudgefiddle}{68}
+
+% Notes de commentaire sur la version A
 \arrangementX[A]{normal}
+
+% Notes de commentaire sur la version B
 \arrangementX[B]{normal}
+
+% Notes sur les sources et citations
+\arrangementX[C]{normal}
+\renewcommand*{\thefootnoteC}{\alph{footnoteC}}
+
+
+% Notes de commentaire sur la version B
+\arrangementX[D]{paragraph}
+
 \Xarrangement[B]{paragraph}
 \Xarrangement[C]{paragraph}
 \Xarrangement[D]{paragraph}
@@ -206,6 +224,8 @@
 
 \onlysideX[A]{L}
 \onlysideX[B]{R}
+\onlysideX[C]{R}
+\onlysideX[D]{R}
 \Xonlyside[B]{R}
 \Xonlyside[D]{R}
 \Xbeforelemmaseparator[D]{-.4em}
@@ -227,7 +247,7 @@
 
 \usepackage[
     tools=manuscripts,
-    bibstyle=authoryear,
+    bibstyle=authoryear
 ]{biblatex-multiple-dm}
 \usepackage[bibstyle=multiple-dm,citestyle=authoryear, isbn=false, doi=true,backend=biber,language=french,url=true,maxbibnames=99]{biblatex}
 

@@ -1,4 +1,6 @@
 import os
+import shutil
+
 from halo import Halo
 import glob
 import subprocess
@@ -35,24 +37,45 @@ def transformation_latex(saxon, fichier_xml, fusion, chemin='divs'):
         output_tex_file.write(tex_file)
     print(f'current dir: {os.getcwd()}')
     utils.clean_spaces(fichier_tex_seul)
-    subprocess.run(["latexmk", "-xelatex", f"-output-directory={chemin}", fichier_tex_seul])
+    subprocess.run(["latexmk", "-xelatex", "-f", f"-output-directory={chemin}", fichier_tex_seul])
 
 
-def fusion_documents_tei(temoin_a_traiter):
+def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions):
     '''
     Cette fonction produit un document xml-tei maître permettant de lier chaque division entre elles.
     Ici l'universalité du code est cassée, il faut voir comment faire pour gérer ça
     :param temoin_a_traiter: le témoin à traiter sans extension pour l'instant
     :return: None
     '''
+    for file in glob.glob(f"{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
+        shutil.copy(file, f'divs/results')
+    print(chemin_corpus)
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
     xi = {'xi': 'http://www.w3.org/2001/XInclude'}
+    mapping = {**tei, **xi}
     parser = etree.XMLParser(load_dtd=True,
                              resolve_entities=True)
-    with open(f'temoins_tokenises/{temoin_a_traiter}.xml', "r") as xml_file:
+    with open(f'{chemin_corpus}', "r") as xml_file:
         # On va copier la structure du document-base
-        f = etree.parse(xml_file, parser=parser)
+        root = etree.parse(xml_file, parser=parser)
+        # https://lxml.de/1.3/api.html#xinclude-and-elementinclude
+        root.xinclude()
+    trancriptions = root.xpath(xpath_transcriptions, namespaces=mapping)
 
+    if len(trancriptions) == 0:
+        raise ValueError("Something went wrong with the production of the main TEI file. Please check path to the corpus.")
+
+    for f in trancriptions:
+        id = f.xpath("@xml:id", namespaces=tei)[0]
+        # Je ne comprends pas pourquoi mais il faut reparser le fichier
+        # pour que ça se mette bien à jour.
+        with open(f'results/{id}.xml', "w") as xml_file:
+            xml_file.write(etree.tostring(f).decode())
+        with open(f'results/{id}.xml', "r") as xml_file:
+            f = etree.parse(xml_file)
+            f = f.getroot()
+            del f.attrib["{http://www.w3.org/XML/1998/namespace}base"]
+        id = f.xpath("@xml:id", namespaces=tei)[0]
         # On va supprimer tout ce qu'il y a dans tei:div[@type='partie'] pour mettre notre contenu
         element = f.xpath("//tei:div[@type='partie'][@n='3']", namespaces=tei)[0]
         element.getparent().remove(element)
@@ -66,19 +89,20 @@ def fusion_documents_tei(temoin_a_traiter):
         titre.getparent().remove(titre)
         titleStmt = f.xpath("//tei:titleStmt", namespaces=tei)[0]
         new_title = f"<title><foreign>Regimiento de los pr&#237;ncipes</foreign>, édition critique " \
-                    f"sur {temoin_a_traiter.replace('_', ' ')}</title>"
+                    f"sur {id.replace('_', ' ')}</title>"
         titleStmt.insert(0, etree.fromstring(new_title))
-
         # On va chercher toutes les divisions traitées pour faire un lien vers elles dans le document
         # maître à l'aide de xi:include
         for i in range(1, 24):  # pas universel non plus, à corriger plus tard
-            for fichier in glob.glob(f'divs/div*/apparat_{temoin_a_traiter}_{i}_final.xml'):
+            # fichier = f'divs/results/apparat_{id}_{i}_injected_punct.transposed.xml'
+            fichier = f'divs/results/apparat_{id}_{i}_injected_punct.transposed.lacuned.xml'
+            if os.path.exists(fichier):
                 partie = f.xpath("//div[@type='partie'][@n='3']", namespaces=tei)[0]
-                x_include = f"<xi:include href=\"{('/').join(fichier.split('/')[1:])}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
+                x_include = f"<xi:include href=\"../divs/results/{('/').join(fichier.split('/')[2:])}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
                 partie.insert(i, etree.fromstring(x_include))
 
-    with open(f'divs/{temoin_a_traiter}.xml', "w") as xml_file:
-        xml_file.write(etree.tostring(f).decode())
+        with open(f'results/{id}.xml', "w") as xml_file:
+            xml_file.write(etree.tostring(f).decode())
 
 
 def tableau_alignement(saxon, chemin):
