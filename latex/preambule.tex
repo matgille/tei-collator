@@ -1,16 +1,12 @@
 %%%%Prambule du fichier principal: les lignes suivantes, avant \begin{document} et le corps du texte:
-%\documentclass[francais,twoside,a4paper]{book}
+%\documentclass[spanish,twoside,a4paper]{book}
+
+
+
 %R\UTF{00E9}soud le probl\UTF{00E8}me de registre (No room for...)
-
-%%%%%%%%%%r\UTF{00E9}soud le probSleme de registre%%%%%%%
-%Utiliser un fichier externe pour la bibliographie%
-%\usepackage{subfiles}
-%Utiliser un fichier externe pour la bibliographie%
-%\input{chemin du prambule}
-
-
 \usepackage{etex}
-\usepackage{graphicx, type1cm, lettrine}
+%%%%%%%%%%r\UTF{00E9}soud le probSleme de registre%%%%%%%
+
 \reserveinserts{28}
 \usepackage[T1]{fontenc} 
 \usepackage{fontspec}
@@ -19,10 +15,20 @@
 \usepackage[latin, english, french, spanish]{babel}
 \usepackage{lipsum}
 
+\usepackage{xcolor}
+
 %Diffrents types de guillemets selon la tradition du pays
 \usepackage{csquotes}
 %Diffrents types de guillemets selon la tradition du pays
 
+%sets the footnote marker flush with,  but just inside the margin from, the text of the footnote; This option forces footnotes to the bottom of the page
+%\usepackage[bottom,flushmargin]{footmisc}
+%sets the footnote marker flush with,  but just inside the margin from, the text of the footnote; This option forces footnotes to the bottom of the page
+
+
+\newcommand{\codeword}[1]{%
+\textcolor{blue}{#1}%
+}
 
 
 %permet de supprimer l'entte/pied de page pour les pages vides aprs un \cleardoublepage
@@ -31,8 +37,9 @@
 
 
 
-\usepackage{lettrine}
 \usepackage{url}
+
+\usepackage{lettrine}
 
 %FAIRE DES BOITES
 \usepackage{mdframed}
@@ -45,6 +52,14 @@
 
 
 
+\usepackage{changepage}
+\newenvironment{note_quote}
+    {\begin{adjustwidth}{.03\columnwidth}{.03\columnwidth}}
+    {\end{adjustwidth}}
+    
+
+
+
 %Bonne hyphenation des urls
 \makeatletter
 \g@addto@macro{\UrlBreaks}{\UrlOrds}
@@ -52,16 +67,9 @@
 %Bonne hyphenation des urls
 
 
-%\usepackage[top=2.5cm, bottom=1.5cm, left=3cm,right=3cm, heightrounded, includefoot]{geometry}
+\usepackage[top=2cm, bottom=1.5cm, left=2cm,right=2cm, heightrounded, marginparwidth=2.5cm, marginparsep=0.8cm]{geometry}
 
-\usepackage[top=2.5cm, bottom=1.5cm, left=2.5cm,right=2.5cm, heightrounded, marginparwidth=2.5cm, marginparsep=0.8cm, includefoot]{geometry}
-%%%%%%%%%%%%%%RESOUD PROBLEME EDNOTES NEWGEOMETRY
-\makeatletter
-    \newcommand*{\newmanyfootgeometry}[1]{%
-        \newgeometry{#1}\MFL@columnwidth\columnwidth}
-    \makeatother
-\raggedbottom
-%%%%%%%%%%%%%%RESOUD PROBLEME EDNOTES NEWGEOMETRY
+
 %stemma
 \usepackage{tikz}
 \usetikzlibrary{shapes}
@@ -92,6 +100,19 @@
 %\sethead[ \ifthechapter{}{\large\quad\textsc{\firstextramarks{chapter}\chaptertitle}}][][]{}{}{\large\textit{\sectiontitle}\quad}
 %\headrule}
 %parties principales du mmoire
+
+\newpagestyle{edition_vis_a_vis}{
+\setfoot{}{\thepage}{}
+\sethead[Chapitre \thechapter][Traduction][Version A bis]{Version B}{Traduction}{Chapitre \thechapter}
+\headrule}
+
+
+\newpagestyle{edition_glose}{
+\sethead{Version B}{Glose}{Chapitre \thechapter}
+\setfoot[][][]{}{\thepage}{}
+\headrule}
+
+
 
 
 
@@ -137,7 +158,7 @@
 \titleformat{\section}
   {\normalfont\LARGE\bfseries}{\thesection}{1em}{}
 \titlespacing*{\section}{-20pt}{40pt}{10pt}
-\interfootnotelinepenalty=10000
+%\interfootnotelinepenalty=10000
 \titleformat{\subsection}
   {\normalfont\scshape\Large\bfseries}{\thesubsection}{1em}{}
   \titlespacing*{\subsection}{10pt}{30pt}{10pt}
@@ -177,6 +198,45 @@
 
 
 
+\usepackage[series={A,B,C,D},noend,noeledsec,noledgroup]{reledmac}
+\usepackage{reledpar}
+\renewcommand{\footfudgefiddle}{68}
+
+% Notes de commentaire sur la version A
+\arrangementX[A]{normal}
+
+% Notes de commentaire sur la version B
+\arrangementX[B]{normal}
+
+% Notes sur les sources et citations
+\arrangementX[C]{normal}
+\renewcommand*{\thefootnoteC}{\alph{footnoteC}}
+
+
+% Notes de commentaire sur la version B
+\arrangementX[D]{paragraph}
+
+\Xarrangement[B]{paragraph}
+\Xarrangement[C]{paragraph}
+\Xarrangement[D]{paragraph}
+\Xlemmaseparator[C]{~}
+\Xlemmaseparator[D]{~}
+
+\onlysideX[A]{L}
+\onlysideX[B]{R}
+\onlysideX[C]{R}
+\onlysideX[D]{R}
+\Xonlyside[B]{R}
+\Xonlyside[D]{R}
+\Xbeforelemmaseparator[D]{-.4em}
+% https://githubmemory.com/repo/maieul/ledmac/issues/870
+\setgoalfraction{.70}
+
+\AtBeginDocument{%
+\Xmaxhnotes{0.6\textheight}
+\maxhnotesX{0.6\textheight}
+}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%BIBLIO%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \usepackage{xpatch}
@@ -187,7 +247,7 @@
 
 \usepackage[
     tools=manuscripts,
-    bibstyle=authoryear,
+    bibstyle=authoryear
 ]{biblatex-multiple-dm}
 \usepackage[bibstyle=multiple-dm,citestyle=authoryear, isbn=false, doi=true,backend=biber,language=french,url=true,maxbibnames=99]{biblatex}
 
@@ -288,10 +348,11 @@
 %Attention au chemin absolu ici !
 \addbibresource{/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/biblio.bib}
 \addbibresource{/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/biblio_mss.bib}
+\addbibresource{/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/primary_sources.bib}
 \title{Bibliographie}
 %\date{}%Enlever la date quand on utilise \maketitle
 %\usepackage[urlcolor=green]{hyperref}%r\UTF{00E9}f\UTF{00E9}rences internes au document (toc, etc) \UTF{00E0} mettre en dernier
-
+\usepackage{hyperref}
 
 
 
@@ -302,87 +363,12 @@
 %notes marginales
 \usepackage{marginnote}
 %notes marginales
-\usepackage{multicol}
-\maxdeadcycles=300%Résoud un problème de boucle: https://stackoverflow.com/questions/53842194/pdflatex-hang-after-large-number-of-figures
-%%%%Notes de bas de page: appel non superscript, appel de note dans le text en exposant.
-\makeatletter
-\renewcommand\@makefntext[1]%
-    {\noindent\makebox[0pt][r]{{\@thefnmark}\,. }#1}
-\makeatother
-%%%%Notes de bas de page: appel non superscript, appel de note dans le text en exposant.
-
-%sets the footnote marker flush with,  but just inside the margin from, the text of the footnote; This option forces footnotes to the bottom of the page
-\usepackage[bottom,flushmargin]{footmisc}
-%sets the footnote marker flush with,  but just inside the margin from, the text of the footnote; This option forces footnotes to the bottom of the page
-
-%%%%Indentation Parfaite Des Notes De Bas De Page
-\makeatletter
-\long\def\@makefntextFB#1{%
-    \ifx\thefootnote\ftnISsymbol
-        \@makefntextORI{#1}%
-    \else
-        \rule\z@\footnotesep
-        \setbox\@tempboxa\hbox{\@thefnmark}%
-            \ifdim\wd\@tempboxa>\z@
-                \kern2em\llap{\@thefnmark.\kern0.5em}%
-            \fi
-        \hangindent2em\hangafter\@ne#1
-    \fi}
-\makeatother
-%%%%Indentation Parfaite Des Notes De Bas De Page
-
-%APPARAT
-
-\usepackage[left,modulo]{lineno}%num\UTF{00E9}rotation des lignes
-
-%sparation des numros de ligne
- \setlength\linenumbersep{0.3cm}
-%sparation des numros de ligne
-
-\usepackage{ednotes}%apparat
-%run-in paragraph footnotes indented as ordinary footnotes, use the package with the para option:
-\usepackage{manyfoot}
-%run-in paragraph footnotes indented as ordinary footnotes, use the package with the para option:
 
 
 
 
 
-%plusieurs niveaux de notes de bas de page
-%\usepackage[ruled]{bigfoot}
-\DeclareNewFootnote{B}[arabic]
-\usepackage{perpage}
-\MakePerPage{footnote}
-\renewcommand{\thefootnote}{\alph{footnote}}
-%\DeclareNewFootnote{A}[alph]
-%
-%plusieurs niveaux de notes de bas de page
-
-% Dcaler le crochet fermant aprs le tmoin de la leon retenue (suppose de jouer aussi avec la feuille XSL)
- \newcommand{\Anotefmt}{% 
-% % \renewcommand*{\sameline}[1]{\linesfmt{##1}}% 
-% % \renewcommand*{\differentlines}[2]{\linesfmt{##1\textendash##2}}% 
-% % \renewcommand*{\linesfmt}[1]{\textbf{##1}\enspace}% 
-% % \renewcommand*{\pageandline}[2]{##1.##2}% ##1 page, ##2 line. 
-% % \renewcommand*{\repeatref}[1]{##1}% E.g., ... 
-% % % \renewcommand*{\repeatref}[1]{\textnormal{/}}% ... instead. 
-% rgle d'origine
-% % \renewcommand{\lemmafmt}[1]{##1\thinspace]\enskip}% 
-% rgle d'origine
-% nouvelle rgle
-\renewcommand{\lemmafmt}[1]{##1~}% 
-% % \renewcommand{\lemmaellipsis}{\textsymmdots}% 
-% % \renewcommand{\notefmt}[1]{##1}% 
- } 
- % Dcaler le crochet fermant aprs le tmoin de la leon retenue (suppose de jouer aussi avec la feuille XSL)
-
-
-%APPARAT
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%NOTES DE BAS DE PAGE%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\newcommand{\hsp}{\hspace{20pt}}
-\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 

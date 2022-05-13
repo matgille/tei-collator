@@ -9,9 +9,10 @@ import python.utils.utils as utils
 
 
 class Tokenizer:
-    def __init__(self, saxon: int, temoin_leader:str):
+    def __init__(self, saxon: int, temoin_leader:str, nodes_to_reinject:dict):
         self.saxon = saxon
         self.temoin_leader = temoin_leader
+        self.nodes_to_reinject = nodes_to_reinject
 
     def ajout_xml_id(self, temoin:str):
         """Création des xml:id pour chaque token.
@@ -26,8 +27,9 @@ class Tokenizer:
         tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
         f = etree.parse(temoin)
         root = f.getroot()
-        # on va marquer les balises autofermantes pour être sûr de les injecter correctement après.
-        liste_elements_vides = root.xpath("//tei:*[not(child::node())]", namespaces=tei)
+        # on va marquer les balises autofermantes pour être sûr de les injecter correctement après. On ignore les
+        # éléments qui ont déjà un identifiant.
+        liste_elements_vides = root.xpath("//tei:*[not(child::node())][not(@xml:id)]", namespaces=tei)
         for element in liste_elements_vides:
             element.set("{http://www.w3.org/XML/1998/namespace}id", utils.generateur_id())
 
@@ -35,6 +37,14 @@ class Tokenizer:
         token_list = root.xpath("//node()[self::tei:w or self::tei:pc]", namespaces=tei)
         for token in token_list:
             token.set("{http://www.w3.org/XML/1998/namespace}id", utils.generateur_id())
+
+        # On va ajouter des xml:id aux éléments à réinjecter s'ils n'en n'ont pas:
+        for node_to_reinject in self.nodes_to_reinject.keys():
+            for node in root.xpath(f"descendant::{node_to_reinject}", namespaces=tei):
+                if not node.xpath("boolean(@xml:id)"):
+                    node.set("{http://www.w3.org/XML/1998/namespace}id", utils.generateur_id())
+
+
         with open(temoin, "w+") as sortie_xml:
             tree_as_string = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
             sortie_xml.write(str(tree_as_string))

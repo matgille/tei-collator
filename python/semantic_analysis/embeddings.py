@@ -1,21 +1,19 @@
 import json
+import math
+import lxml.etree as etree
 import torch
 import random
 
-import tqdm
-from sklearn.decomposition import PCA
-import itertools
-
-from scipy.integrate import quad
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+from sklearn.decomposition import PCA
 import numpy as np
-import plotly.graph_objs as go
 
 
 class Embeddings:
-    def __init__(self, model, device='cpu'):
+    def __init__(self, model, vocab, device='cpu'):
         # On a besoin du vocabulaire qui est la base de l'entraînement du plongement de mots
-        with open("python/post_traitement/vocab.json", "r") as vocab_json:
+        with open(vocab, "r") as vocab_json:
             self.vocab = json.load(vocab_json)
         self.model_dict = torch.load(model)
         self.device = device
@@ -30,7 +28,6 @@ class Embeddings:
         self.similarities = list()
         self.mean_similarity = None
         self.median_similarity = None
-
 
     def random_mean_similarity(self):
         """
@@ -156,9 +153,6 @@ class Embeddings:
 
         )
         data.append(trace)
-
-
-
 
         # Configure the layout
 

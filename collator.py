@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+import shutil
 import time
 import json
 from halo import Halo
@@ -16,7 +17,8 @@ import python.collation.collation as collation
 import python.tokenisation.tokenisation as tokenisation
 import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
-import python.post_traitement.post_traitement as post_traitement
+import python.injections.injections as injections
+import python.semantic_analysis.similarity as similarity
 import python.settings
 import python.tests.tests as tests
 import python.utils.utils as utils
@@ -47,25 +49,36 @@ def main():
     parser.add_argument("-ao", "--align_only", default=False, help="Exit after alignment.")
     parser.add_argument("-cp", "--createpdf", default=False, help="Produce pdf and exit.")
     parser.add_argument("-io", "--injectiononly", default=False, help="Debug option: performs injection and exits")
+    parser.add_argument("-To", "--testonly", default=False, help="Performs tests and exit.")
+    parser.add_argument("-so", "--similarityonly", default=False, help="Performs similarity computation and exit.")
+    parser.add_argument("-w", "--witness", default="*", help="Witness to process")
+    parser.add_argument("-fo", "--fusiononly", default=False, help="Create final xml document with xi:includes")
 
+    ##### Settings
     args = parser.parse_args()
+    similarity_only = args.similarityonly
     correction = args.correction
     log = correction
     inject_only = args.injectiononly
     lemmatize_only = args.lemmatizeonly
     tokenize_only = args.tokenizeonly
+    test_only = args.testonly
     pdf_only = args.createpdf
     align_only = args.align_only
     fichier_de_parametres = args.parameters
     division = args.division
+    witness = args.witness
+    fusion_only = args.fusiononly
+    #####
+
     if division is None:
         division = "*"
 
     # On importe les paramètres en créant un objet parametres
     parametres = python.settings.Parametres(fichier_de_parametres)
-    print(f'\n\n\n ---- Paramètres globaux: \n {parametres.__str__()}\n ')
-    print("Attention, certains paramètres peuvent être modifiés par des options "
-          "de la ligne de commande.")
+    # print(f'\n\n\n ---- Paramètres globaux: \n {parametres.__str__()}\n ')
+    # print("Attention, certains paramètres peuvent être modifiés par des options "
+          # "de la ligne de commande.")
     print(f'Lemmatisation seule: {lemmatize_only} \n')
     print(f'Mode correction: {correction} \n ---- \n')
     print(f'Injection seule: {inject_only} \n ---- \n')
@@ -75,21 +88,58 @@ def main():
               "On switche à un alignement mot à mot.\n\n ---- \n\n")
         parametres.alignement = "mam"
 
+    synonyms_datasets = parametres.create_synonym_dataset
+    compute_similarity = parametres.compute_similarity
+    chemin_corpus = parametres.corpus_path
+    xpath_transcriptions = parametres.files_path
+    liste_sigles = utils.sigles()
+    excluded_ancestors = parametres.exclude_descendant_of
+
+    liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
+    if fusion_only:
+        print("Création des fichiers xml maîtres")
+        sorties.fusion_documents_tei(chemin_corpus, xpath_transcriptions)
+        exit(0)
+
+
+    if test_only:
+        print(f'Tests en cours...')
+        tests.test_word_alignment(division)
+        for sigle in liste_sigles:
+            tests.tokentest(sigle, division)
+            tests.witness_test(sigle, division)
+        exit(0)
+
+    if similarity_only:
+        for fichier in glob.glob(f"divs/div{division}/*_injected_punct.xml"):
+            similarity.compute_similarity(fichier)
+        exit(0)
 
     if inject_only:
         chemin = f"divs/div{division}"
-        liste_fichiers_finaux = utils.chemin_fichiers_finaux(division)
-        post_traitement.injection_omissions(liste_fichiers_finaux, parametres.element_base)
-        tuples_elements_position = parametres.reinjection.items()
-        post_traitement.injection_intelligente(chapitre=division,
-                                               elements_and_position=tuples_elements_position,
-                                               liste_temoins=liste_fichiers_finaux)
+        Injector = injections.Injector(debug=True,
+                                       div_n=division,
+                                       elements_to_inject=parametres.reinjection,
+                                       saxon=saxon,
+                                       chemin=chemin,
+                                       coeurs=parametres.parallel_process_number,
+                                       element_base=parametres.element_base,
+                                       type_division=parametres.type_division,
+                                       lacuna_sensibility=parametres.lacuna_sensibility,
+                                       liste_sigles=liste_sigles,
+                                       excluded_elements=excluded_ancestors)
+        Injector.run_injections()
+        print(chemin_corpus)
+        print(xpath_transcriptions)
+        chemin_fichiers = f"divs/div{str(division)}"
+        sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
         exit(0)
 
     if pdf_only:
         chemin = f"divs/div{division}"
         print("On produit les fichiers pdf.")
-        for fichier in glob.glob(f'{chemin}/apparat_*_*final.xml'):
+        # for fichier in glob.glob(f'{chemin}/apparat_*J*_*injected_punct.transposed.lacuned.xml'):
+        for fichier in glob.glob(f'{chemin}/apparat_*J*_*injected_punct.transposed.lacuned.xml'):
             print(fichier)
             sorties.transformation_latex(saxon, fichier, False, chemin)
         sorties.nettoyage("divs")
@@ -106,7 +156,9 @@ def main():
             pass
 
     if tokenize_only:
-        tokeniser = tokenisation.Tokenizer(saxon, temoin_leader=parametres.temoin_leader)
+        tokeniser = tokenisation.Tokenizer(saxon,
+                                           temoin_leader=parametres.temoin_leader,
+                                           nodes_to_reinject=parametres.reinjection)
         tokeniser.tokenisation(parametres.corpus_path, correction)
         exit(0)
 
@@ -118,7 +170,9 @@ def main():
         else:
             exit(0)
         print(parametres.corpus_path)
-        tokeniser = tokenisation.Tokenizer(saxon, temoin_leader=parametres.temoin_leader)
+        tokeniser = tokenisation.Tokenizer(saxon=saxon,
+                                           temoin_leader=parametres.temoin_leader,
+                                           nodes_to_reinject=parametres.reinjection)
         tokeniser.tokenisation(parametres.corpus_path, correction)
 
     if parametres.xmlId and not parametres.tokeniser:  # si le corpus est tokénisé mais sans xml:id
@@ -156,11 +210,23 @@ def main():
                                                     liste_temoins=utils.chemin_temoins_tokenises_regularises())
 
     for i in portee:
+
+        # We first remove all files in the corresponding dir to avoid any possible interference and bug
+        utils.remove_files(f"divs/div{str(i)}/*")
+
         chemin_fichiers = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
-        corpus_preparator.run(i)
+
+
+        if not tests.test_lemmatization(div_n=i,
+                                        div_type=parametres.type_division,
+                                        temoin_leader=parametres.temoin_leader):
+            print("This division is not lemmatized; exiting.")
+            exit(0)
+        corpus_preparator.prepare(i)
         pattern = re.compile(f"divs/div{i}/juxtaposition_\d+\.xml")
-        fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if re.match(pattern, fichier)]
+        fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if
+                        re.match(pattern, fichier)]
         print("Alignement avec CollateX.")
 
         aligner = collation.Aligner(liste_fichiers_xml=fichiers_xml,
@@ -175,10 +241,10 @@ def main():
         # On va fusionner les fichiers individuels collationnés en un seul fichier.
         with open(chemin_fichier_json, "w") as out_json_file:
             dictionnaire_sortie = {'table': [], 'witnesses': []}
-            nombre_de_par = len(glob.glob(f"{chemin_fichiers}/alignement_collatex*.json"))  # on veut ordonner la
+            par_nb = len(glob.glob(f"{chemin_fichiers}/alignement_collatex*.json"))  # on veut ordonner la
             # fusion des
             # documents pour le tableau d'alignement ensuite
-            for par in range(nombre_de_par):
+            for par in range(par_nb):
                 fichier = f"{chemin_fichiers}/alignement_collatex{par + 1}.json"
                 with open(fichier, 'r') as file:
                     dictionnaire_entree = json.loads(file.read())
@@ -222,57 +288,80 @@ def main():
             # regroupement des lemmes
 
         collationeur = collation.Collateur(log=False,
-                                           chemin_fichiers=chemin_fichiers)
-        collationeur.collate(f'apparat_final.json')
+                                           chemin_fichiers=chemin_fichiers,
+                                           div_n=division)
+        collationeur.run_collation()
         print("Création des apparats ✓")
 
         # Création du tableau d'alignement pour visualisation
         if parametres.tableauxAlignement:
             sorties.tableau_alignement(saxon, chemin_fichiers)
+
+        # On bouge tous les fichiers d'alignement dans un dossier à part
+        fichiers_alignement = glob.glob(f"{chemin_fichiers}/align*")
+        fichiers_alignement.extend(glob.glob(f"{chemin_fichiers}/juxtaposition*"))
+        fichiers_alignement.append(f"{chemin_fichiers}/apparat_final.json")
+        fichiers_alignement.append(f"{chemin_fichiers}/apparat_collatex.xml")
+
+        utils.move_files(fichiers_alignement, f"{chemin_fichiers}/alignement")
+
+
         if align_only:
             t1 = time.time()
             temps_total = t1 - t0
             print(f"Fait en {round(temps_total)} secondes. \n")
             exit(0)
 
-        # Réinjection des apparats.
-        post_traitement.injection(saxon, chemin_fichiers, i, parametres.parallel_process_number)
+        injecteur = injections.Injector(debug=True,
+                                        div_n=i,
+                                        elements_to_inject=parametres.reinjection,
+                                        saxon=saxon,
+                                        chemin=chemin_fichiers,
+                                        coeurs=parametres.parallel_process_number,
+                                        element_base=parametres.element_base,
+                                        type_division=parametres.type_division,
+                                        lacuna_sensibility=parametres.lacuna_sensibility,
+                                        liste_sigles=liste_sigles,
+                                        excluded_elements=excluded_ancestors)
+        injecteur.run_injections()
+        # Ici on indique d'autres éléments tei à réinjecter.
+
+
+        # On copie les fichiers finaux produits pour ne pas avoir à refaire à chaque fois le processus
+        for file in glob.glob(f"{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
+            shutil.copy(file, f'divs/results')
+
+        if similarity_only:
+            for fichier in glob.glob(f"{chemin_fichiers}/*_injected_punct.xml"):
+                similarity.compute_similarity(fichier)
+            exit(0)
+
+        if synonyms_datasets:
+            similarity.similarity_eval_set_creator(i)
 
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
-        liste_sigles = utils.sigles()
-        liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
-        sorties.similarity_eval_set_creator(i)
-        # Ici on indique d'autres éléments tei à réinjecter.
-        if parametres.reinjection:
-            post_traitement.injection_omissions(liste_fichiers_finaux, parametres.element_base)
-            tuples_elements_position = parametres.reinjection.items()
-            post_traitement.injection_intelligente(chapitre=division,
-                                                   elements_and_position=tuples_elements_position,
-                                                   liste_temoins=liste_fichiers_finaux)
 
-        # Raffinage des apparats: on rassemble les lieux variants
-        for fichier in liste_fichiers_finaux:
-            post_traitement.raffinage_apparats(fichier, i)
-            # post_traitement.calcul_similarite(fichier)
+        for file in glob.glob(f"div{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
+            shutil.copy(file, f'divs/results')
+
+        for file in glob.glob(f"div{chemin_fichiers}/*.pdf"):
+            shutil.copy(file, f'divs/results')
+
+        if parametres.fusion_documents:
+            sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
 
         # Tests de conformité
         print(f'Tests en cours...')
         for sigle in liste_sigles:
-            tests.tokentest(sigle, i)
-            tests.witness_test(sigle, i)
-
-    if parametres.fusion_documents:
-        for temoin in liste_fichiers_tokenises:
-            sigle = temoin.split('/')[1].split(".xml")[0]
-            sorties.fusion_documents_tei(sigle)
-        if parametres.latex:
-            for fichier in glob.glob('divs/*.xml'):
-                sorties.transformation_latex(saxon, fichier, True)
+            pass
+            #tests.tokentest(sigle, i)
+            #tests.witness_test(sigle, i)
+            #tests.test_word_alignment(i)
 
     if parametres.latex and not parametres.fusion_documents:
         for fichier in liste_fichiers_finaux:
             print(fichier)
-            sorties.transformation_latex(saxon, fichier, False, chemin_fichiers)
+            sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct.transposed.lacuned"), False, chemin_fichiers)
 
     sorties.nettoyage("divs")
     t1 = time.time()
