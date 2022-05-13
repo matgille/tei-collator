@@ -1,14 +1,19 @@
 import fnmatch
 import glob
+import itertools
+from operator import itemgetter
 import os
 import re
 import shutil
 import string
 import subprocess
 import random
+from lxml import etree
 
 from halo import Halo
 from joblib._multiprocessing_helpers import mp
+
+tei_ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
 
 
 def nettoyage_liste_positions(liste_de_tuples):
@@ -88,7 +93,37 @@ def txt_to_liste(filename):
 
 def remove_files(files):
     for file in glob.glob(files):
-        os.remove(file)
+        try:
+            os.remove(file)
+        except:
+            shutil.rmtree(file)
+
+
+def move_files(files: list, output_dir: str) -> None:
+    try:
+        os.mkdir(output_dir)
+    except:
+        pass
+    for file in files:
+        if os.path.isfile(file):
+            shutil.move(file, output_dir)
+
+
+def clean_xml_file(input_file, output_file):
+    """
+    This function removes unwanted attributes from the xml file to produce a "final" version
+    """
+    with open(input_file, "r") as input_file:
+        tree = parse_xml_file(input_file)
+
+    # First, the tei:rdg
+    readings = tree.xpath("//tei:rdg", namespaces=tei_ns)
+
+
+def save_xml_file(xml_object, path):
+    with open(path, "w") as output_file:
+        output_file.write(etree.tostring(xml_object, pretty_print=True).decode())
+
 
 def clean_spaces(file):
     with open(file, "r") as input_file:
@@ -103,14 +138,17 @@ def clean_spaces(file):
     with open(file, "w") as output_file:
         output_file.write(file_to_clean)
 
+
 def generateur_lettre_initiale(chars=string.ascii_lowercase):
     # Génère une lettre aléatoire
     return random.choice(chars)[0]
 
-def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
+
+def generateur_id(size=6, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits) -> str:
     random_letter = generateur_lettre_initiale()
     random_string = ''.join(random.choice(chars) for _ in range(size))
     return random_letter + random_string
+
 
 def sigles():
     """
@@ -124,6 +162,7 @@ def chemin_fichiers_finaux(div: str):
     Cette fonction retourne la liste des fichiers XML finaux d'une division donnée
     """
     return [fichier for fichier in glob.glob(f'divs/div{div}/apparat_*_{div}_final.xml')]
+
 
 def chemin_temoins_tokenises():
     """
@@ -141,11 +180,64 @@ def chemin_temoins_tokenises_regularises():
 
 def fileExists(file):
     if os.path.exists(file):
-        print('%s: check' % file)
+        return True
     else:
-        print('%s: n\'est pas trouvé' % file)
+        return False
 
 
 def pool_function(function, args, coeurs):
     pool = mp.Pool(processes=coeurs)
     pool.map(function, args)
+
+
+def error_checklist():
+    print("Une erreur est survenue. Merci de regarder en amont:\n"
+          "- que toutes les divisions à comparer sont correctement identifiées;\n"
+          "- ")
+
+
+def merge_list_of_lists(list_to_merge):
+    return list(itertools.chain.from_iterable(list_to_merge))
+
+
+def accent_removal(string_to_process):
+    # https://www.tutorialsteacher.com/python/string-maketrans
+    accents = 'áéíóúý'
+    no_accents = 'aeiouy'
+
+    # Je ne comprends pas pourquoi maketrans est une méthode de classe str.
+    mapping_table = accents.maketrans(accents, no_accents)
+
+    # Mais ça marche donc ne posons pas trop de questions.
+    translated_string = string_to_process.translate(mapping_table)
+
+    return translated_string
+
+
+def group_adjacent_positions(positions: list) -> list:
+    """
+    Regroupe en une liste de tuples les entiers adjacents à partir d'une liste
+     d'entiers
+    """
+    ranges = []
+    # https://stackoverflow.com/a/2154437 on veut regrouper les positions contigües.
+    for k, g in itertools.groupby(enumerate(positions), lambda x: x[0] - x[1]):
+        group = (map(itemgetter(1), g))
+        group = list(map(int, group))
+        ranges.append((group[0], group[-1]))
+
+    return ranges
+
+
+def parse_xml_file(file):
+    with open(file, "r") as input_xml:
+        return etree.parse(input_xml)
+
+
+def remove_elements(xml_tree, xpath_expression, namespace):
+    """
+    This function deletes all elements that match a given xpath expression
+    """
+    xpath_selection = xml_tree.xpath(xpath_expression, namespaces=namespace)
+    for element in xpath_selection:
+        element.getparent().remove(element)

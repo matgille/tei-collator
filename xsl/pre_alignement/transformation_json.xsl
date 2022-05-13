@@ -5,7 +5,8 @@
 <!--Troisième partie: transformer en json les sources xml pour pouvoir utiliser au mieux collatex -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:math="http://www.w3.org/2005/xpath-functions/math"
-    exclude-result-prefixes="xs math" xmlns:tei="http://www.tei-c.org/ns/1.0" version="3.0">
+    exclude-result-prefixes="xs math" xmlns:tei="http://www.tei-c.org/ns/1.0" version="3.0"
+    xmlns:mgl="https://matthiasgillelevenson.fr">
     <xsl:output method="text"/>
     <xsl:param name="correction"/>
 
@@ -20,7 +21,7 @@
             }</xsl:text>
     </xsl:template>
 
-    <xsl:template match="temoin[child::tei:*]">
+    <xsl:template match="mgl:temoin[child::tei:*]">
         <!--Any empty div won't be processed: there -->
         <xsl:text>{
     "id":"</xsl:text>
@@ -98,19 +99,19 @@
             <xsl:text>"xml:id" : "</xsl:text>
             <xsl:value-of select="@xml:id"/>
             <xsl:text>"}</xsl:text>
-            <xsl:variable name="nom_temoin" select="ancestor::temoin/@n"/>
-            <!--<xsl:if test="following::tei:w[text()][ancestor::temoin/@n = $nom_temoin]|following::tei:pc[ancestor::temoin/@n = $nom_temoin]">-->
-            <xsl:if test="following::tei:w[text()][ancestor::temoin/@n = $nom_temoin]">
+            <xsl:variable name="nom_temoin" select="ancestor::mgl:temoin/@n"/>
+            <!--<xsl:if test="following::tei:w[text()][ancestor::mgl:temoin/@n = $nom_mgl:temoin]|following::tei:pc[ancestor::mgl:temoin/@n = $nom_mgl:temoin]">-->
+            <xsl:if test="following::tei:w[text()][ancestor::mgl:temoin/@n = $nom_temoin]">
                 <xsl:text>,</xsl:text>
             </xsl:if>
         </xsl:for-each>
         <xsl:text>]}</xsl:text>
-        <xsl:if test="following::temoin">
+        <xsl:if test="following::mgl:temoin">
             <xsl:text>,</xsl:text>
         </xsl:if>
     </xsl:template>
 
-    <xsl:template match="temoin[not(child::tei:*)]">
+    <xsl:template match="mgl:temoin[not(child::tei:*)]">
         <!--Any empty div won't be processed: there -->
         <xsl:text>{
     "id":"</xsl:text>
@@ -126,7 +127,7 @@
         <xsl:text>"xml:id" : "none</xsl:text>
         <xsl:text>"}</xsl:text>
         <xsl:text>]}</xsl:text>
-        <xsl:if test="following::temoin">
+        <xsl:if test="following::mgl:temoin">
             <xsl:text>,</xsl:text>
         </xsl:if>
     </xsl:template>

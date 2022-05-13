@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+import shutil
 import time
 import json
 from halo import Halo
@@ -9,7 +10,6 @@ import glob
 import logging
 import argparse
 import dicttoxml
-import multiprocessing as mp
 
 dicttoxml.LOG.setLevel(logging.ERROR)
 
@@ -51,7 +51,8 @@ def main():
     parser.add_argument("-io", "--injectiononly", default=False, help="Debug option: performs injection and exits")
     parser.add_argument("-To", "--testonly", default=False, help="Performs tests and exit.")
     parser.add_argument("-so", "--similarityonly", default=False, help="Performs similarity computation and exit.")
-
+    parser.add_argument("-w", "--witness", default="*", help="Witness to process")
+    parser.add_argument("-fo", "--fusiononly", default=False, help="Create final xml document with xi:includes")
 
     ##### Settings
     args = parser.parse_args()
@@ -66,6 +67,8 @@ def main():
     align_only = args.align_only
     fichier_de_parametres = args.parameters
     division = args.division
+    witness = args.witness
+    fusion_only = args.fusiononly
     #####
 
     if division is None:
@@ -73,9 +76,9 @@ def main():
 
     # On importe les paramètres en créant un objet parametres
     parametres = python.settings.Parametres(fichier_de_parametres)
-    print(f'\n\n\n ---- Paramètres globaux: \n {parametres.__str__()}\n ')
-    print("Attention, certains paramètres peuvent être modifiés par des options "
-          "de la ligne de commande.")
+    # print(f'\n\n\n ---- Paramètres globaux: \n {parametres.__str__()}\n ')
+    # print("Attention, certains paramètres peuvent être modifiés par des options "
+          # "de la ligne de commande.")
     print(f'Lemmatisation seule: {lemmatize_only} \n')
     print(f'Mode correction: {correction} \n ---- \n')
     print(f'Injection seule: {inject_only} \n ---- \n')
@@ -87,8 +90,18 @@ def main():
 
     synonyms_datasets = parametres.create_synonym_dataset
     compute_similarity = parametres.compute_similarity
-
+    chemin_corpus = parametres.corpus_path
+    xpath_transcriptions = parametres.files_path
     liste_sigles = utils.sigles()
+    excluded_ancestors = parametres.exclude_descendant_of
+
+    liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
+    if fusion_only:
+        print("Création des fichiers xml maîtres")
+        sorties.fusion_documents_tei(chemin_corpus, xpath_transcriptions)
+        exit(0)
+
+
     if test_only:
         print(f'Tests en cours...')
         tests.test_word_alignment(division)
@@ -106,20 +119,27 @@ def main():
         chemin = f"divs/div{division}"
         Injector = injections.Injector(debug=True,
                                        div_n=division,
-                                       elements_to_inject=parametres.reinjection.items(),
+                                       elements_to_inject=parametres.reinjection,
                                        saxon=saxon,
                                        chemin=chemin,
                                        coeurs=parametres.parallel_process_number,
                                        element_base=parametres.element_base,
                                        type_division=parametres.type_division,
-                                       lacuna_sensibility=parametres.lacuna_sensibility)
+                                       lacuna_sensibility=parametres.lacuna_sensibility,
+                                       liste_sigles=liste_sigles,
+                                       excluded_elements=excluded_ancestors)
         Injector.run_injections()
+        print(chemin_corpus)
+        print(xpath_transcriptions)
+        chemin_fichiers = f"divs/div{str(division)}"
+        sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
         exit(0)
 
     if pdf_only:
         chemin = f"divs/div{division}"
         print("On produit les fichiers pdf.")
-        for fichier in glob.glob(f'{chemin}/apparat_**_*injected_punct.lacuned.xml'):
+        # for fichier in glob.glob(f'{chemin}/apparat_*J*_*injected_punct.transposed.lacuned.xml'):
+        for fichier in glob.glob(f'{chemin}/apparat_*J*_*injected_punct.transposed.lacuned.xml'):
             print(fichier)
             sorties.transformation_latex(saxon, fichier, False, chemin)
         sorties.nettoyage("divs")
@@ -136,7 +156,9 @@ def main():
             pass
 
     if tokenize_only:
-        tokeniser = tokenisation.Tokenizer(saxon, temoin_leader=parametres.temoin_leader)
+        tokeniser = tokenisation.Tokenizer(saxon,
+                                           temoin_leader=parametres.temoin_leader,
+                                           nodes_to_reinject=parametres.reinjection)
         tokeniser.tokenisation(parametres.corpus_path, correction)
         exit(0)
 
@@ -148,7 +170,9 @@ def main():
         else:
             exit(0)
         print(parametres.corpus_path)
-        tokeniser = tokenisation.Tokenizer(saxon, temoin_leader=parametres.temoin_leader)
+        tokeniser = tokenisation.Tokenizer(saxon=saxon,
+                                           temoin_leader=parametres.temoin_leader,
+                                           nodes_to_reinject=parametres.reinjection)
         tokeniser.tokenisation(parametres.corpus_path, correction)
 
     if parametres.xmlId and not parametres.tokeniser:  # si le corpus est tokénisé mais sans xml:id
@@ -266,12 +290,22 @@ def main():
         collationeur = collation.Collateur(log=False,
                                            chemin_fichiers=chemin_fichiers,
                                            div_n=division)
-        collationeur.run()
+        collationeur.run_collation()
         print("Création des apparats ✓")
 
         # Création du tableau d'alignement pour visualisation
         if parametres.tableauxAlignement:
             sorties.tableau_alignement(saxon, chemin_fichiers)
+
+        # On bouge tous les fichiers d'alignement dans un dossier à part
+        fichiers_alignement = glob.glob(f"{chemin_fichiers}/align*")
+        fichiers_alignement.extend(glob.glob(f"{chemin_fichiers}/juxtaposition*"))
+        fichiers_alignement.append(f"{chemin_fichiers}/apparat_final.json")
+        fichiers_alignement.append(f"{chemin_fichiers}/apparat_collatex.xml")
+
+        utils.move_files(fichiers_alignement, f"{chemin_fichiers}/alignement")
+
+
         if align_only:
             t1 = time.time()
             temps_total = t1 - t0
@@ -280,15 +314,22 @@ def main():
 
         injecteur = injections.Injector(debug=True,
                                         div_n=i,
-                                        elements_to_inject=parametres.reinjection.items(),
+                                        elements_to_inject=parametres.reinjection,
                                         saxon=saxon,
                                         chemin=chemin_fichiers,
                                         coeurs=parametres.parallel_process_number,
                                         element_base=parametres.element_base,
                                         type_division=parametres.type_division,
-                                        lacuna_sensibility=parametres.lacuna_sensibility)
+                                        lacuna_sensibility=parametres.lacuna_sensibility,
+                                        liste_sigles=liste_sigles,
+                                        excluded_elements=excluded_ancestors)
         injecteur.run_injections()
         # Ici on indique d'autres éléments tei à réinjecter.
+
+
+        # On copie les fichiers finaux produits pour ne pas avoir à refaire à chaque fois le processus
+        for file in glob.glob(f"{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
+            shutil.copy(file, f'divs/results')
 
         if similarity_only:
             for fichier in glob.glob(f"{chemin_fichiers}/*_injected_punct.xml"):
@@ -298,27 +339,29 @@ def main():
         if synonyms_datasets:
             similarity.similarity_eval_set_creator(i)
 
-        liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
+
+        for file in glob.glob(f"div{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
+            shutil.copy(file, f'divs/results')
+
+        for file in glob.glob(f"div{chemin_fichiers}/*.pdf"):
+            shutil.copy(file, f'divs/results')
+
+        if parametres.fusion_documents:
+            sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
+
         # Tests de conformité
         print(f'Tests en cours...')
         for sigle in liste_sigles:
-            tests.tokentest(sigle, i)
-            tests.witness_test(sigle, i)
-            tests.test_word_alignment(i)
-
-    if parametres.fusion_documents:
-        for temoin in liste_fichiers_tokenises:
-            sigle = temoin.split('/')[1].split(".xml")[0]
-            sorties.fusion_documents_tei(sigle)
-        if parametres.latex:
-            for fichier in liste_fichiers_finaux:
-                sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct"), True)
+            pass
+            #tests.tokentest(sigle, i)
+            #tests.witness_test(sigle, i)
+            #tests.test_word_alignment(i)
 
     if parametres.latex and not parametres.fusion_documents:
         for fichier in liste_fichiers_finaux:
             print(fichier)
-            sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct.lacuned"), False, chemin_fichiers)
+            sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct.transposed.lacuned"), False, chemin_fichiers)
 
     sorties.nettoyage("divs")
     t1 = time.time()

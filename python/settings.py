@@ -32,6 +32,7 @@ class Parametres:
         self.teiCorpus = self.settings['tei:teiCorpus']
         self.tableauxAlignement = self.settings['sortie']['tableaux_alignement']
         self.latex = self.settings['sortie']['LaTeX']
+        self.exclude_descendant_of: list = self.settings['exclude_descendant_of']
 
         self.compute_similarity = self.settings['compute_similarity']
         self.create_synonym_dataset = self.settings['create_synonym_dataset']

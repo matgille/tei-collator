@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:mgl="https://matthiasgillelevenson.fr"
     exclude-result-prefixes="xs" version="2.0">
     <!--Idée ici: regrouper les tokens alignés en un apparat grossier, qu'il reste à affiner. -->
 
@@ -17,7 +17,7 @@
 
 
     <xsl:template match="/">
-        <xsl:element name="texte">
+        <xsl:element name="texte" namespace="https://matthiasgillelevenson.fr">
             <xsl:apply-templates/>
         </xsl:element>
     </xsl:template>

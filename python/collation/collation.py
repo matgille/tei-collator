@@ -56,7 +56,9 @@ class Aligner:
 
     def alignement(self, fichier_a_collationer, numero):
         """
-            Alignement CollateX, puis regroupement des leçons communes en lieux variants
+            Alignement CollateX, puis regroupement des leçons communes en lieux variants. La méthode collatex.collate() est
+            ici trompeuse. CollateX ne fait que l'alignement; la collation (=déterminer s'il y a lieu
+             variant ou pas, typer les variantes, identifier les omissions) est faite ensuite.
         """
         alignement = self.parametres_alignement
         # on réécrit la variable en cas de mode correction
@@ -114,12 +116,11 @@ class Collateur:
         self.div_n = div_n
         self.tei_ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
 
-    def run(self):
-        self.collate(f'apparat_final.json')
-        # Continuer ici
+    def run_collation(self):
+        self.produce_typed_apps(f'apparat_final.json')
         self.raffinage_apparats(f'divs/div{self.div_n}/apparat_collatex.xml')
 
-    def collate(self, fichier_entree):
+    def produce_typed_apps(self, fichier_entree):
         """
             Cette fonction permet de passer de la table d'alignement à
             l'apparat proprement dit, avec création d'apparat s'il y a
@@ -355,22 +356,32 @@ class Collateur:
         #  directement sur le TSV lors de la production du corpus. Ou alors, considérer que c'est
         #  une variante graphique si le terme n'est pas analysé comme un nom au moins une fois.
 
-        # TODO: ignorer les erreurs d'analyse probables: même lemmes, pos différent mais parce que
-        #  changement de catégorie (= P <=> D, etc). Comme ça on affine le corpus sur tsv et pas sur
-        #  xml.
 
         # TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
         # TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
-        # TODO: en faire une fonction récursive pour refaire la typologie si on détecte une omission
+
+        # On commence par supprimer les accents: il est très peu probable que deux homographes se retrouvent
+        # dans un même lieu variant.
 
         comparaison_lemme = all(elem == liste_lemmes[0] for elem in liste_lemmes[1:])
         comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos[1:])
 
-        ## Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
+
+        # On a besoin de filtrer certaines erreurs dûes au fait que Freeling gère très mal l'homographie
+        # Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
         # de corriger dans le XML ou car il n'y a pas d'intérêt à la variante.
         filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca'), ('él', 'el'),
-                         ('esta', 'está', 'ésta'), ('grande', 'gran'), ('el', 'lo')]
+                         ('esta', 'está', 'ésta'), ('grande', 'gran'), ('el', 'lo'), ('uno', '1'),
+                         ('probar','prueba'), ('daño', 'dañar'), ('atrever', 'atrevido')]
+
+
+        # Idem pour les pos: on va ignorer les lieux variants avec POS dans le filtre et lemmes identiques.
+        # Ce filtrage est à supprimer si le lemmatiseur est de meilleure qualité
+        filtre_pos = [('AQ0MS0', 'PI0MS000'), ('NCMP000', 'AQ0MP0'), ('NCFP000', 'NCMP000'), ('PR000000', 'RG'),
+                      ('VMIS3S0', 'VMIP1S0'), ('VSSI3S0', 'VSSI1S0'), ('Z', 'PI0FS000', 'DI0FS0')]
+
         filtre_nombres = re.compile("\d+")
+
         # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante graphique.
         # Ici il faut se rappeler qu'il y a une différence entre les formes
         type_de_variante = None
@@ -387,9 +398,9 @@ class Collateur:
                     else:
                         type_de_variante = 'lexicale'
         elif comparaison_lemme and not comparaison_pos:  # si seul le pos change
-            # On va identifier les variantes numérales, pas toujours intéressantes à montrer (ii° vs ii par exemple)
+            # On va identifier les variantes numerales, pas toujours intéressantes à montrer (ii° vs ii par exemple)
             if all(re.match(filtre_nombres, lemme) for lemme in liste_lemmes):
-                type_de_variante = 'numérale'
+                type_de_variante = 'numerale'
             # On peut avoir un lemme identique et un pos qui change ('como' p.ex)
             elif any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
                 type_de_variante = 'filtre'
@@ -409,9 +420,15 @@ class Collateur:
                         pos[2:] == liste_pos[0][2:] for pos in liste_pos):
                     type_de_variante = "auxiliarite"
                 else:
-                    type_de_variante = "morphosyntactique"
+                    if any(all(pos in couple for pos in liste_pos) for couple in filtre_pos):
+                        type_de_variante = "filtre"
+                    else:
+                        type_de_variante = "morphosyntactique"
             else:
-                type_de_variante = 'morphosyntactique'
+                if any(all(pos in couple for pos in liste_pos) for couple in filtre_pos):
+                    type_de_variante = "filtre"
+                else:
+                    type_de_variante = 'morphosyntactique'
         elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
             if liste_lemmes[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
                 # indéterminée
@@ -489,9 +506,9 @@ class Collateur:
                             orig_rdg = apparat.xpath(f"tei:rdg[@id = '{identifiant}']", namespaces=self.tei_ns)[0]
                         except IndexError as error:
                             print(etree.tostring(apparat, pretty_print=True).decode())
-                            print(f"Raffinage des apparats sur {fichier}.\n"
-                                  f"Index error. Rdg's id: {identifiant}. \n"
-                                  f"Error: {error}. Exiting.")
+                            print(f"Index error. Rdg's id: {identifiant}. \n"
+                                  f"Error: {error}. Exiting.\n"
+                                  f"The error could come from the lemmatization.")
                             exit(0)
                         rdg_grp.append(orig_rdg)
 

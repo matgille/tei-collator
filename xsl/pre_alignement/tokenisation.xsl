@@ -149,23 +149,26 @@
     </xsl:template>
 
 
-    <xsl:template match="tei:choice[not(parent::tei:w)]" mode="secondePasse">
-        <!--Si on a un corr avec plusieurs mots, ça peut planter. Reprendre le code.-->
-        <!--Mais est-ce que sémantiquement un corr avec plusieurs mots a du sens ?-->
+    <!-- <xsl:template match="tei:choice[not(parent::tei:w)]" mode="secondePasse">
+        <!-\-On décide que si un choice n'a pas de parent tei:w (donc il faut le faire à la main), alors il ne sera pas
+        intégré à la comparaison textuelle-\->
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:value-of select="substring-after(preceding-sibling::text()[-1], ' ')"/>
             <xsl:copy-of select="."/>
             <xsl:if test="not(contains(',.;?!¡¿', substring-before(following-sibling::text()[1], ' ')))">
                 <xsl:value-of select="substring-before(following-sibling::text()[1], ' ')"/>
             </xsl:if>
-            <!--Attention à ne pas copier un élément de ponctuation par mégarde-->
+            <!-\-Attention à ne pas copier un élément de ponctuation par mégarde-\->
         </xsl:element>
-    </xsl:template>
+    </xsl:template>-->
+
+
 
     <!--On procède en deux temps: d'abord, tokeniser avec espace comme séparateur. Puis on analyse la chaîne produite
     et on en extrait la ponctuation-->
+    <!--Dans le not() on mettra tous les éléments que l'on ne veut PAS voir tokénisés.-->
     <xsl:template
-        match="text()[not(ancestor::tei:note)][not(ancestor::tei:teiHeader)][not(ancestor::tei:w)][not(ancestor::tei:desc)]"
+        match="text()[not(ancestor::tei:abbr)][not(ancestor::tei:expan)][not(ancestor::tei:sic)][not(ancestor::tei:corr)][not(ancestor::tei:note)][not(ancestor::tei:teiHeader)][not(ancestor::tei:w)][not(ancestor::tei:desc)][not(ancestor::tei:fw)][not(ancestor::tei:add[@type = 'commentaire'])][not(ancestor::tei:del)]"
         mode="secondePasse">
         <xsl:for-each select="tokenize(., '\s+')">
             <xsl:analyze-string select="." regex="([():,;¿?!¡.])">
@@ -183,6 +186,9 @@
         </xsl:for-each>
     </xsl:template>
 
+
+    <!--Ici les éléments que l'on veut voir copiés tels quels-->
+    <!--Ici les éléments que l'on veut voir copiés tels quels-->
 
     <!--Seconde Passe-->
 
@@ -202,16 +208,17 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template match="tei:w[preceding-sibling::tei:w[1][tei:hi][text() = text()]]"
+    <xsl:template
+        match="tei:w[preceding-sibling::tei:w[not(@mode = 'manuel')][1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
 
 
 
     <xsl:template
-        match="tei:cb[@break = 'n'][not(ancestor::tei:w)] | tei:lb[@break = 'n'][not(ancestor::tei:w)] | tei:pb[@break = 'n'][not(ancestor::tei:w)]"
+        match="tei:cb[@break = 'no'][not(ancestor::tei:w)] | tei:lb[@break = 'no'][not(ancestor::tei:w)] | tei:pb[@break = 'no'][not(ancestor::tei:w)]"
         mode="troisiemePasse">
         <!--<xsl:template
-        match="tei:cb[@break = 'n'] | tei:lb[@break = 'n'][not(ancestor::tei:w)] | tei:pb[@break = 'n']"
+        match="tei:cb[@break = 'no'] | tei:lb[@break = 'no'][not(ancestor::tei:w)] | tei:pb[@break = 'no']"
         mode="troisiemePasse">-->
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:choose>
@@ -234,7 +241,7 @@
         </xsl:element>
     </xsl:template>
     <!--
-    <xsl:template match="tei:lb[@break = 'y'] | tei:pb[@break = 'y'] | tei:pb[not(@break)]"
+    <xsl:template match="tei:lb[@break = 'yes'] | tei:pb[@break = 'yes'] | tei:pb[not(@break)]"
         mode="troisiemePasse">
         <xsl:copy-of select="."/>
     </xsl:template>
@@ -254,19 +261,19 @@
 
     <xsl:template match="
             tei:w[not(descendant::text())][not(@mode)] |
-            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:pb[@break = 'n']]] |
-            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:lb[@break = 'n']]] |
-            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:cb[@break = 'n']]] |
-            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:pb[@break = 'n']]] |
-            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:lb[@break = 'n']]] |
-            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:cb[@break = 'n']]]"
+            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:pb[@break = 'no']]] |
+            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:lb[@break = 'no']]] |
+            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:cb[@break = 'no']]] |
+            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:pb[@break = 'no']]] |
+            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:lb[@break = 'no']]] |
+            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:cb[@break = 'no']]]"
         mode="quatriemePasse"/>
 
 
 
     <xsl:template match="/">
         <xsl:for-each
-            select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])][not(@subtype = 'version_a')]">
+            select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'lat'])][not(@subtype = 'version_a')]">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
             <xsl:result-document href="temoins_tokenises/{$nom_fichier}.xml">
                 <xsl:apply-templates select="$ResultatTroisiemePasse//tei:TEI[@xml:id = $nom_fichier]"
