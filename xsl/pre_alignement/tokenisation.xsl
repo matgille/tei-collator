@@ -215,7 +215,7 @@
 
 
     <xsl:template
-        match="tei:cb[@break = 'no'][not(ancestor::tei:w)] | tei:lb[@break = 'no'][not(ancestor::tei:w)] | tei:pb[@break = 'no'][not(ancestor::tei:w)]"
+        match="tei:cb[@break = 'no'][not(ancestor::tei:w)] | tei:lb[@break = 'no'][not(ancestor::tei:w)] | tei:pb[@break = 'no'][not(ancestor::tei:w)][not(ancestor::tei:note)]"
         mode="troisiemePasse">
         <!--<xsl:template
         match="tei:cb[@break = 'no'] | tei:lb[@break = 'no'][not(ancestor::tei:w)] | tei:pb[@break = 'no']"

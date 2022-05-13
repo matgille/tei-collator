@@ -41,6 +41,14 @@ def nettoyage_liste_positions(liste_de_tuples):
     result.sort(key=lambda tup: tup[0])
     return result
 
+def get_file_list(path):
+    """
+    Return list of files and check if they exist.
+    """
+
+    file_list = glob.glob(path)
+    assert len(file_list) > 0
+    return file_list
 
 def run_subprocess(liste):
     subprocess.run(liste)
@@ -113,12 +121,36 @@ def clean_xml_file(input_file, output_file):
     """
     This function removes unwanted attributes from the xml file to produce a "final" version
     """
-    with open(input_file, "r") as input_file:
-        tree = parse_xml_file(input_file)
+
+    tree = parse_xml_file(input_file)
 
     # First, the tei:rdg
     readings = tree.xpath("//tei:rdg", namespaces=tei_ns)
 
+    for reading in readings:
+        #https://stackoverflow.com/a/2720418
+        for attr in ["lemma", "pos", "n", "id"]:
+            try:
+                reading.attrib.pop(attr)
+            except:
+                continue
+
+
+    # Then, the tei:w
+    words = tree.xpath("//tei:w", namespaces=tei_ns)
+
+    for word in words:
+        #https://stackoverflow.com/a/2720418
+        [word.attrib.pop(attr) for attr in ['{http://www.w3.org/XML/1998/namespace}id']]
+
+
+    with open(output_file, "w") as output_file:
+        output_file.write(etree.tostring(tree, pretty_print=True).decode())
+
+
+def get_sigla_from_path(path):
+    return [file.split('/')[-1].split('.xml')[0] for file in glob.glob("temoins_tokenises/*.xml")
+            if file.split('/')[-1].split('.xml')[0] in path][0]
 
 def save_xml_file(xml_object, path):
     with open(path, "w") as output_file:

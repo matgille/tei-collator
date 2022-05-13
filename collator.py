@@ -78,7 +78,7 @@ def main():
     parametres = python.settings.Parametres(fichier_de_parametres)
     # print(f'\n\n\n ---- Paramètres globaux: \n {parametres.__str__()}\n ')
     # print("Attention, certains paramètres peuvent être modifiés par des options "
-          # "de la ligne de commande.")
+    # "de la ligne de commande.")
     print(f'Lemmatisation seule: {lemmatize_only} \n')
     print(f'Mode correction: {correction} \n ---- \n')
     print(f'Injection seule: {inject_only} \n ---- \n')
@@ -98,9 +98,10 @@ def main():
     liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
     if fusion_only:
         print("Création des fichiers xml maîtres")
-        sorties.fusion_documents_tei(chemin_corpus, xpath_transcriptions)
+        sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division)}",
+                                     chemin_corpus=chemin_corpus,
+                                     xpath_transcriptions=xpath_transcriptions)
         exit(0)
-
 
     if test_only:
         print(f'Tests en cours...')
@@ -129,8 +130,6 @@ def main():
                                        liste_sigles=liste_sigles,
                                        excluded_elements=excluded_ancestors)
         Injector.run_injections()
-        print(chemin_corpus)
-        print(xpath_transcriptions)
         chemin_fichiers = f"divs/div{str(division)}"
         sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
         exit(0)
@@ -216,7 +215,6 @@ def main():
 
         chemin_fichiers = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
-
 
         if not tests.test_lemmatization(div_n=i,
                                         div_type=parametres.type_division,
@@ -305,7 +303,6 @@ def main():
 
         utils.move_files(fichiers_alignement, f"{chemin_fichiers}/alignement")
 
-
         if align_only:
             t1 = time.time()
             temps_total = t1 - t0
@@ -326,7 +323,6 @@ def main():
         injecteur.run_injections()
         # Ici on indique d'autres éléments tei à réinjecter.
 
-
         # On copie les fichiers finaux produits pour ne pas avoir à refaire à chaque fois le processus
         for file in glob.glob(f"{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
             shutil.copy(file, f'divs/results')
@@ -341,27 +337,31 @@ def main():
 
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
 
-        for file in glob.glob(f"div{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
-            shutil.copy(file, f'divs/results')
 
-        for file in glob.glob(f"div{chemin_fichiers}/*.pdf"):
+        for file in glob.glob(f"divs/div{i}/*lacuned.xml"):
+            sigle = utils.get_sigla_from_path(file)
+            utils.clean_xml_file(input_file=file, output_file=f"divs/div{i}/apparat_{sigle}_{i}_final.xml")
+
+        for file in glob.glob(f"div{chemin_fichiers}/*final.xml"):
             shutil.copy(file, f'divs/results')
 
         if parametres.fusion_documents:
             sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
 
+
         # Tests de conformité
         print(f'Tests en cours...')
         for sigle in liste_sigles:
             pass
-            #tests.tokentest(sigle, i)
-            #tests.witness_test(sigle, i)
-            #tests.test_word_alignment(i)
+            # tests.tokentest(sigle, i)
+            # tests.witness_test(sigle, i)
+            # tests.test_word_alignment(i)
 
     if parametres.latex and not parametres.fusion_documents:
         for fichier in liste_fichiers_finaux:
             print(fichier)
-            sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct.transposed.lacuned"), False, chemin_fichiers)
+            sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct.transposed.lacuned"), False,
+                                         chemin_fichiers)
 
     sorties.nettoyage("divs")
     t1 = time.time()
