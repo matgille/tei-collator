@@ -1,3 +1,4 @@
+import collections
 import subprocess
 import sys
 import re
@@ -24,12 +25,44 @@ class CorpusALemmatiser:
             self.nombre_coeurs = nombre_coeurs
         self.nsmap = {'tei': 'http://www.tei-c.org/ns/1.0'}
 
+
+
     def lemmatisation_parallele(self, division="*"):
         with mp.Pool(processes=self.nombre_coeurs) as pool:
             # https://www.kite.com/python/answers/how-to-map-a-function-with-
             # multiple-arguments-to-a-multiprocessing-pool-in-python
             data = [(temoin, division) for temoin in self.chemin_vers_temoin]
             pool.starmap(self.lemmatisation, data)
+
+    def normalize_spelling(self):
+        '''
+        On normalise avec des expressions régulières avant d'envoyer à la lemmatisation
+        IN: *tokenized.txt
+        OUT: *.tokenized.normalized.txt
+        '''
+
+        # Attention à l'ordre.
+        table_normalisation = collections.OrderedDict({
+            re.compile(r'uj([aeiouyáéíóúý])'): r'vi\g<1>',
+            re.compile(r'lv([aeiouyáéíóúý])'): r'lu\g<1>',
+            re.compile(r'([aeiouyáéíóúý])i([aeiouyáéíóúý])'): r'\g<1>j\g<2>',
+            re.compile(r'([aeiouyáéíóúý])u([aeiouyáéíóúý])'): r'\g<1>v\g<2>',
+        })
+
+        for text_file in glob.glob("temoins_tokenises_regularises/txt/*tokenized.txt"):
+            with open(text_file, "r") as input_text_file:
+                list_of_words = {index: line.replace('\n', '') for index, line in enumerate(input_text_file.readlines())}
+
+
+            normalized_list = []
+            for index, form in list_of_words.items():
+                for orig, reg in table_normalisation.items():
+                    form = re.sub(orig, reg, form)
+                normalized_list.append(form)
+            normalized_list.append("")
+
+            with open(text_file.replace('.txt', '.normalized.txt'), "w") as output_text_file:
+                output_text_file.write("\n".join(normalized_list))
 
     def lemmatisation(self, temoin, division):
         """
@@ -41,7 +74,8 @@ class CorpusALemmatiser:
         fichier_sans_extension = os.path.splitext(fichier)[0]
         fichier_xsl = "xsl/lemmatisation/transformation_pre_lemmatisation.xsl"
         chemin_vers_fichier = f"temoins_tokenises_regularises/{str(fichier)}"
-        fichier_entree_txt = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}.txt'
+        fichier_entree_txt = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}_tokenized.txt'
+        fichier_normalized = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}_tokenized.normalized.txt'
         param_division = f"division={division}"
         param_sortie = f"sortie={fichier_entree_txt}"
         subprocess.run(["java", "-jar",
@@ -50,11 +84,13 @@ class CorpusALemmatiser:
                         fichier_xsl,
                         param_sortie,
                         param_division])
+
         if self.langue == "spa_o":
-            fichier_lemmatise = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}_lemmatise.txt'
+            self.normalize_spelling()
+            fichier_lemmatise = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}.lemmatized.txt'
             cmd_sh = ["sh",
                       "python/lemmatisation/analyze.sh",
-                      fichier_entree_txt,
+                      fichier_normalized,
                       fichier_lemmatise]  # je dois passer par un script externe car un subprocess tourne dans le vide,
             # pas trouvé pourquoi
             subprocess.run(cmd_sh)
@@ -85,7 +121,7 @@ class CorpusALemmatiser:
                     print("You should check for empty tei:w in tokenized files.")
                     print(f"{mot}, {[previous_token.text for previous_token in tokens[index - 10: index]]}")
                     xml_id = mot.xpath("@xml:id", namespaces=self.nsmap)[0]
-                    exit(1)
+                    exit(0)
 
                 # On injecte les analyses.
                 if mot.xpath("@lemma") and mot.xpath("@pos"):  # si l'analyse est déjà présente (cas des lemmes
@@ -159,4 +195,3 @@ if __name__ == "__main__":
         nombre_coeurs=mp.cpu_count()
     )
     corpus_a_lemmatiser.lemmatisation_parallele(division)
-

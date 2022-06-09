@@ -42,7 +42,7 @@ def main():
     parser.add_argument("-p", "--parameters", default="parametres/lemmatisation.json",
                         help="Path to the parameter file.")
     parser.add_argument("-d", "--division", help="Division to be treated.")
-    parser.add_argument("-corr", "--correction", default=False,
+    parser.add_argument("-corr", "--correction", default=True,
                         help="Correction mode (outputs more information in xml files).")
     parser.add_argument("-to", "--tokenizeonly", default=False, help="Exit after tokenization.")
     parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
@@ -97,6 +97,9 @@ def main():
 
     liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
     if fusion_only:
+        for file in glob.glob(f"divs/div{division}/*lacuned.xml"):
+            sigle = utils.get_sigla_from_path(file)
+            utils.clean_xml_file(input_file=file, output_file=f"divs/div{division}/apparat_{sigle}_{division}_final.xml")
         print("Création des fichiers xml maîtres")
         sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division)}",
                                      chemin_corpus=chemin_corpus,
@@ -178,6 +181,7 @@ def main():
         for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
             temoin = f"temoins_tokenises_regularises/{temoin}"
             tokeniser.ajout_xml_id(temoin)
+            tokeniser.same_word_identification(temoin)
 
     if parametres.lemmatiser:
         print("Lemmatisation du corpus...")

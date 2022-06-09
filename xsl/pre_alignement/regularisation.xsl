@@ -2,9 +2,8 @@
 <!--Cette feuille régularise les éléments une fois tokénisés et xmlidsés-->
 <!--Est-ce qu'on est obligé de produire du XML ? Ne peut-on pas produire une liste (id-forme-lemme) ?-->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="xs"
-    version="2.0">
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tei="http://www.tei-c.org/ns/1.0"
+    exclude-result-prefixes="xs" version="2.0">
 
     <xsl:output method="xml"/>
     <xsl:strip-space elements="*"/>
@@ -21,11 +20,9 @@
 
 
     <xsl:template match="/">
-        <xsl:for-each
-            select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI">
+        <xsl:for-each select="collection('../../temoins_tokenises?select=*.xml')//tei:TEI">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
-            <xsl:result-document
-                href="temoins_tokenises_regularises/{$nom_fichier}.xml">
+            <xsl:result-document href="temoins_tokenises_regularises/{$nom_fichier}.xml">
                 <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
                     <xsl:attribute name="xml:id" select="$nom_fichier"/>
                     <xsl:apply-templates/>
@@ -41,11 +38,11 @@
 
     <xsl:template match="tei:hi[@rend = 'lettre_attente']"/>
 
-    <xsl:template match="tei:unclear[tei:w]">
+    <xsl:template match="tei:unclear[tei:w] | tei:damage[tei:w]">
         <xsl:copy-of select="tei:w"/>
     </xsl:template>
 
-    <xsl:template match="tei:unclear[not(tei:w)]">
+    <xsl:template match="tei:unclear[not(tei:w)] | tei:damage[not(tei:w)]">
         <xsl:value-of select="."/>
     </xsl:template>
 
@@ -55,6 +52,10 @@
 
     <xsl:template match="tei:reg | tei:expan">
         <xsl:value-of select="."/>
+    </xsl:template>
+
+    <xsl:template match="tei:subst">
+        <xsl:value-of select="tei:add"/>
     </xsl:template>
 
 
@@ -80,12 +81,11 @@
         <xsl:apply-templates/>
     </xsl:template>
 
-    <!--  <xsl:template match="tei:add">
-        <xsl:value-of select="."/>
-    </xsl:template>-->
+    <xsl:template match="tei:add[not(@type = 'commentaire')]">
+        <xsl:apply-templates/>
+    </xsl:template>
 
-    <xsl:template
-        match="tei:pb | tei:cb | tei:note | tei:fw | tei:del | tei:add[@type = 'commentaire']"/>
+    <xsl:template match="tei:pb | tei:cb | tei:note | tei:fw | tei:del | tei:add[@type = 'commentaire']"/>
 
     <xsl:template match="tei:lb">
         <xsl:if test="$correction = 'True'">

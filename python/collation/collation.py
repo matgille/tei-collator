@@ -207,10 +207,11 @@ class Collateur:
                     # Première étape. Si tous les lieux variants sont égaux ainsi que leur analyse grammaticale
                     # entre eux,ne pas créer d'apparat mais imprimer
                     # directement le texte
-                    # Résultat de ça: on a des tei:app avec 1 seul tei:rdg si la graphie est identique mais l'analyse
-                    # grammaticale distincte (signe d'une erreur de lemmatisation en général).
+                    # On ne va pas utiliser les autres vérifcations car quand les formes sont identiques, il y a
+                    # de très faibles chances que le mot soit un homographe dans le même contexte.
                     app = etree.SubElement(root, tei + 'app')
-                    if identite_forme and identite_lemme and identite_pos:
+                    # if identite_forme and identite_lemme and identite_pos:
+                    if identite_forme:
                         apparat = False
                     else:
                         pass
@@ -323,9 +324,7 @@ class Collateur:
                     liste_id = xml_id.split('_')
                     n = 0
                     for mot in liste_w:
-                        nombre_temoins = temoin.count('#')
                         nombre_mots = len(liste_w)
-                        position_mot = liste_w.index(mot)
                         xml_id_courant = '_'.join(liste_id[n::nombre_mots])  # on va distribuer les xml:id:
                         # abcd > ac, db pour 2 témoins qui lisent la même chose (ab et cd sont les identifiants des deux
                         # tokens identiques, donc il faut distribuer pour identifier le premier token, puis le second)
@@ -377,8 +376,8 @@ class Collateur:
 
         # Idem pour les pos: on va ignorer les lieux variants avec POS dans le filtre et lemmes identiques.
         # Ce filtrage est à supprimer si le lemmatiseur est de meilleure qualité
-        filtre_pos = [('AQ0MS0', 'PI0MS000'), ('NCMP000', 'AQ0MP0'), ('NCFP000', 'NCMP000'), ('PR000000', 'RG'),
-                      ('VMIS3S0', 'VMIP1S0'), ('VSSI3S0', 'VSSI1S0'), ('Z', 'PI0FS000', 'DI0FS0')]
+        filtre_pos = [('AQ0MS0', 'PI0MS000'), ('NCMP000', 'AQ0MP0'), ('NCMS000', 'AQ0MS0'), ('NCFP000', 'NCMP000'), ('PR000000', 'RG'),
+                      ('VMIS3S0', 'VMIP1S0'), ('VSSI3S0', 'VSSI1S0'), ('Z', 'PI0FS000', 'DI0FS0'), ('PR0CN000', 'CS')]
 
         filtre_nombres = re.compile("\d+")
 
@@ -403,7 +402,10 @@ class Collateur:
                 type_de_variante = 'numerale'
             # On peut avoir un lemme identique et un pos qui change ('como' p.ex)
             elif any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
-                type_de_variante = 'filtre'
+                if all(liste_pos[0] == pos for pos in liste_pos):
+                    type_de_variante = 'filtre'
+                else:
+                    type_de_variante = 'morphosyntactique'
             elif all(pos.startswith('NC') for pos in liste_pos):
                 # On rappelle la structure de l'étiquette du nom: NCMS000 pour un nom masculin singulier
                 if all(pos[2] == liste_pos[0][2] for pos in liste_pos):
@@ -452,14 +454,22 @@ class Collateur:
         # TODO: il reste un problème dans le cas suivant (en amont): chaîne identique, (lemme?|)pos différent.
         parser = etree.XMLParser(load_dtd=True,
                                  resolve_entities=True)
+
+        tei_namespace = 'http://www.tei-c.org/ns/1.0'
+        namespace = '{%s}' % tei_namespace
         f = etree.parse(fichier, parser=parser)  # https://lxml.de/tutorial.html#namespaces
         root = f.getroot()
         liste_apps = root.xpath(f"//tei:app[not(@ana='#graphique')]", namespaces=self.tei_ns)
         for apparat in liste_apps:
             lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=self.tei_ns)
-            # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat.
+            # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat, on crée des tei:rdgGrp pour plus de
+            # simplicité de traitement ensuite.
             if len(lecon) <= 2:
-                pass
+                for rdg in lecon:
+                    parent = rdg.getparent()
+                    rdg_grp = etree.SubElement(parent, namespace + 'rdgGrp')
+                    rdg_grp.append(rdg)
+
 
             # Sinon, les choses deviennent intéressantes
             else:
