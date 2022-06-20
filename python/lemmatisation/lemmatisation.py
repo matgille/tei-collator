@@ -25,8 +25,6 @@ class CorpusALemmatiser:
             self.nombre_coeurs = nombre_coeurs
         self.nsmap = {'tei': 'http://www.tei-c.org/ns/1.0'}
 
-
-
     def lemmatisation_parallele(self, division="*"):
         with mp.Pool(processes=self.nombre_coeurs) as pool:
             # https://www.kite.com/python/answers/how-to-map-a-function-with-
@@ -36,23 +34,32 @@ class CorpusALemmatiser:
 
     def normalize_spelling(self):
         '''
-        On normalise avec des expressions régulières avant d'envoyer à la lemmatisation
+        On normalise avec des expressions régulières avant d'envoyer à la lemmatisation, pour adapter au mieux
+        aux normes attendues par Freeling.
         IN: *tokenized.txt
         OUT: *.tokenized.normalized.txt
         '''
 
         # Attention à l'ordre.
         table_normalisation = collections.OrderedDict({
+            re.compile(r'^rr(.*)'): r'r\g<1>',
+            re.compile(r'(.*)mm(.*)'): r'\g<1>m\g<2>',
             re.compile(r'uj([aeiouyáéíóúý])'): r'vi\g<1>',
             re.compile(r'lv([aeiouyáéíóúý])'): r'lu\g<1>',
-            re.compile(r'([aeiouyáéíóúý])i([aeiouyáéíóúý])'): r'\g<1>j\g<2>',
-            re.compile(r'([aeiouyáéíóúý])u([aeiouyáéíóúý])'): r'\g<1>v\g<2>',
+            re.compile(r'([aeiouyáéíóúý])v([aeiouyáéíóúý])'): r'\g<1>u\g<2>',
         })
+
+        accent_mapping = {'á': 'a',
+                          'é': 'e',
+                          'í': 'i',
+                          'ó': 'o',
+                          'ú': 'u',
+                          'ý': 'y'}
 
         for text_file in glob.glob("temoins_tokenises_regularises/txt/*tokenized.txt"):
             with open(text_file, "r") as input_text_file:
-                list_of_words = {index: line.replace('\n', '') for index, line in enumerate(input_text_file.readlines())}
-
+                list_of_words = {index: line.replace('\n', '') for index, line in
+                                 enumerate(input_text_file.readlines())}
 
             normalized_list = []
             for index, form in list_of_words.items():
@@ -60,9 +67,12 @@ class CorpusALemmatiser:
                     form = re.sub(orig, reg, form)
                 normalized_list.append(form)
             normalized_list.append("")
+            text = "\n".join(normalized_list)
+            for orig, reg in accent_mapping.items():
+                text = text.replace(orig, reg)
 
             with open(text_file.replace('.txt', '.normalized.txt'), "w") as output_text_file:
-                output_text_file.write("\n".join(normalized_list))
+                output_text_file.write(text)
 
     def lemmatisation(self, temoin, division):
         """
@@ -86,7 +96,7 @@ class CorpusALemmatiser:
                         param_division])
 
         if self.langue == "spa_o":
-            self.normalize_spelling()
+            # self.normalize_spelling()
             fichier_lemmatise = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}.lemmatized.txt'
             cmd_sh = ["sh",
                       "python/lemmatisation/analyze.sh",
@@ -107,7 +117,7 @@ class CorpusALemmatiser:
             tokens = root.xpath(groupe_words, namespaces=self.nsmap)
             fichier_lemmatise = temoin_tokenise
             n = 1
-
+            print(f"Témoin {fichier}; nombre de tokens: {len(tokens)}")
             for index, mot in enumerate(tokens):
                 # Ça marche bien si la lemmatisation se fait
                 # sans retokenisation. Pour l'instant, ça bloque avec les chiffre (ochenta mill est fusionné). Voir
