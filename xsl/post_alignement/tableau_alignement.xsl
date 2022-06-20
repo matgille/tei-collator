@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:mgl="https://matthiasgillelevenson.fr"
     xmlns="http://www.w3.org/1999/xhtml" xmlns:tei="http://www.tei-c.org/ns/1.0"
     exclude-result-prefixes="xs" version="2.0">
     <!--Feuille de transformation pour créer une table d'alignement en HTML pour faciliter le commentaire-->
@@ -87,7 +87,7 @@
             <body id="body">
                 <div>
                     <table id="container">
-                        <xsl:apply-templates select="texte"/>
+                        <xsl:apply-templates select="mgl:texte"/>
                     </table>
                 </div>
                 <button id="pause" style="position:fixed;" true="false"
@@ -126,7 +126,7 @@
 
     <xsl:template match="tei:w"/>
 
-    <xsl:template match="texte/tei:app[1]/tei:rdg">
+    <xsl:template match="mgl:texte/tei:app[1]/tei:rdg">
         <xsl:variable name="position"
             select="count(preceding-sibling::tei:rdg) + 1"/>
         <tr>
