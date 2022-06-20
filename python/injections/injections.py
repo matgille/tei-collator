@@ -16,7 +16,7 @@ import python.utils.utils as utils
 
 class Injector:
     def __init__(self, debug, div_n, elements_to_inject, saxon, chemin, coeurs, element_base,
-                 type_division, lacuna_sensibility, liste_sigles, excluded_elements):
+                 type_division, lacuna_sensibility, liste_sigles, excluded_elements, temoin_base):
         """
         Classe injecteur: réalise les injections de ponctuation, des omissions et des éléments spécifiés
         par l'utilisateur.ice
@@ -42,6 +42,7 @@ class Injector:
         self.type_division = type_division
         self.lacuna_sensibility = lacuna_sensibility
         self.liste_sigles = liste_sigles
+        self.temoin_base = temoin_base
 
     def run_injections(self):
         self.injection_apparats()
@@ -49,14 +50,14 @@ class Injector:
         self.same_word_identification(distance=10)
         self.injection_intelligente()
         self.injection_noeuds_non_textuels()
-        self.transposition_recognition()
         self.regroupement_omissions()
+        self.transposition_recognition()
 
     def detection_homeotheleuton(self):
         """TODO
         Cette fonction détecte parmi les lacunes identifiées les homéothéleutes
         Deux façons de faire:
-        - soit en travThe input files should be validatedaillant sur les lemmes
+        - soit en travaillant sur les lemmes
         - soit en travaillant sur des proximités formelles (mots proches à 60, 80%, ou qui commencent identiquement).
         """
         pass
@@ -64,12 +65,12 @@ class Injector:
     def regroupement_omissions(self):
         """
         Cette fonction lance l'identification des lacunes sur chaque témoin.
-        INPUTS: *transposed.xml
-        OUTPUTS: *transposed.lacuned.xml
+        INPUTS: *apparated.xml
+        OUTPUTS: *apparated.lacuned.xml
         """
-        output_filename = "_injected.transposed.lacuned.xml"
-        print(f"Regroupement des omissions: *injected.transposed.xml => *{output_filename}")
-        files = glob.glob(f"{self.chemin}/*.transposed.xml")
+        output_filename = "_injected.apparated.lacuned.xml"
+        print(f"Regroupement des omissions: *injected.apparated.xml => *{output_filename}")
+        files = glob.glob(f"{self.chemin}/*.apparated.xml")
         assert len(files) > 0
 
         for fichier in files:
@@ -125,8 +126,8 @@ class Injector:
                 try:
                     corresponding_app = dictionnary[identifier]
                 except KeyError as error:
-                    print(f"There was a problem with the injection."
-                          f"Please check there is no tei:w where there should not be"
+                    print(f"There was a problem with the injection with witness {sigle}. "
+                          f"Please check there is no tei:w where there should not be "
                           f"(in the notes for example). ID: {identifier}"
                           f"\nThe input files should be validated against the given schema.")
                     exit(0)
@@ -243,8 +244,8 @@ class Injector:
                             corresponding_rdg.insert(corresponding_rdg.index(corresponding_node), corresponding_node)
                     corresponding_app = corresponding_rdg.xpath("ancestor::tei:app", namespaces=self.ns_decl)[0]
                     corresponding_app_typology = corresponding_app.xpath("@ana")[0]
-                    if not "#codico" in corresponding_app_typology:
-                        corresponding_app.set("ana", corresponding_app_typology + " #codico")
+                    # if not "#codico" in corresponding_app_typology:
+                        # corresponding_app.set("ana", corresponding_app_typology + " #codico")
 
                 # Enfin on supprime les éléments sans witness, qui signifie qu'ils ont tous été extraits individuellement.
                 for rdg_with_empty_wits in fichier_collatione_orig.xpath("//tei:rdg[not(contains(@wit, '#'))]",
@@ -270,117 +271,120 @@ class Injector:
     def transposition_recognition(self):
         """
         Cette fonction détecte les transpositions de la forme inversion de mots
-        INPUTS: *apparated.xml
+        INPUTS: *lacuned.xml
         OUTPUTS: *transposed.xml
         """
         print("Reconnaissance des transpositions")
-        files = glob.glob(f"{self.chemin}/*apparated.xml")
+        files = glob.glob(f"{self.chemin}/*lacuned.xml")
         assert len(files) > 0
+        with open(".debug/debug_transp.txt", "w") as debug_file:
+            debug_file.truncate(0)
 
-        for file in files:
-            print(f"File {file}")
-            output_file = file.replace(".xml", ".transposed.xml")
-            with open(file, "r") as input_file:
-                f = etree.parse(input_file)
+            for file in files:
+                debug_file.write(f"---\n\nAnalyzing {file}\n")
+                print(f"File {file}")
+                output_file = file.replace(".xml", ".transposed.xml")
+                with open(file, "r") as input_file:
+                    f = etree.parse(input_file)
+                # On va travailler sur des n-grams de 3 à 5.
+                for distance in range(2, 5):
+                    # On exclut d'emblée
+                    apps = f.xpath("//tei:app[not(preceding::tei:milestone[@ana='#transposition'][1][@type='start'])]",
+                                   namespaces=self.ns_decl)
 
-            # On va travailler sur des n-grams de 3 à 5.
-            for distance in range(2, 5):
-                # On exclut d'emblée
-                apps = f.xpath("//tei:app[not(preceding::tei:milestone[@ana='#transposition'][1][@type='start'])]",
-                               namespaces=self.ns_decl)
+                    # D'abord on crée des bigrammes, et on va comparer chaque bigramme avec le suivant
+                    # Il faudrait faire tourner cette fonction sur des bigrammes, puis des trigrammes, etc.
+                    bigram_apps = [apps[i:i + distance] for i in range(len(apps))]
 
-                # D'abord on crée des bigrammes, et on va comparer chaque bigramme avec le suivant
-                # Il faudrait faire tourner cette fonction sur des bigrammes, puis des trigrammes, etc.
-                bigram_apps = [apps[i:i + distance] for i in range(len(apps))]
+                    for index in range(len(bigram_apps)):
+                        debug_file.write(f"New {str(distance)}-gram\n")
+                        ordered_Set_list = []
+                        set_list = []
 
-                for index in range(len(bigram_apps)):
-                    ordered_Set_list = []
-                    set_list = []
-
-                    # On crée des bigrammes de ces bigrammes
-                    # (i.e., on aura trois apparats différents répartis dans deux couples avec l'apparat central en commun)
-                    # On en extrait les analyses morphosyntaxiques et on en supprime la redondance
-                    for groupe_apparat in bigram_apps[index:index + 2]:
-                        ordered_set_tmp = []
-                        set_tmp = []
-                        for apparat in groupe_apparat:
-                            list_of_lemmas = "_".join(
-                                apparat.xpath("descendant::tei:rdg/@*[name()='lemma']", namespaces=self.ns_decl)).split(
-                                "_")
-                            list_of_pos = " ".join(
-                                apparat.xpath("descendant::tei:rdg/@*[name()='pos']", namespaces=self.ns_decl)).split(
-                                " ")
-                            lemmas_and_pos = [pos + lemma for pos, lemma in list(zip(list_of_pos, list_of_lemmas))]
-                            with open("/home/mgl/Documents/debug_transp.txt", "a") as debug_file:
+                        # On crée des bigrammes de ces bigrammes
+                        # (i.e., on aura trois apparats différents répartis dans deux couples avec l'apparat central en commun)
+                        # On en extrait les analyses morphosyntaxiques et on en supprime la redondance
+                        for groupe_apparat in bigram_apps[index:index + 2]:
+                            ordered_set_tmp = []
+                            set_tmp = []
+                            for apparat in groupe_apparat:
+                                list_of_lemmas = "_".join(
+                                    apparat.xpath("descendant::tei:rdg/@*[name()='lemma']", namespaces=self.ns_decl)).split(
+                                    "_")
+                                list_of_pos = " ".join(
+                                    apparat.xpath("descendant::tei:rdg/@*[name()='pos']", namespaces=self.ns_decl)).split(
+                                    " ")
+                                lemmas_and_pos = [pos + lemma if pos+lemma != "" else "om" for pos, lemma in list(zip(list_of_pos, list_of_lemmas))]
                                 debug_file.write("|".join(lemmas_and_pos))
                                 debug_file.write("\n")
-                            ordered_set_tmp.append(OrderedSet(lemmas_and_pos))
-                            set_tmp.append(set(lemmas_and_pos))
-                        ordered_Set_list.append(ordered_set_tmp)
-                        set_list.append(set_tmp)
+                                ordered_set_tmp.append(OrderedSet(lemmas_and_pos))
+                                set_tmp.append(set(lemmas_and_pos))
+                            ordered_Set_list.append(ordered_set_tmp)
+                            set_list.append(set_tmp)
 
-                    # Résultat: une liste d'OrderedSets
-                    # [
-                    # [OrderedSet(['', 'AQ0CS0grande']), OrderedSet(['NCMS000cuidado'])], # premier, deuxième app
-                    # [OrderedSet(['NCMS000cuidado']), OrderedSet(['AQ0CS0grande', ''])] # deuxième, troisième app
-                    # ]
+                        # Résultat: une liste d'OrderedSets
+                        # [
+                        # [OrderedSet(['', 'AQ0CS0grande']), OrderedSet(['NCMS000cuidado'])], # premier, deuxième app
+                        # [OrderedSet(['NCMS000cuidado']), OrderedSet(['AQ0CS0grande', ''])] # deuxième, troisième app
+                        # ]
 
-                    # Et une liste de sets
-                    # [
-                    # [{'', 'AQ0CS0grande'}, {'NCMS000cuidado'}], # premier, deuxième app
-                    # [{'NCMS000cuidado'}, {'', 'AQ0CS0grande'}] # deuxième, troisième app
-                    # ]
+                        # Et une liste de sets
+                        # [
+                        # [{'', 'AQ0CS0grande'}, {'NCMS000cuidado'}], # premier, deuxième app
+                        # [{'NCMS000cuidado'}, {'', 'AQ0CS0grande'}] # deuxième, troisième app
+                        # ]
 
-                    # Le but est de comparer un à un chaque élément (ordonnés) de ces listes. Si l'égalité est vraie pour les
-                    # ensembles non ordonnés mais fausse pour les ensembles ordonnés, on a logiquement un changement d'ordre
-                    # entre les éléments, donc une transposition.
+                        # Le but est de comparer un à un chaque élément (ordonnés) de ces listes. Si l'égalité est vraie pour les
+                        # ensembles non ordonnés mais fausse pour les ensembles ordonnés, on a logiquement un changement d'ordre
+                        # entre les éléments, donc une transposition.
 
-                    # Il est possible que l'on laisse de côté certaines transpositions: si les sets ont la même longueur,
-                    # on ne pourra pas ordonner les listes et donc les comparer.
+                        # Il est possible que l'on laisse de côté certaines transpositions: si les sets ont la même longueur,
+                        # on ne pourra pas ordonner les listes et donc les comparer.
 
-                    # https://stackoverflow.com/a/7242838
-                    ordered_set_equality = all(
-                        sorted(ordered_Set_list[n], key=len) == sorted(ordered_Set_list[0], key=len) for n in
-                        range(len(ordered_Set_list)))
-                    unordered_set_equality = all(
-                        sorted(set_list[n], key=len) == sorted(set_list[0], key=len) for n in range(len(set_list)))
+                        # https://stackoverflow.com/a/7242838
+                        ordered_set_equality = all(
+                            sorted(ordered_Set_list[n], key=len) == sorted(ordered_Set_list[0], key=len) for n in
+                            range(len(ordered_Set_list)))
+                        unordered_set_equality = all(
+                            sorted(set_list[n], key=len) == sorted(set_list[0], key=len) for n in range(len(set_list)))
 
-                    if not ordered_set_equality and unordered_set_equality:
-                        list_of_positions = [int(apparat.xpath("count(preceding::tei:app)", namespaces=self.ns_decl))
-                                             for
-                                             apparat in groupe_apparat]
-                        max_pos = max(list_of_positions)
-                        min_pos = min(list_of_positions) - 1
-                        print("Found a transposition")
+                        if not ordered_set_equality and unordered_set_equality:
+                            debug_file.write("Transposition detected.\n")
+                            print("Transposition detected.")
+                            list_of_positions = [int(apparat.xpath("count(preceding::tei:app)", namespaces=self.ns_decl))
+                                                 for
+                                                 apparat in groupe_apparat]
+                            max_pos = max(list_of_positions)
+                            min_pos = min(list_of_positions) - 1
 
-                        # https://stackoverflow.com/a/6045260
-                        concerned_apps = f.xpath(f"//tei:app", namespaces=self.ns_decl)[min_pos: max_pos + 1]
-                        concerned_apps_typology = f.xpath(f"//tei:app/@ana", namespaces=self.ns_decl)[
-                                                  min_pos: max_pos + 1]
-                        first_app = concerned_apps[0]
+                            # https://stackoverflow.com/a/6045260
+                            concerned_apps = f.xpath(f"//tei:app", namespaces=self.ns_decl)[min_pos: max_pos + 1]
+                            concerned_apps_typology = f.xpath(f"//tei:app/@ana", namespaces=self.ns_decl)[
+                                                      min_pos: max_pos + 1]
+                            first_app = concerned_apps[0]
 
-                        # Let's update the typology for further use
-                        for index, transposed_app in enumerate(concerned_apps):
-                            transposed_app.set('ana', concerned_apps_typology[index] + ' #transposition')
+                            # Let's update the typology for further use
+                            for index, transposed_app in enumerate(concerned_apps):
+                                transposed_app.set('ana', concerned_apps_typology[index] + ' #transposition')
 
-                        last_app = concerned_apps[-1]
+                            last_app = concerned_apps[-1]
 
-                        starting_transposition_milestone = etree.Element('{%s}' % self.tei_ns + 'milestone')
-                        starting_transposition_milestone.set('ana', '#transposition')
-                        starting_transposition_milestone.set("type", "start")
+                            starting_transposition_milestone = etree.Element('{%s}' % self.tei_ns + 'milestone')
+                            starting_transposition_milestone.set('ana', '#transposition')
+                            starting_transposition_milestone.set("type", "start")
 
-                        ending_transposition_milestone = etree.Element('{%s}' % self.tei_ns + 'milestone')
-                        ending_transposition_milestone.set('ana', '#transposition')
-                        ending_transposition_milestone.set("type", "end")
+                            ending_transposition_milestone = etree.Element('{%s}' % self.tei_ns + 'milestone')
+                            ending_transposition_milestone.set('ana', '#transposition')
+                            ending_transposition_milestone.set("type", "end")
 
-                        first_parent = first_app.getparent()
-                        last_parent = last_app.getparent()
+                            first_parent = first_app.getparent()
+                            last_parent = last_app.getparent()
 
-                        first_parent.insert(first_parent.index(first_app), starting_transposition_milestone)
-                        last_parent.insert(last_parent.index(last_app) + 1, ending_transposition_milestone)
+                            first_parent.insert(first_parent.index(first_app), starting_transposition_milestone)
+                            last_parent.insert(last_parent.index(last_app) + 1, ending_transposition_milestone)
 
-            with open(output_file, "w") as output_xml_file:
-                output_xml_file.write(etree.tostring(f, pretty_print=True).decode())
+                with open(output_file, "w") as output_xml_file:
+                    output_xml_file.write(etree.tostring(f, pretty_print=True).decode())
 
         print("Fait !")
 
@@ -461,6 +465,7 @@ class Injector:
                                 print(f"File {temoin}")
                                 print(f"Error for anchor {anchor_id}. \nOmission: {omission}.\n"
                                       f"Exiting. Error can come from a wrong alignment of the source files.")
+                                print(e)
                                 exit(0)
                             anchor_parent = anchor_element.getparent()
                             # Ici on va voir si il n'y a pas un élément juste après (ex. note) pour éviter de le décaler; il est
@@ -676,6 +681,7 @@ class Injector:
                     try:
                         empty_rdg = apparat.xpath("descendant::tei:rdg[not(node())]", namespaces=self.ns_decl)[0]
                     except:
+                        print("Error for apparatus. Try relauching the program.")
                         print(apparat)
                         print(etree.tostring(apparat))
                         id = apparat.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0]
@@ -699,7 +705,7 @@ class Injector:
             if " " in current_att:
                 omission.set('ana', current_att.replace('#omission ', ''))
             else:
-                omission.set('ana', current_att.replace('#omission ', '#not_apparat'))
+                omission.set('ana', current_att.replace('#omission', '#not_apparat'))
 
 
         # Ici on va regrouper tous les tei:witEnd et witStart individuels adjacents
