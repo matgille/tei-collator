@@ -77,7 +77,8 @@ class Aligner:
         if alignement == 'global':
             resultat_json = collatex.collate(json_str, output='json', segmentation=True, near_match=True)
         else:
-            resultat_json = collatex.collate(json_str, output='json', segmentation=False, near_match=True, astar=False, detect_transpositions=False)
+            resultat_json = collatex.collate(json_str, output='json', segmentation=False, near_match=True, astar=False,
+                                             detect_transpositions=False)
             # segmentation=False permet une collation au mot-à-mot:
             # http://interedition.github.io/collatex/pythonport.html
         nom_fichier_sortie = f'{self.chemin}/alignement_collatex{numero}.json'
@@ -107,13 +108,15 @@ class Aligner:
                 self.liste_fichiers_xml
             ]
             pool.starmap(self.alignement_collatex, data)
+        print("Done !")
 
 
 class Collateur:
-    def __init__(self, log: bool, chemin_fichiers, div_n):
+    def __init__(self, log: bool, chemin_fichiers, div_n, div_type):
         self.log = log
         self.chemin_fichiers = chemin_fichiers
         self.div_n = div_n
+        self.div_type = div_type
         self.tei_ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
 
     def run_collation(self):
@@ -253,9 +256,10 @@ class Collateur:
 
                             # Mise à jour la liste
                             liste_lecons.append(lecon_depart)
-                    #
+
                     type_apparat = self.typologie_variantes(liste_lemmes=liste_lemme,
-                                                            liste_pos=liste_pos)
+                                                            liste_pos=liste_pos,
+                                                            liste_lecons=liste_lecons)
 
                     # Si on a une omission, on refait un tour en supprimant les éléments vides
                     if type_apparat == "omission":
@@ -263,7 +267,8 @@ class Collateur:
                         liste_lemme = [element for element in liste_lemme if element != ""]
                         liste_pos = [element for element in liste_pos if element != ""]
                         type_apparat = self.typologie_variantes(liste_lemmes=liste_lemme,
-                                                                liste_pos=liste_pos)
+                                                                liste_pos=liste_pos,
+                                                                liste_lecons=liste_lecons)
                         if all(lecon == liste_lecons[0] for lecon in liste_lecons):
                             type_apparat = '#omission'
                         else:
@@ -295,8 +300,6 @@ class Collateur:
                     else:
                         app.set('ana', type_apparat)
                 # Une fois le dictionnaire de sortie produit, le transformer en XML.
-                temoins_complets = " ".join([f'#{fichier.split(".xml")[0].split("/")[-1]}'
-                                             for fichier in glob.glob("temoins_tokenises_regularises/*.xml")])
                 for key, value in dict_sortie.items():
                     if not apparat:
                         xml_id, temoin, lemmes, pos = value[0], value[1], value[2], value[3]
@@ -304,7 +307,7 @@ class Collateur:
                         rdg = etree.SubElement(app, tei + 'rdg')
                         # on indique que tous les témoins proposent la leçon
                         rdg.set('id', utils.generateur_id())
-                        rdg.set('wit', temoins_complets)
+                        rdg.set('wit', temoin)
                         rdg.set('n', xml_id)
                         rdg.set('lemma', lemmes)
                         rdg.set('pos', pos)
@@ -339,11 +342,12 @@ class Collateur:
                 output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
                 sortie_xml.write(str(output))
 
-    def typologie_variantes(self, liste_lemmes, liste_pos):
+    def typologie_variantes(self, liste_lemmes, liste_pos, liste_lecons):
         """
         Cette fonction permet de produire la typologie des variantes.
         Elle s'appuie notamment sur l'article de Camps, Spadini et Ing 2019:
         "Collating Medieval Vernacular Texts: Aligning Witnesses, Classifying Variants"
+        On présuppose qu'il y a une variante graphique.
         """
         # TODO: remplacer les + par des espaces pour ignorer les crases qui sont souvent
         # TODO: uniquement des variantes graphiques: PR0CN00+PP3CSD0 > PR0CN00 PP3CSD0
@@ -355,7 +359,6 @@ class Collateur:
         #  directement sur le TSV lors de la production du corpus. Ou alors, considérer que c'est
         #  une variante graphique si le terme n'est pas analysé comme un nom au moins une fois.
 
-
         # TODO: ajouter une règle si la différence est seulement une différence d'espaces. Idem pour les accents
         # TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
 
@@ -365,18 +368,32 @@ class Collateur:
         comparaison_lemme = all(elem == liste_lemmes[0] for elem in liste_lemmes[1:])
         comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos[1:])
 
+        list_lecon_sans_accents = [utils.remove_accents(lecon) for lecon in liste_lecons]
+
+        # S'il n'y a pas d'accent, on continue la typologie
+        if list_lecon_sans_accents == liste_lecons:
+            similarity_after_normalization = False
+
+        # On regarde si la différence ne tient qu'aux accents: si tel est le cas, on présuppose qu'il n'y a pas de variation
+        else:
+            similarity_without_accent = all(elem == list_lecon_sans_accents[0] for elem in list_lecon_sans_accents[1:])
+            similarity_with_accent = all(elem == liste_lecons for elem in liste_lecons[1:])
+            if not similarity_with_accent and similarity_without_accent:
+                similarity_after_normalization = True
+            else:
+                similarity_after_normalization = False
 
         # On a besoin de filtrer certaines erreurs dûes au fait que Freeling gère très mal l'homographie
         # Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
         # de corriger dans le XML ou car il n'y a pas d'intérêt à la variante.
         filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca'), ('él', 'el'),
                          ('esta', 'está', 'ésta'), ('grande', 'gran'), ('el', 'lo'), ('uno', '1'),
-                         ('probar','prueba'), ('daño', 'dañar'), ('atrever', 'atrevido')]
-
+                         ('probar', 'prueba'), ('daño', 'dañar'), ('atrever', 'atrevido')]
 
         # Idem pour les pos: on va ignorer les lieux variants avec POS dans le filtre et lemmes identiques.
         # Ce filtrage est à supprimer si le lemmatiseur est de meilleure qualité
-        filtre_pos = [('AQ0MS0', 'PI0MS000'), ('NCMP000', 'AQ0MP0'), ('NCMS000', 'AQ0MS0'), ('NCFP000', 'NCMP000'), ('PR000000', 'RG'),
+        filtre_pos = [('AQ0MS0', 'PI0MS000'), ('NCMP000', 'AQ0MP0'), ('NCMS000', 'AQ0MS0'), ('NCFP000', 'NCMP000'),
+                      ('PR000000', 'RG'),
                       ('VMIS3S0', 'VMIP1S0'), ('VSSI3S0', 'VSSI1S0'), ('Z', 'PI0FS000', 'DI0FS0'), ('PR0CN000', 'CS')]
 
         filtre_nombres = re.compile("\d+")
@@ -384,6 +401,8 @@ class Collateur:
         # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante graphique.
         # Ici il faut se rappeler qu'il y a une différence entre les formes
         type_de_variante = None
+        if similarity_after_normalization:
+            return "accent"
         if not comparaison_lemme:  # si il y a une différence de lemmes seulement: 'vraie variante'
             if all(pos.startswith('NP') for pos in liste_pos):
                 type_de_variante = 'entite_nommee'
@@ -459,6 +478,18 @@ class Collateur:
         namespace = '{%s}' % tei_namespace
         f = etree.parse(fichier, parser=parser)  # https://lxml.de/tutorial.html#namespaces
         root = f.getroot()
+
+        # On travaille d'abord sur les apparats de type graphique: un seul tei:rdgGrp qui va tout englober
+        liste_apps_graphique = root.xpath(f"//tei:app[@ana='#graphique']", namespaces=self.tei_ns)
+        for apparat in liste_apps_graphique:
+            lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=self.tei_ns)
+            # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat, on crée des tei:rdgGrp pour plus de
+            # simplicité de traitement ensuite.
+            rdg_grp = etree.SubElement(apparat, namespace + 'rdgGrp')
+            for rdg in lecon:
+                rdg_grp.append(rdg)
+
+        # Puis on s'intéresse aux autres apparats
         liste_apps = root.xpath(f"//tei:app[not(@ana='#graphique')]", namespaces=self.tei_ns)
         for apparat in liste_apps:
             lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=self.tei_ns)
