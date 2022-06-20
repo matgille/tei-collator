@@ -168,7 +168,7 @@
     et on en extrait la ponctuation-->
     <!--Dans le not() on mettra tous les éléments que l'on ne veut PAS voir tokénisés.-->
     <xsl:template
-        match="text()[not(ancestor::tei:abbr)][not(ancestor::tei:expan)][not(ancestor::tei:sic)][not(ancestor::tei:corr)][not(ancestor::tei:note)][not(ancestor::tei:teiHeader)][not(ancestor::tei:w)][not(ancestor::tei:desc)][not(ancestor::tei:fw)][not(ancestor::tei:add[@type = 'commentaire'])][not(ancestor::tei:del)]"
+        match="text()[not(ancestor::tei:abbr)][not(ancestor::tei:expan)][not(ancestor::tei:sic)][not(ancestor::tei:corr)][not(ancestor::tei:note)][not(ancestor::tei:teiHeader)][not(ancestor::tei:w)][not(ancestor::tei:pc)][not(ancestor::tei:desc)][not(ancestor::tei:fw)][not(ancestor::tei:add[@type = 'commentaire'])][not(ancestor::tei:del)]"
         mode="secondePasse">
         <xsl:for-each select="tokenize(., '\s+')">
             <xsl:analyze-string select="." regex="([():,;¿?!¡.])">
@@ -215,7 +215,7 @@
 
 
     <xsl:template
-        match="tei:cb[@break = 'no'][not(ancestor::tei:w)] | tei:lb[@break = 'no'][not(ancestor::tei:w)] | tei:pb[@break = 'no'][not(ancestor::tei:w)][not(ancestor::tei:note)]"
+        match="tei:cb[@break = 'no'][not(ancestor::tei:w)][not(ancestor::tei:note)] | tei:lb[@break = 'no'][not(ancestor::tei:w)][not(ancestor::tei:note)][not(ancestor::tei:add[@type = 'commentaire'])] | tei:pb[@break = 'no'][not(ancestor::tei:w)][not(ancestor::tei:note)]"
         mode="troisiemePasse">
         <!--<xsl:template
         match="tei:cb[@break = 'no'] | tei:lb[@break = 'no'][not(ancestor::tei:w)] | tei:pb[@break = 'no']"

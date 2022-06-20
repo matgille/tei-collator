@@ -16,7 +16,7 @@ import python.utils.utils as utils
 
 class Injector:
     def __init__(self, debug, div_n, elements_to_inject, saxon, chemin, coeurs, element_base,
-                 type_division, lacuna_sensibility, liste_sigles, excluded_elements):
+                 type_division, lacuna_sensibility, liste_sigles, excluded_elements, temoin_base):
         """
         Classe injecteur: réalise les injections de ponctuation, des omissions et des éléments spécifiés
         par l'utilisateur.ice
@@ -42,24 +42,35 @@ class Injector:
         self.type_division = type_division
         self.lacuna_sensibility = lacuna_sensibility
         self.liste_sigles = liste_sigles
+        self.temoin_base = temoin_base
 
     def run_injections(self):
         self.injection_apparats()
         self.injection_omissions()
-        self.injection_noeuds_non_textuels()
+        self.same_word_identification(distance=10)
         self.injection_intelligente()
-        self.transposition_recognition()
+        self.injection_noeuds_non_textuels()
         self.regroupement_omissions()
+        self.transposition_recognition()
+
+    def detection_homeotheleuton(self):
+        """TODO
+        Cette fonction détecte parmi les lacunes identifiées les homéothéleutes
+        Deux façons de faire:
+        - soit en travaillant sur les lemmes
+        - soit en travaillant sur des proximités formelles (mots proches à 60, 80%, ou qui commencent identiquement).
+        """
+        pass
 
     def regroupement_omissions(self):
         """
         Cette fonction lance l'identification des lacunes sur chaque témoin.
-        INPUTS: *transposed.xml
-        OUTPUTS: *transposed.lacuned.xml
+        INPUTS: *apparated.xml
+        OUTPUTS: *apparated.lacuned.xml
         """
-        output_filename = "_injected.transposed.lacuned.xml"
-        print(f"Regroupement des omissions: *injected.transposed.xml => *{output_filename}")
-        files =  glob.glob(f"{self.chemin}/*.transposed.xml")
+        output_filename = "_injected.apparated.lacuned.xml"
+        print(f"Regroupement des omissions: *injected.apparated.xml => *{output_filename}")
+        files = glob.glob(f"{self.chemin}/*.apparated.xml")
         assert len(files) > 0
 
         for fichier in files:
@@ -74,7 +85,8 @@ class Injector:
         OUTPUTS: *out.xml
         """
         print("Injection des apparats dans les témoins d'origine")
-        input_files = glob.glob("temoins_tokenises/*.xml")
+        input_files = utils.filter_existing_divs(glob.glob("temoins_tokenises/*.xml"), div_n=self.div_n,
+                                                 div_type=self.type_division)
         assert len(input_files) > 0
 
         for file in input_files:
@@ -89,15 +101,16 @@ class Injector:
                                          namespaces=self.ns_decl)
             dictionnary = {}
             for app in apps:
-                identifiants_rdg = utils.merge_list_of_lists([ID.split("_") for ID in app.xpath("descendant::tei:rdg/@n",
-                                                                                            namespaces=self.ns_decl)])
+                identifiants_rdg = utils.merge_list_of_lists(
+                    [ID.split("_") for ID in app.xpath("descendant::tei:rdg/@n",
+                                                       namespaces=self.ns_decl)])
                 # On met à jour le dictionnaire.
                 dictionnary = {**dictionnary, **{identifiant: app for identifiant in identifiants_rdg}}
 
             # Première étape, récupérer tous les tei:w du fichier tokénisé en ne filtrant que la division qui nous intéresse.
             try:
                 current_division = fichier_tokenise.xpath(f"//tei:div[@n='{self.div_n}'][@type='{self.type_division}']",
-                                                      namespaces=self.ns_decl)[0]
+                                                          namespaces=self.ns_decl)[0]
             # Quand la liste est vide, c'est que le témoin ne contient pas la division.
             except IndexError:
                 continue
@@ -106,16 +119,18 @@ class Injector:
             IDs = current_division.xpath(f"descendant::tei:w/@xml:id", namespaces=self.ns_decl)
 
             IDs_and_words = list(zip(IDs, words))
+
             # Deuxième étape
             for identifier, word in IDs_and_words:
                 parent_anchor = word.getparent()
                 try:
                     corresponding_app = dictionnary[identifier]
                 except KeyError as error:
-                    print(f"There was a problem with the injection."
-                          f"Please check there is no tei:w where there should not be"
+                    print(f"There was a problem with the injection with witness {sigle}. "
+                          f"Please check there is no tei:w where there should not be "
                           f"(in the notes for example). ID: {identifier}"
-                          f"The input files should be validated against the given schema.")
+                          f"\nThe input files should be validated against the given schema.")
+                    exit(0)
                 parent_anchor.insert(parent_anchor.index(word), corresponding_app)
                 parent_anchor.remove(word)
 
@@ -128,21 +143,15 @@ class Injector:
         """
         Le but de cette fonction est d'aller enrichir chaque rdg des informations originelles contenues dans les tei:w
         de chaque témoin.
-        INPUTS: *omitted.xml
-        OUTPUTS: *omitted.apparated.xml
+        INPUTS: *injected.xml
+        OUTPUTS: *apparated.xml
         """
 
         print("Injection des noeuds non textuels")
         tei_namespace = 'http://www.tei-c.org/ns/1.0'
         tei = '{%s}' % tei_namespace
-        regular_expression = "apparat_[A-Z][a-z]{2,4}_[A-Z]_[0-9]{1,2}_omitted.xml"
-        regular_expression_with_path = re.compile(f'{self.chemin}/{regular_expression}')
-        paths_fichiers_collationes_orig = glob.glob(f"{self.chemin}/*_omitted.xml")
+        paths_fichiers_collationes_orig = glob.glob(f"{self.chemin}/*injected.xml")
         assert len(paths_fichiers_collationes_orig) > 0
-
-        # On filtre avec l'expression régulière.
-        paths_fichiers_collationes_orig = [element for element in paths_fichiers_collationes_orig
-                                           if re.match(regular_expression_with_path, element)]
 
         # On va créer un dictionnaire dont les clés sont les sigles et les valeurs sont
         # des dictionnaires avec les éléments intéressants et leurs id
@@ -151,10 +160,9 @@ class Injector:
             tokenised_file = utils.parse_xml_file(f"temoins_tokenises/{sigle}.xml")
             annotated_file = utils.parse_xml_file(f"temoins_tokenises_regularises/{sigle}.xml")
 
-
             try:
                 tokenised_file.xpath(f"//tei:div[@n='{self.div_n}'][@type='{self.type_division}']",
-                                                      namespaces=self.ns_decl)[0]
+                                     namespaces=self.ns_decl)[0]
             # Quand la liste est vide, c'est que le témoin ne contient pas la division.
             except IndexError:
                 continue
@@ -181,13 +189,17 @@ class Injector:
         for path_fichier_collatione_orig in paths_fichiers_collationes_orig:
             fichier_collatione_orig = utils.parse_xml_file(path_fichier_collatione_orig)
             sigle_output = [sigle for sigle in self.liste_sigles if sigle in path_fichier_collatione_orig][0]
+            output_file = path_fichier_collatione_orig.replace(".xml", ".apparated.xml")
             print(sigle_output)
 
             # On récupère tous les ids. On va aller regarder dans chaque id dans le document original si
             # il y a un noeud non textuel
             # On re-boucle sur les sigles
-            # TODO: gérer les témoins qui ne contiennent pas une division, au niveau de la liste d'entrée.
-            for sigle_input in self.liste_sigles:
+
+            # https://stackoverflow.com/a/4843172
+            list_of_sigla = [sigle for sigle in self.liste_sigles if
+                             any(sigle in s for s in paths_fichiers_collationes_orig)]
+            for sigle_input in list_of_sigla:
                 for id, (element, lemma, pos) in dict_of_files[sigle_input].items():
                     corresponding_rdg = \
                         fichier_collatione_orig.xpath(f"descendant::tei:rdg[contains(tei:w/@xml:id, '{id}')]",
@@ -198,29 +210,51 @@ class Injector:
 
                     # On vérifie qu'il y a un seul témoin
 
-                    # Cas complexe: il faut créer un nouveau rdg
-                    if " " in corresponding_wits:
+                    # Cas complexe: le rdg concerne plusieurs témoins, il faut donc extraire
+                    # et créer un nouveau tei:rdg avec le noeud non textuel.
+                    # La deuxième condition est une rustine.
+                    if " " in corresponding_wits and " " != corresponding_wits:
                         # On supprime le témoin et l'identifiant du rdg
-                        ID_to_replace = corresponding_rdg.xpath("@xml:id")
                         new_rdg = etree.SubElement(corresponding_rdg.getparent(), tei + 'rdg')
                         corresponding_rdg.set("lemma", corresponding_lemmas)  # il faudrait nettoyer mais compliqué
                         corresponding_rdg.set("pos", corresponding_pos)  # idem
-                        corresponding_rdg.set("wit", corresponding_wits.replace(f"#{sigle_input}", ""))  # idem
+                        corresponding_rdg.set("wit", utils.clean_spaces_from_string(
+                            corresponding_wits.replace(f"#{sigle_input}", "")))  # idem
+                        new_rdg.set('inj', 'true')
                         new_rdg.set('n', id)
                         new_rdg.set('lemma', lemma)
                         new_rdg.set('pos', pos)
                         new_rdg.set('wit', "#" + sigle_input)
                         new_rdg.insert(0, element)
+                        if corresponding_rdg.xpath(f"descendant::node()[@corresp = '#{sigle_input}']"):
+                            print("Moving a node")
+                            corresponding_node = \
+                                corresponding_rdg.xpath(f"descendant::node()[@corresp = '#{sigle_input}']")[0]
+                            new_rdg.insert(corresponding_rdg.index(corresponding_node), corresponding_node)
 
-                    # Cas simple, on remplace les noeuds enfants du rdg
+                    # Cas simple: le rdg ne concerne qu'un témoin
                     else:
                         # On supprime le noeud
                         corresponding_w = corresponding_rdg.xpath("tei:w", namespaces=self.ns_decl)[0]
                         corresponding_w.getparent().remove(corresponding_w)
                         corresponding_rdg.insert(0, element)
+                        if corresponding_rdg.xpath(f"descendant::node()[@corresp = '#{sigle_input}']"):
+                            corresponding_node = \
+                                corresponding_rdg.xpath(f"descendant::node()[@corresp = '#{sigle_input}']")[0]
+                            corresponding_rdg.insert(corresponding_rdg.index(corresponding_node), corresponding_node)
+                    corresponding_app = corresponding_rdg.xpath("ancestor::tei:app", namespaces=self.ns_decl)[0]
+                    corresponding_app_typology = corresponding_app.xpath("@ana")[0]
+                    # if not "#codico" in corresponding_app_typology:
+                        # corresponding_app.set("ana", corresponding_app_typology + " #codico")
 
-            with open(f"{self.chemin}/apparat_{sigle_output}_{self.div_n}_omitted.apparated.xml", "w") as output_file:
-                output_file.write(etree.tostring(fichier_collatione_orig, pretty_print=True).decode())
+                # Enfin on supprime les éléments sans witness, qui signifie qu'ils ont tous été extraits individuellement.
+                for rdg_with_empty_wits in fichier_collatione_orig.xpath("//tei:rdg[not(contains(@wit, '#'))]",
+                                                                         namespaces=self.ns_decl):
+                    parent = rdg_with_empty_wits.getparent()
+                    parent.remove(rdg_with_empty_wits)
+
+            with open(output_file, "w") as output_apparated_file:
+                output_apparated_file.write(etree.tostring(fichier_collatione_orig, pretty_print=True).decode())
         print("Noeuds injectés !")
 
     def parallel_transformation(self, chemin_xsl, param_chapitre, liste):
@@ -237,104 +271,127 @@ class Injector:
     def transposition_recognition(self):
         """
         Cette fonction détecte les transpositions de la forme inversion de mots
-        INPUTS: *injected.xml
-        OUTPUTS: *injected.transposed.xml
+        INPUTS: *lacuned.xml
+        OUTPUTS: *transposed.xml
         """
-        files = glob.glob(f"{self.chemin}/*injected.xml")
+        print("Reconnaissance des transpositions")
+        files = glob.glob(f"{self.chemin}/*lacuned.xml")
         assert len(files) > 0
+        with open(".debug/debug_transp.txt", "w") as debug_file:
+            debug_file.truncate(0)
 
-        for file in files:
-            print(f"File {file}")
-            output_file = file.replace(".xml", ".transposed.xml")
-            with open(file, "r") as input_file:
-                f = etree.parse(input_file)
+            for file in files:
+                debug_file.write(f"---\n\nAnalyzing {file}\n")
+                print(f"File {file}")
+                output_file = file.replace(".xml", ".transposed.xml")
+                with open(file, "r") as input_file:
+                    f = etree.parse(input_file)
+                # On va travailler sur des n-grams de 3 à 5.
+                for distance in range(2, 5):
+                    # On exclut d'emblée
+                    apps = f.xpath("//tei:app[not(preceding::tei:milestone[@ana='#transposition'][1][@type='start'])]",
+                                   namespaces=self.ns_decl)
 
-            apps = f.xpath("//tei:app", namespaces=self.ns_decl)
+                    # D'abord on crée des bigrammes, et on va comparer chaque bigramme avec le suivant
+                    # Il faudrait faire tourner cette fonction sur des bigrammes, puis des trigrammes, etc.
+                    bigram_apps = [apps[i:i + distance] for i in range(len(apps))]
 
-            # D'abord on crée des bigrammes, et on va comparer chaque bigramme avec le suivant
-            # Il faudrait faire tourner cette fonction sur des bigrammes, puis des trigrammes, etc.
-            bigram_apps = [apps[i:i + 3] for i in range(len(apps))]
+                    for index in range(len(bigram_apps)):
+                        debug_file.write(f"New {str(distance)}-gram\n")
+                        ordered_Set_list = []
+                        set_list = []
 
-            for index in range(len(bigram_apps)):
-                ordered_Set_list = []
-                set_list = []
+                        # On crée des bigrammes de ces bigrammes
+                        # (i.e., on aura trois apparats différents répartis dans deux couples avec l'apparat central en commun)
+                        # On en extrait les analyses morphosyntaxiques et on en supprime la redondance
+                        for groupe_apparat in bigram_apps[index:index + 2]:
+                            ordered_set_tmp = []
+                            set_tmp = []
+                            for apparat in groupe_apparat:
+                                list_of_lemmas = "_".join(
+                                    apparat.xpath("descendant::tei:rdg/@*[name()='lemma']", namespaces=self.ns_decl)).split(
+                                    "_")
+                                list_of_pos = " ".join(
+                                    apparat.xpath("descendant::tei:rdg/@*[name()='pos']", namespaces=self.ns_decl)).split(
+                                    " ")
+                                lemmas_and_pos = [pos + lemma if pos+lemma != "" else "om" for pos, lemma in list(zip(list_of_pos, list_of_lemmas))]
+                                debug_file.write("|".join(lemmas_and_pos))
+                                debug_file.write("\n")
+                                ordered_set_tmp.append(OrderedSet(lemmas_and_pos))
+                                set_tmp.append(set(lemmas_and_pos))
+                            ordered_Set_list.append(ordered_set_tmp)
+                            set_list.append(set_tmp)
 
-                # On crée des bigrammes de ces bigrammes
-                # (i.e., on aura trois apparats différents répartis dans deux couples avec l'apparat central en commun)
-                # On en extrait les analyses morphosyntaxiques et on en supprime la redondance
-                for groupe_apparat in bigram_apps[index:index + 2]:
-                    ordered_set_tmp = []
-                    set_tmp = []
-                    for apparat in groupe_apparat:
-                        list_of_lemmas = "_".join(
-                            apparat.xpath("descendant::tei:rdg/@*[name()='lemma']", namespaces=self.ns_decl)).split("_")
-                        list_of_pos = " ".join(
-                            apparat.xpath("descendant::tei:rdg/@*[name()='pos']", namespaces=self.ns_decl)).split(" ")
-                        lemmas_and_pos = [pos + lemma for pos, lemma in list(zip(list_of_pos, list_of_lemmas))]
-                        with open("/home/mgl/Documents/debug_transp.txt", "a") as debug_file:
-                            debug_file.write("|".join(lemmas_and_pos))
-                            debug_file.write("\n")
-                        ordered_set_tmp.append(OrderedSet(lemmas_and_pos))
-                        set_tmp.append(set(lemmas_and_pos))
-                    ordered_Set_list.append(ordered_set_tmp)
-                    set_list.append(set_tmp)
+                        # Résultat: une liste d'OrderedSets
+                        # [
+                        # [OrderedSet(['', 'AQ0CS0grande']), OrderedSet(['NCMS000cuidado'])], # premier, deuxième app
+                        # [OrderedSet(['NCMS000cuidado']), OrderedSet(['AQ0CS0grande', ''])] # deuxième, troisième app
+                        # ]
 
-                # Résultat: une liste d'OrderedSets
-                # [
-                # [OrderedSet(['', 'AQ0CS0grande']), OrderedSet(['NCMS000cuidado'])], # premier, deuxième app
-                # [OrderedSet(['NCMS000cuidado']), OrderedSet(['AQ0CS0grande', ''])] # deuxième, troisième app
-                # ]
+                        # Et une liste de sets
+                        # [
+                        # [{'', 'AQ0CS0grande'}, {'NCMS000cuidado'}], # premier, deuxième app
+                        # [{'NCMS000cuidado'}, {'', 'AQ0CS0grande'}] # deuxième, troisième app
+                        # ]
 
-                # Et une liste de sets
-                # [
-                # [{'', 'AQ0CS0grande'}, {'NCMS000cuidado'}], # premier, deuxième app
-                # [{'NCMS000cuidado'}, {'', 'AQ0CS0grande'}] # deuxième, troisième app
-                # ]
+                        # Le but est de comparer un à un chaque élément (ordonnés) de ces listes. Si l'égalité est vraie pour les
+                        # ensembles non ordonnés mais fausse pour les ensembles ordonnés, on a logiquement un changement d'ordre
+                        # entre les éléments, donc une transposition.
 
-                # Le but est de comparer un à un chaque élément (ordonnés) de ces listes. Si l'égalité est vraie pour les
-                # ensembles non ordonnés mais fausse pour les ensembles ordonnés, on a logiquement un changement d'ordre
-                # entre les éléments, donc une transposition.
+                        # Il est possible que l'on laisse de côté certaines transpositions: si les sets ont la même longueur,
+                        # on ne pourra pas ordonner les listes et donc les comparer.
 
-                # Il est possible que l'on laisse de côté certaines transpositions: si les sets ont la même longueur,
-                # on ne pourra pas ordonner les listes et donc les comparer.
+                        # https://stackoverflow.com/a/7242838
+                        ordered_set_equality = all(
+                            sorted(ordered_Set_list[n], key=len) == sorted(ordered_Set_list[0], key=len) for n in
+                            range(len(ordered_Set_list)))
+                        unordered_set_equality = all(
+                            sorted(set_list[n], key=len) == sorted(set_list[0], key=len) for n in range(len(set_list)))
 
-                # https://stackoverflow.com/a/7242838
-                ordered_set_equality = all(
-                    sorted(ordered_Set_list[n], key=len) == sorted(ordered_Set_list[0], key=len) for n in
-                    range(len(ordered_Set_list)))
-                unordered_set_equality = all(
-                    sorted(set_list[n], key=len) == sorted(set_list[0], key=len) for n in range(len(set_list)))
+                        if not ordered_set_equality and unordered_set_equality:
+                            debug_file.write("Transposition detected.\n")
+                            print("Transposition detected.")
+                            list_of_positions = [int(apparat.xpath("count(preceding::tei:app)", namespaces=self.ns_decl))
+                                                 for
+                                                 apparat in groupe_apparat]
+                            max_pos = max(list_of_positions)
+                            min_pos = min(list_of_positions) - 1
 
-                if not ordered_set_equality and unordered_set_equality:
-                    list_of_positions = [int(apparat.xpath("count(preceding::tei:app)", namespaces=self.ns_decl)) for
-                                         apparat in groupe_apparat]
-                    max_pos = max(list_of_positions)
-                    min_pos = min(list_of_positions) - 1
-                    print("Found a transposition")
+                            # https://stackoverflow.com/a/6045260
+                            concerned_apps = f.xpath(f"//tei:app", namespaces=self.ns_decl)[min_pos: max_pos + 1]
+                            concerned_apps_typology = f.xpath(f"//tei:app/@ana", namespaces=self.ns_decl)[
+                                                      min_pos: max_pos + 1]
+                            first_app = concerned_apps[0]
 
-                    # https://stackoverflow.com/a/6045260
-                    concerned_apps = f.xpath(f"//tei:app", namespaces=self.ns_decl)[min_pos: max_pos + 1]
-                    first_app = concerned_apps[0]
-                    transposition_seg = etree.Element('{%s}' % self.tei_ns + 'seg')
-                    transposition_seg.set("ana", "#transposition")
-                    parent = first_app.getparent()
-                    parent.insert(parent.index(first_app), transposition_seg)
+                            # Let's update the typology for further use
+                            for index, transposed_app in enumerate(concerned_apps):
+                                transposed_app.set('ana', concerned_apps_typology[index] + ' #transposition')
 
-                    # On va insérer tous les éléments trouvés dans le tei:seg
-                    for i in concerned_apps[0:]:
-                        transposition_seg.insert(-1, i)
-                    # On ajoute le premier élément de la liste, sinon il est ajouté à la fin,
-                    # bug que je ne comprends pas
-                    transposition_seg.insert(0, concerned_apps[0])
-                    # On ajoute la balise de borne inférieure
-                    transposition_seg.insert(0, first_app)
+                            last_app = concerned_apps[-1]
 
-            with open(output_file, "w") as output_file:
-                output_file.write(etree.tostring(f, pretty_print=True).decode())
+                            starting_transposition_milestone = etree.Element('{%s}' % self.tei_ns + 'milestone')
+                            starting_transposition_milestone.set('ana', '#transposition')
+                            starting_transposition_milestone.set("type", "start")
+
+                            ending_transposition_milestone = etree.Element('{%s}' % self.tei_ns + 'milestone')
+                            ending_transposition_milestone.set('ana', '#transposition')
+                            ending_transposition_milestone.set("type", "end")
+
+                            first_parent = first_app.getparent()
+                            last_parent = last_app.getparent()
+
+                            first_parent.insert(first_parent.index(first_app), starting_transposition_milestone)
+                            last_parent.insert(last_parent.index(last_app) + 1, ending_transposition_milestone)
+
+                with open(output_file, "w") as output_xml_file:
+                    output_xml_file.write(etree.tostring(f, pretty_print=True).decode())
+
+        print("Fait !")
 
     def injection_omissions(self):
         '''
-        Cette fonction récupère tous les apparats contenant des omissions.
+        Cette fonction récupère tous les apparats contenant des omissions et les réinjecte dans les témoins.
+        En effet,
         INPUTS: des fichiers "*out.xml"
         OUTPUTS: des fichiers "*omitted.xml"
         '''
@@ -408,6 +465,7 @@ class Injector:
                                 print(f"File {temoin}")
                                 print(f"Error for anchor {anchor_id}. \nOmission: {omission}.\n"
                                       f"Exiting. Error can come from a wrong alignment of the source files.")
+                                print(e)
                                 exit(0)
                             anchor_parent = anchor_element.getparent()
                             # Ici on va voir si il n'y a pas un élément juste après (ex. note) pour éviter de le décaler; il est
@@ -415,7 +473,7 @@ class Injector:
                             if anchor_element.xpath(
                                     f"boolean(following-sibling::node()[1][not(self::tei:app | self::tei:w | self::tei:pc)])",
                                     namespaces=self.ns_decl):
-                                anchor_parent.insert(anchor_parent.index(anchor_element) + 2, app)
+                                anchor_parent.insert(anchor_parent.index(anchor_element) + 1, app)
                             else:
                                 anchor_parent.insert(anchor_parent.index(anchor_element) + 1, app)
                         elif anchor_name == "w":
@@ -488,21 +546,72 @@ class Injector:
     def injection_intelligente(self):
         """
         Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier.
-        INPUTS: *apparated.xml
-        OUTPUTS: *apparated.injected.xml
+        INPUTS: *omitted.xml
+        OUTPUTS: *injected.xml
         """
 
         with open(f".debug/injection.txt", "w+") as debug_file:
             debug_file.truncate(0)
 
-        liste_temoins = utils.get_file_list(f"{self.chemin}/*omitted.apparated.xml")
+        liste_temoins = utils.get_file_list(f"{self.chemin}/*omitted.xml")
 
         self.recuperation_elements()
         print("Reinjecting non apparatus elements in the other witnesses:")
         for witness in liste_temoins:
+            print(witness)
             self.reinjection_elements(target_file=witness)
             # on regarde le nombre d'exemples qui n'ont pas été injectés par temoin
-            self.verification_injections(temoin_a_verifier=witness)
+            # self.verification_injections(temoin_a_verifier=witness)
+        print("Done !")
+
+    def regroupement_apparats(self):
+        """
+        Cette fonction regroupe les apparats qui peuvent l'être. Si deux apparats
+        consécutifs contiennent les mêmes groupes de témoins, on peut les fusionner.
+        TODO: continuer ici.
+        """
+        file = "divs/div1/apparat_Sal_J_1_final.xml"
+
+        xml_file = utils.parse_xml_file(file)
+
+        # On veut récupérer les sigles groupés.
+        apps = xml_file.xpath("//tei:app", namespaces=self.ns_decl)
+
+        grouped_witnesses = {
+            index: tuple(app.xpath("descendant::tei:rdgGrp/descendant::tei:rdg/@wit", namespaces=self.ns_decl))
+            for index, app in enumerate(apps)}
+
+        ## Pour regrouper les consécutifs, on peut faire le regroupement d'abord puis regarder si les clés sont consécutives.
+        # https://stackoverflow.com/a/54249535
+        d = {tuple([k for k in grouped_witnesses.keys() if grouped_witnesses[k] == n]): n for n in
+             set(grouped_witnesses.values())}
+
+        # print(list(d.keys()))
+        d_list = d.keys()
+
+        list_of_positions = utils.merge_list_of_lists(
+            [utils.group_adjacent_positions(list(group)) for group in d_list if
+             utils.group_adjacent_positions(list(group))])
+        list_of_positions = [(first, last) for first, last in list_of_positions if first != last]
+        list_of_positions.sort(key=lambda x: x[0])
+
+        for first, last in list_of_positions:
+            print(list_of_positions)
+            # Ici on va prendre tous les apps et les fusionner en un seul
+            # en gardant tous les autres noeuds.
+            # Un problème va se poser avec la ponctuation.
+            # TODO: gérer la possibilité que des groupes soient constants mais qu'ils disent une chose
+            #  différente: ce n'est pas parce que ce sont les mêmes regroupements que la leçon est identique
+            #  pour les mêmes groupes
+            grouped_witnesses = [
+                tuple(app.xpath("descendant::tei:rdgGrp/descendant::tei:rdg/@wit", namespaces=self.ns_decl)) for app in
+                apps[first:last]]
+            print(grouped_witnesses)
+            exit(0)
+            old_app = apps[first]
+            parent = old_app.getparent()
+            new_app = etree.SubElement(parent, self.tei_ns + "app")
+            pass
 
     def lacuna_identification(self, chemin, output_file):
         """
@@ -569,7 +678,15 @@ class Injector:
                 omitted_apps = all_apps[position_inf:position_sup + 1]
 
                 for apparat in omitted_apps:
-                    empty_rdg = apparat.xpath("descendant::tei:rdg[not(node())]", namespaces=self.ns_decl)[0]
+                    try:
+                        empty_rdg = apparat.xpath("descendant::tei:rdg[not(node())]", namespaces=self.ns_decl)[0]
+                    except:
+                        print("Error for apparatus. Try relauching the program.")
+                        print(apparat)
+                        print(etree.tostring(apparat))
+                        id = apparat.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0]
+                        print(id)
+                        exit(0)
                     witnesses = apparat.xpath("descendant::tei:rdg[not(node())]/@wit", namespaces=self.ns_decl)[0]
                     pattern = re.compile(f"\s?{sigle}")
                     updated_wit_att = re.sub(pattern, '', witnesses)
@@ -583,10 +700,13 @@ class Injector:
                                           "))])]", namespaces=self.ns_decl)
         for omission in update_omissions:
             current_att = omission.xpath("@ana", namespaces=self.ns_decl)[0]
-            if current_att == "#omission":
-                omission.set('ana', '#not_apparat')
-            else:
+
+            # On change pour not_apparat si le type est seulement omission; sinon on supprime #omission.
+            if " " in current_att:
                 omission.set('ana', current_att.replace('#omission ', ''))
+            else:
+                omission.set('ana', current_att.replace('#omission', '#not_apparat'))
+
 
         # Ici on va regrouper tous les tei:witEnd et witStart individuels adjacents
         self.group_adjacent_nodes(xml_tree, 'witEnd')
@@ -617,10 +737,10 @@ class Injector:
         Cette fonction va regrouper les éléments identiques adjacents en un seul élément avec un attribut en commun.
         Utilisé pour regrouper les witStart et les witEnd.
         """
-        coexistent_witStart = tree.xpath(f"//tei:{node}[preceding-sibling::node()[1][self::tei:{node}]]",
-                                         namespaces=self.ns_decl)
-        positions = [int(witStart.xpath(f"count(preceding::tei:{node})", namespaces=self.ns_decl)) for witStart in
-                     coexistent_witStart]
+        coexistent_nodes = tree.xpath(f"//tei:{node}[preceding-sibling::node()[1][self::tei:{node}]]",
+                                      namespaces=self.ns_decl)
+        positions = [int(element.xpath(f"count(preceding::tei:{node})", namespaces=self.ns_decl)) for element in
+                     coexistent_nodes]
 
         ranges = [(a - 1, b) for a, b in utils.group_adjacent_positions(positions)]
         for adjacent_positions in ranges:
@@ -635,11 +755,14 @@ class Injector:
             corresp_attributes.sort()
             first_element.set('corresp', ' '.join(corresp_attributes))
 
-        for witStart in coexistent_witStart:
-            comment = etree.Comment(etree.tostring(witStart))
-            first_parent = witStart.getparent()
-            first_parent.insert(first_parent.index(witStart), comment)
-            witStart.getparent().remove(witStart)
+        for element in coexistent_nodes:
+            # xml_id = element.xpath("@xml:id")[0]
+            # next = element.xpath("@next")[0].replace('#', '')
+            # previous = element.xpath("@previous")[0].replace('#', '')
+            comment = etree.Comment(etree.tostring(element))
+            first_parent = element.getparent()
+            first_parent.insert(first_parent.index(element), comment)
+            element.getparent().remove(element)
 
     def recuperation_elements(self):
         """
@@ -739,9 +862,9 @@ class Injector:
                 pass
             else:
                 if position == "before":
-                    operation = operator.sub  # et on injectera donc avant ce tei:w (index(tei:w) - 1)
+                    index_shift = 0
                 else:
-                    operation = operator.add  # et on injectera donc après ce tei:w (index(tei:w) + 1)
+                    index_shift = 1
 
                 # Certains élément existent déjà (ceux du témoin de provenance)
                 if current_xml_tree.xpath(f"boolean(//node()[@xml:id='{element_id}'])"):
@@ -761,6 +884,7 @@ class Injector:
                         # Réécrire la fonction pour être plus spécifique sur l'exception.
                         anchor_word = \
                             current_xml_tree.xpath(f"//tei:w[@xml:id='{anchor_id}']", namespaces=self.ns_decl)[0]
+
                         # We want to inject the element in the tei:rdg containing our base witness.
                         if anchor_word.xpath("boolean(ancestor::tei:app)", namespaces=self.ns_decl):
                             # If  level eq work, we can reinject outside the apparatus.
@@ -783,22 +907,14 @@ class Injector:
                                     anchor_word = anchor_word.xpath(f"ancestor::tei:app", namespaces=self.ns_decl)[0]
 
                         # https://stackoverflow.com/questions/7474972/python-lxml-append-element-after-another-element
-                        if level == "work":
-                            # On peut sortir l'élément de l'apparat
-                            item_element = anchor_word.getparent()
-                            index = operation(item_element.index(anchor_word), 0)
+                        parent_element = anchor_word.getparent()
+                        index = parent_element.index(anchor_word) + index_shift
 
-                        else:
-                            item_element = anchor_word.getparent()
+                        # index can be -1 in case of a tei:w in a tei:rdg.
+                        if index == -1:
+                            index = 0
 
-                            # https://stackoverflow.com/a/54559513
-                            index = operation(item_element.index(anchor_word), 1)
-
-                            # index can be -1 in case of a tei:w in a tei:rdg.
-                            if index == -1:
-                                index = 0
-
-                        item_element.insert(index, element_to_inject)
+                        parent_element.insert(index, element_to_inject)
                     except Exception as e:
                         print(f"Injection failed for witness {sigla_output_wit}")
                         print(f"Element failed: {element_name}. Id: {element_id}. Original witness: {orig_witness}")
@@ -808,13 +924,40 @@ class Injector:
                               "first)")
                         print(anchor_word.xpath("@xml:id")[0])
 
-        with open(target_file.replace("apparated", "apparated.injected"), "w") as output_file:
+        with open(target_file.replace("omitted", "omitted.injected"), "w") as output_file:
             output_file.write(etree.tostring(current_xml_tree).decode())
+
+    def same_word_identification(self, distance):
+        """
+        Cette fonction identifie les mots qui se répètent dans un rayon donné par la variable {distance}
+        Elle permet de désambiguiser ensuite les mots dans les apparats.
+        """
+
+        liste_temoins = f"{self.chemin}/*_omitted.xml"
+
+        for temoin in glob.glob(liste_temoins):
+            sigle = utils.get_sigla_from_path(temoin)
+            print(sigle)
+
+            tree = etree.parse(temoin)
+            tei_words = tree.xpath(f"descendant::tei:w[ancestor::tei:rdg[contains(@wit, '{sigle}')]]",
+                                   namespaces=self.ns_decl)
+
+            forms = [word.text for index, word in enumerate(tei_words)]
+
+            same_words = [index for index, word in enumerate(forms) if word in forms[index + 1:index + 1 + distance]
+                          or word in forms[index - 1 - distance:index]]
+
+            [tei_w.set("ana", "#same_word") for index, tei_w in enumerate(tei_words) if index in same_words]
+
+            with open(temoin, "w") as output_file:
+                output_file.write(etree.tostring(tree, pretty_print=True).decode())
 
     def verification_injections(self, temoin_a_verifier):
         """
         Cette fonction vérifie le nombre d'éléments injectés
         Elle retourne le nombre d'éléments inejctés et leur id.
+        TODO: transformer cette fonction qui prend trop de ressources.
         """
 
         debug_file = open(f".debug/injection.txt", "a")

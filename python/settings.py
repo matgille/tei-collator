@@ -26,6 +26,7 @@ class Parametres:
         self.corpus_path = self.settings['localisation_fichiers']
         self.files_path = self.settings['chemin_vers_TEI']
         self.alignement = self.settings['alignement']
+        self.temoin_base = self.settings['temoin_base']
         self.lacuna_sensibility = self.settings['sensibilite_lacunes']
         self.path = self.settings['structure']
         self.lang = self.settings['lang']

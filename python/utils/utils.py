@@ -41,6 +41,7 @@ def nettoyage_liste_positions(liste_de_tuples):
     result.sort(key=lambda tup: tup[0])
     return result
 
+
 def get_file_list(path):
     """
     Return list of files and check if they exist.
@@ -49,6 +50,7 @@ def get_file_list(path):
     file_list = glob.glob(path)
     assert len(file_list) > 0
     return file_list
+
 
 def run_subprocess(liste):
     subprocess.run(liste)
@@ -128,29 +130,48 @@ def clean_xml_file(input_file, output_file):
     readings = tree.xpath("//tei:rdg", namespaces=tei_ns)
 
     for reading in readings:
-        #https://stackoverflow.com/a/2720418
+        # https://stackoverflow.com/a/2720418
         for attr in ["lemma", "pos", "n", "id"]:
             try:
                 reading.attrib.pop(attr)
             except:
                 continue
 
-
     # Then, the tei:w
     words = tree.xpath("//tei:w", namespaces=tei_ns)
 
     for word in words:
-        #https://stackoverflow.com/a/2720418
+        # https://stackoverflow.com/a/2720418
         [word.attrib.pop(attr) for attr in ['{http://www.w3.org/XML/1998/namespace}id']]
-
 
     with open(output_file, "w") as output_file:
         output_file.write(etree.tostring(tree, pretty_print=True).decode())
 
+def clean_spaces_from_string(string) -> str:
+    regexp_1 = re.compile(r"^\s | \s$")
+    regexp_2 = re.compile(r"\s+")
+    string = re.sub(regexp_2, " ", string)
+    string = re.sub(regexp_1, "", string)
+    return string
 
-def get_sigla_from_path(path):
+
+def filter_existing_divs(list_of_files, div_n, div_type) -> list:
+    files_with_div = []
+    for file in list_of_files:
+        tree = etree.parse(file)
+        presence = tree.xpath(f"boolean(//tei:div[@type =  '{div_type}'][@n = '{div_n}'])", namespaces=tei_ns)
+        if presence:
+            files_with_div.append(file)
+
+    return files_with_div
+
+def get_sigla_from_path(path: str) -> str:
+    """
+    Cette fonction retourne le sigle à partir d'un chemin (qui doit contenir le sigle)
+    """
     return [file.split('/')[-1].split('.xml')[0] for file in glob.glob("temoins_tokenises/*.xml")
             if file.split('/')[-1].split('.xml')[0] in path][0]
+
 
 def save_xml_file(xml_object, path):
     with open(path, "w") as output_file:
@@ -259,6 +280,36 @@ def group_adjacent_positions(positions: list) -> list:
         ranges.append((group[0], group[-1]))
 
     return ranges
+
+
+def return_adjacent_positions(positions: list) -> list:
+    """
+    Regroupe en une liste de tuples les entiers adjacents d'une liste
+    """
+    ranges = []
+    # https://stackoverflow.com/a/2154437 on veut regrouper les positions contigües.
+    print(f"Input: {positions}")
+    for k, g in itertools.groupby(enumerate(positions), lambda x: x[0] - x[1]):
+        group = (map(itemgetter(1), g))
+        group = list(map(int, group))
+        if len(group) > 1:
+            print(f"Output: {group}")
+            return group
+        else:
+            print(f"Output: None")
+            return
+
+def remove_accents(string):
+    accent_mapping = {'á': 'a',
+                      'é': 'e',
+                      'í': 'i',
+                      'ó': 'o',
+                      'ú': 'u',
+                      'ý': 'y'}
+    for orig, reg in accent_mapping.items():
+        string = string.replace(orig, reg)
+
+    return string
 
 
 def parse_xml_file(file):

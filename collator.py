@@ -42,7 +42,7 @@ def main():
     parser.add_argument("-p", "--parameters", default="parametres/lemmatisation.json",
                         help="Path to the parameter file.")
     parser.add_argument("-d", "--division", help="Division to be treated.")
-    parser.add_argument("-corr", "--correction", default=False,
+    parser.add_argument("-corr", "--correction", default=True,
                         help="Correction mode (outputs more information in xml files).")
     parser.add_argument("-to", "--tokenizeonly", default=False, help="Exit after tokenization.")
     parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
@@ -83,6 +83,7 @@ def main():
     print(f'Mode correction: {correction} \n ---- \n')
     print(f'Injection seule: {inject_only} \n ---- \n')
     alignement = parametres.alignement
+    temoin_base = parametres.temoin_base
     if alignement == "global" and not align_only:
         print("WARNING: l'alignement global ne fonctionne pas encore (xml:id identiques sur les non-apparats). "
               "On switche à un alignement mot à mot.\n\n ---- \n\n")
@@ -97,6 +98,10 @@ def main():
 
     liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
     if fusion_only:
+        for file in glob.glob(f"divs/div{division}/*transposed.xml"):
+            sigle = utils.get_sigla_from_path(file)
+            print(sigle)
+            utils.clean_xml_file(input_file=file, output_file=f"divs/div{division}/apparat_{sigle}_{division}_final.xml")
         print("Création des fichiers xml maîtres")
         sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division)}",
                                      chemin_corpus=chemin_corpus,
@@ -128,7 +133,8 @@ def main():
                                        type_division=parametres.type_division,
                                        lacuna_sensibility=parametres.lacuna_sensibility,
                                        liste_sigles=liste_sigles,
-                                       excluded_elements=excluded_ancestors)
+                                       excluded_elements=excluded_ancestors,
+                                       temoin_base=temoin_base)
         Injector.run_injections()
         chemin_fichiers = f"divs/div{str(division)}"
         sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
@@ -178,6 +184,7 @@ def main():
         for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
             temoin = f"temoins_tokenises_regularises/{temoin}"
             tokeniser.ajout_xml_id(temoin)
+            tokeniser.same_word_identification(temoin)
 
     if parametres.lemmatiser:
         print("Lemmatisation du corpus...")
@@ -287,7 +294,8 @@ def main():
 
         collationeur = collation.Collateur(log=False,
                                            chemin_fichiers=chemin_fichiers,
-                                           div_n=division)
+                                           div_n=division,
+                                           div_type=parametres.type_division)
         collationeur.run_collation()
         print("Création des apparats ✓")
 
@@ -319,7 +327,8 @@ def main():
                                         type_division=parametres.type_division,
                                         lacuna_sensibility=parametres.lacuna_sensibility,
                                         liste_sigles=liste_sigles,
-                                        excluded_elements=excluded_ancestors)
+                                        excluded_elements=excluded_ancestors,
+                                        temoin_base=temoin_base)
         injecteur.run_injections()
         # Ici on indique d'autres éléments tei à réinjecter.
 
@@ -338,8 +347,9 @@ def main():
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
 
 
-        for file in glob.glob(f"divs/div{i}/*lacuned.xml"):
+        for file in glob.glob(f"divs/div{i}/*transposed.xml"):
             sigle = utils.get_sigla_from_path(file)
+            print(sigle)
             utils.clean_xml_file(input_file=file, output_file=f"divs/div{i}/apparat_{sigle}_{i}_final.xml")
 
         for file in glob.glob(f"div{chemin_fichiers}/*final.xml"):

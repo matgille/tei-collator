@@ -29,9 +29,17 @@
         <xsl:text>",
         "tokens" : [</xsl:text>
         <!--<xsl:for-each select="descendant::tei:w[text()]|descendant::tei:pc">-->
-        <xsl:for-each select="descendant::tei:w[text()]">
+        <xsl:for-each select="descendant::tei:w[text()] | tei:milestone[@type = 'ancre_alignement']">
             <xsl:text>{"t": "</xsl:text>
-            <xsl:value-of select="normalize-space(.)"/>
+            <xsl:choose>
+                <xsl:when test="node()">
+                    <xsl:value-of select="normalize-space(.)"/>
+                </xsl:when>
+                <!--
+                <xsl:otherwise>
+                    <xsl:text>ø</xsl:text>
+                </xsl:otherwise>-->
+            </xsl:choose>
             <!--pour éviter des sauts de ligne qui ne sont vraiment pas appréciés par le validateur JSON-->
             <xsl:text> "</xsl:text>
             <xsl:choose>
@@ -67,13 +75,6 @@
                                     <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs-->
                                     <xsl:when test="$correction = 'True'">
                                         <xsl:value-of select="concat(@lemma, '|', @pos, '|')"/>
-                                        <!--on supprime les + qui marquent l'agglutination selon EAGLES et Freeling, pour un meilleur alignement.-->
-                                        <!--<xsl:value-of
-                    select="translate(@lemma, '+', ' ')"/>-->
-                                        <!--Éventuellement aller plus loin et ne mettre que la catégorie grammaticale?-->
-                                        <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs: peut être moins efficace ?-->
-                                        <!--Ajouter une règle de normalisation sur le POS si c'est un nom propre-->
-                                        <!--Voir pourquoi l'alignement global ne marche plus.-->
                                     </xsl:when>
                                     <xsl:otherwise>
                                         <xsl:value-of select="@lemma"/>
@@ -101,7 +102,8 @@
             <xsl:text>"}</xsl:text>
             <xsl:variable name="nom_temoin" select="ancestor::mgl:temoin/@n"/>
             <!--<xsl:if test="following::tei:w[text()][ancestor::mgl:temoin/@n = $nom_mgl:temoin]|following::tei:pc[ancestor::mgl:temoin/@n = $nom_mgl:temoin]">-->
-            <xsl:if test="following::tei:w[text()][ancestor::mgl:temoin/@n = $nom_temoin]">
+            <xsl:if
+                test="following::tei:w[text()][ancestor::mgl:temoin/@n = $nom_temoin] | following::tei:milestone[@type = 'ancre_alignement'][ancestor::mgl:temoin/@n = $nom_temoin]">
                 <xsl:text>,</xsl:text>
             </xsl:if>
         </xsl:for-each>

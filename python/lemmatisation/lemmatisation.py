@@ -1,3 +1,4 @@
+import collections
 import subprocess
 import sys
 import re
@@ -31,6 +32,48 @@ class CorpusALemmatiser:
             data = [(temoin, division) for temoin in self.chemin_vers_temoin]
             pool.starmap(self.lemmatisation, data)
 
+    def normalize_spelling(self):
+        '''
+        On normalise avec des expressions régulières avant d'envoyer à la lemmatisation, pour adapter au mieux
+        aux normes attendues par Freeling.
+        IN: *tokenized.txt
+        OUT: *.tokenized.normalized.txt
+        '''
+
+        # Attention à l'ordre.
+        table_normalisation = collections.OrderedDict({
+            re.compile(r'^rr(.*)'): r'r\g<1>',
+            re.compile(r'(.*)mm(.*)'): r'\g<1>m\g<2>',
+            re.compile(r'uj([aeiouyáéíóúý])'): r'vi\g<1>',
+            re.compile(r'lv([aeiouyáéíóúý])'): r'lu\g<1>',
+            re.compile(r'([aeiouyáéíóúý])v([aeiouyáéíóúý])'): r'\g<1>u\g<2>',
+        })
+
+        accent_mapping = {'á': 'a',
+                          'é': 'e',
+                          'í': 'i',
+                          'ó': 'o',
+                          'ú': 'u',
+                          'ý': 'y'}
+
+        for text_file in glob.glob("temoins_tokenises_regularises/txt/*tokenized.txt"):
+            with open(text_file, "r") as input_text_file:
+                list_of_words = {index: line.replace('\n', '') for index, line in
+                                 enumerate(input_text_file.readlines())}
+
+            normalized_list = []
+            for index, form in list_of_words.items():
+                for orig, reg in table_normalisation.items():
+                    form = re.sub(orig, reg, form)
+                normalized_list.append(form)
+            normalized_list.append("")
+            text = "\n".join(normalized_list)
+            for orig, reg in accent_mapping.items():
+                text = text.replace(orig, reg)
+
+            with open(text_file.replace('.txt', '.normalized.txt'), "w") as output_text_file:
+                output_text_file.write(text)
+
     def lemmatisation(self, temoin, division):
         """
             Lemmatisation du fichier XML et réinjection dans le document xml originel.
@@ -41,7 +84,8 @@ class CorpusALemmatiser:
         fichier_sans_extension = os.path.splitext(fichier)[0]
         fichier_xsl = "xsl/lemmatisation/transformation_pre_lemmatisation.xsl"
         chemin_vers_fichier = f"temoins_tokenises_regularises/{str(fichier)}"
-        fichier_entree_txt = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}.txt'
+        fichier_entree_txt = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}_tokenized.txt'
+        fichier_normalized = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}_tokenized.normalized.txt'
         param_division = f"division={division}"
         param_sortie = f"sortie={fichier_entree_txt}"
         subprocess.run(["java", "-jar",
@@ -50,11 +94,13 @@ class CorpusALemmatiser:
                         fichier_xsl,
                         param_sortie,
                         param_division])
+
         if self.langue == "spa_o":
-            fichier_lemmatise = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}_lemmatise.txt'
+            # self.normalize_spelling()
+            fichier_lemmatise = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}.lemmatized.txt'
             cmd_sh = ["sh",
                       "python/lemmatisation/analyze.sh",
-                      fichier_entree_txt,
+                      fichier_normalized,
                       fichier_lemmatise]  # je dois passer par un script externe car un subprocess tourne dans le vide,
             # pas trouvé pourquoi
             subprocess.run(cmd_sh)
@@ -71,7 +117,7 @@ class CorpusALemmatiser:
             tokens = root.xpath(groupe_words, namespaces=self.nsmap)
             fichier_lemmatise = temoin_tokenise
             n = 1
-
+            print(f"Témoin {fichier}; nombre de tokens: {len(tokens)}")
             for index, mot in enumerate(tokens):
                 # Ça marche bien si la lemmatisation se fait
                 # sans retokenisation. Pour l'instant, ça bloque avec les chiffre (ochenta mill est fusionné). Voir
@@ -85,7 +131,7 @@ class CorpusALemmatiser:
                     print("You should check for empty tei:w in tokenized files.")
                     print(f"{mot}, {[previous_token.text for previous_token in tokens[index - 10: index]]}")
                     xml_id = mot.xpath("@xml:id", namespaces=self.nsmap)[0]
-                    exit(1)
+                    exit(0)
 
                 # On injecte les analyses.
                 if mot.xpath("@lemma") and mot.xpath("@pos"):  # si l'analyse est déjà présente (cas des lemmes
@@ -159,4 +205,3 @@ if __name__ == "__main__":
         nombre_coeurs=mp.cpu_count()
     )
     corpus_a_lemmatiser.lemmatisation_parallele(division)
-
