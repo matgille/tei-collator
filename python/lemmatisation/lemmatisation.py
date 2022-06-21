@@ -96,7 +96,7 @@ class CorpusALemmatiser:
                         param_division])
 
         if self.langue == "spa_o":
-            # self.normalize_spelling()
+            self.normalize_spelling()
             fichier_lemmatise = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}.lemmatized.txt'
             cmd_sh = ["sh",
                       "python/lemmatisation/analyze.sh",
@@ -117,7 +117,6 @@ class CorpusALemmatiser:
             tokens = root.xpath(groupe_words, namespaces=self.nsmap)
             fichier_lemmatise = temoin_tokenise
             n = 1
-            print(f"Témoin {fichier}; nombre de tokens: {len(tokens)}")
             for index, mot in enumerate(tokens):
                 # Ça marche bien si la lemmatisation se fait
                 # sans retokenisation. Pour l'instant, ça bloque avec les chiffre (ochenta mill est fusionné). Voir
