@@ -56,7 +56,7 @@ def test_lemmatization(div_n, div_type, temoin_leader):
         f = etree.parse(input_xml_file)
 
     target_div = f.xpath(f"//tei:div[@type='{div_type}'][@n = '{div_n}']", namespaces=NSMAP)[0]
-    first_token = target_div.xpath("descendant::tei:w[not(@mode='manuel')][1]", namespaces=NSMAP)[0]
+    first_token = target_div.xpath("descendant::tei:w[not(@ana='#annotation_manuelle')][1]", namespaces=NSMAP)[0]
     try:
         lemma = first_token.xpath("@lemma")[0]
         pos = first_token.xpath("@pos")[0]

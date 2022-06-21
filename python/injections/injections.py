@@ -220,7 +220,6 @@ class Injector:
                         corresponding_rdg.set("pos", corresponding_pos)  # idem
                         corresponding_rdg.set("wit", utils.clean_spaces_from_string(
                             corresponding_wits.replace(f"#{sigle_input}", "")))  # idem
-                        new_rdg.set('inj', 'true')
                         new_rdg.set('n', id)
                         new_rdg.set('lemma', lemma)
                         new_rdg.set('pos', pos)
