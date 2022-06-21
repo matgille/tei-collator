@@ -57,7 +57,7 @@
             </xsl:if>
             <!--On ajoute cet attribut pour ne pas confondre ces tei:w avec ceux produits par le tokéniseur (cas de la correction de corpus);
             À supprimer après.-->
-            <xsl:attribute name="mode">manuel</xsl:attribute>
+            <xsl:attribute name="ana">#annotation_manuelle</xsl:attribute>
             <!--On ajoute cet attribut pour ne pas confondre ces tei:w avec ceux produits par le tokéniseur (cas de la correction de corpus)-->
             <xsl:copy-of select="child::node()"/>
         </xsl:element>
@@ -209,7 +209,7 @@
     </xsl:template>
 
     <xsl:template
-        match="tei:w[preceding-sibling::tei:w[not(@mode = 'manuel')][1][tei:hi][text() = text()]]"
+        match="tei:w[preceding-sibling::tei:w[not(@ana = '#annotation_manuelle')][1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
 
 
