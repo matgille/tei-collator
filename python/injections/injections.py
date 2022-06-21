@@ -876,7 +876,7 @@ class Injector:
                         0:2])
                     element_name = element_to_inject.xpath("local-name()")
                     element_id = element_to_inject.xpath("@xml:id")[0]
-                    element_to_inject.set("injected", "injected")  # il faudra nettoyer ça à la fin de la boucle.
+                    element_to_inject.set("ana", "#injected")  # il faudra nettoyer ça à la fin de la boucle.
                     element_to_inject.set("corresp",
                                           f'#{orig_witness}')  # on indique de quel témoin provient l'élément.
                     try:
