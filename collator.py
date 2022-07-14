@@ -24,15 +24,8 @@ import python.tests.tests as tests
 import python.utils.utils as utils
 
 
-# IMPORTANT: pour la POO, considérer le corpus comme un objet ? En faire une classe qui permette de tout traiter
-# à partir de là ? Suppose de demander un tei:teiCorpus
-
-# TODO: URGENT ! vérifier pourquoi les tei:w/tei:sic sont supprimés. 
-# TODO: nettoyer le tout / s'occuper de la conservation des xml:id pour ne pas avoir à les régénérer
 # Remerciements: merci à Élisa Nury pour ses éclaircissements sur le fonctionnement de CollateX et ses
 # conseils.
-# Todo: faire du mot à mot et s'occuper de rassembler en plus gros apparats après. Si on fait du mot à mot, l'éclatement
-# du TEI n'a plus aucun sens car il n'y a plus de risque de destructurer...
 
 
 def main():
@@ -57,6 +50,7 @@ def main():
     ##### Settings
     args = parser.parse_args()
     similarity_only = args.similarityonly
+    print(similarity_only)
     correction = args.correction
     log = correction
     inject_only = args.injectiononly
@@ -70,6 +64,9 @@ def main():
     witness = args.witness
     fusion_only = args.fusiononly
     #####
+
+    # We start by removing all debug files
+    utils.remove_debug_files()
 
     if division is None:
         division = "*"
@@ -117,8 +114,10 @@ def main():
         exit(0)
 
     if similarity_only:
-        for fichier in glob.glob(f"divs/div{division}/*_injected_punct.xml"):
-            similarity.compute_similarity(fichier)
+        for fichier in glob.glob(f"divs/div{division}/apparat_Mad_G_{division}_omitted.injected.apparated.lacuned.transposed.xml"):
+            # similarity.compute_similarity(fichier)
+            print(fichier)
+            similarity.similarity_eval_set_creator(division, fichier)
         exit(0)
 
     if inject_only:
@@ -175,6 +174,7 @@ def main():
         else:
             exit(0)
         print(parametres.corpus_path)
+        utils.remove_files(f"temoins_tokenises_regularises/txt/*")
         tokeniser = tokenisation.Tokenizer(saxon=saxon,
                                            temoin_leader=parametres.temoin_leader,
                                            nodes_to_reinject=parametres.reinjection)
@@ -336,10 +336,6 @@ def main():
         for file in glob.glob(f"{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
             shutil.copy(file, f'divs/results')
 
-        if similarity_only:
-            for fichier in glob.glob(f"{chemin_fichiers}/*_injected_punct.xml"):
-                similarity.compute_similarity(fichier)
-            exit(0)
 
         if synonyms_datasets:
             similarity.similarity_eval_set_creator(i)

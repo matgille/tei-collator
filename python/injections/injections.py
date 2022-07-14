@@ -1,17 +1,12 @@
-import copy
-import json
 import re
 from ordered_set import OrderedSet
 
 from lxml import etree
 import glob
-import operator
 import multiprocessing as mp
-import subprocess
-
-from tqdm import tqdm
 
 import python.utils.utils as utils
+from typing import List
 
 
 class Injector:
@@ -44,23 +39,136 @@ class Injector:
         self.liste_sigles = liste_sigles
         self.temoin_base = temoin_base
 
+        self.dict_ids_forms = {}
+        self.get_ids_and_forms()
+
+    def get_ids_and_forms(self):
+        """
+        This function produces a dict containing all the forms of any tei:w, with their @xml:id
+        """
+        for i in self.liste_sigles:
+            with open(f"temoins_tokenises_regularises/{i}.xml", "r") as input_xml:
+                parsed = etree.parse(input_xml)
+            words = parsed.xpath("//tei:w", namespaces=self.ns_decl)
+            forms = [word.xpath("text()", namespaces=self.ns_decl)[0].replace('\n', '') for word in words]
+            ids = [word.xpath("@xml:id", namespaces=self.ns_decl)[0] for word in words]
+
+            # Il faudrait normaliser les formes
+
+            assert len(ids) == len(forms)
+
+            witness_dict = dict(zip(ids, forms))
+            self.dict_ids_forms = {**self.dict_ids_forms, **witness_dict}
+
     def run_injections(self):
-        self.injection_apparats()
-        self.injection_omissions()
-        self.same_word_identification(distance=10)
+        # self.injection_apparats()
+        # self.injection_omissions()
+        # self.same_word_identification(distance=10)
         self.injection_intelligente()
         self.injection_noeuds_non_textuels()
         self.regroupement_omissions()
         self.transposition_recognition()
 
-    def detection_homeotheleuton(self):
-        """TODO
-        Cette fonction détecte parmi les lacunes identifiées les homéothéleutes
-        Deux façons de faire:
-        - soit en travaillant sur les lemmes
-        - soit en travaillant sur des proximités formelles (mots proches à 60, 80%, ou qui commencent identiquement).
+    def detection_homeoteleuton(self, lacune: list) -> bool:
         """
-        pass
+        Cette fonction détecte parmi les lacunes identifiées les sauts du même au même par homéothéleutes
+        en travaillant sur les formes. On peut détecter un saut du même au même de deux façons:
+
+        - en regardant le dernier mot de la lacune et le mot qui la précède (cas A);
+
+        - ou en regardant le premier mot de l'omission et le mot qui la suit (cas B).
+
+        :param lacune: Une liste d'apparats qui contiennent une lacune identifiée.
+
+        :return: Un booléen. Identification ou non d'un saut du même au même.
+        """
+
+        first_app, second_app, penultimate_app, last_app = lacune[0], lacune[1], lacune[-2], lacune[-1]
+
+        # Cas (A)
+        preceding_forms_id = first_app.xpath("preceding::tei:app[1]/descendant::tei:w/@xml:id", namespaces=self.ns_decl)
+        preceding_app_forms = [self.dict_ids_forms[splitted] for id in preceding_forms_id for splitted in id.split("_")]
+
+        last_form_id = last_app.xpath("descendant::tei:w/@xml:id", namespaces=self.ns_decl)
+        last_app_forms = [self.dict_ids_forms[splitted] for id in last_form_id for splitted in id.split("_")]
+
+        assert len(preceding_app_forms) <= len(
+            self.liste_sigles), "Le nombre de formes devrait être inférieur ou égal au nombre de témoins."
+
+        result_A = any(form in preceding_app_forms for form in last_app_forms)
+
+        if result_A:
+            # On recommence avec le second app pour donner une mesure de certitude:
+            second_preceding_forms_id = first_app.xpath("preceding::tei:app[2]/descendant::tei:w/@xml:id",
+                                                        namespaces=self.ns_decl)
+            second_preceding_forms = [self.dict_ids_forms[splitted] for id in second_preceding_forms_id for splitted in
+                                      id.split("_")]
+
+            penultimate_form_id = penultimate_app.xpath("descendant::tei:w/@xml:id", namespaces=self.ns_decl)
+            penultimate_app_forms = [self.dict_ids_forms[splitted] for id in penultimate_form_id for splitted in
+                                     id.split("_")]
+
+            result_A_2 = any(form in second_preceding_forms for form in penultimate_app_forms)
+
+        # Cas (B)
+        # On va chercher les formes normalisés dans le fichier tokénisé.
+        first_form_id = first_app.xpath("descendant::tei:w/@xml:id", namespaces=self.ns_decl)
+        first_app_forms = [self.dict_ids_forms[splitted] for id in first_form_id for splitted in id.split("_")]
+
+        following_forms_id = last_app.xpath("following::tei:app[1]/descendant::tei:w/@xml:id", namespaces=self.ns_decl)
+        following_app_forms = [self.dict_ids_forms[splitted] for id in following_forms_id for splitted in id.split("_")]
+
+        assert len(following_app_forms) <= len(
+            self.liste_sigles), "Le nombre de formes devrait être inférieur ou égal au nombre de témoins."
+
+        # On veut qu'au moins une forme dans le premier apparat se retrouve dans l'apparat qui suit l'omission
+        # Ça n'est pas une preuve de saut du même au même (puisqu'on ne connaît pas lors de la collation
+        # les relations entre témoins), mais au moins un indice d'une possible omission par homéoteleute.
+
+        result_B = any(form in following_app_forms for form in first_app_forms)
+
+        if result_B:
+            # On recommence avec le second app pour donner une mesure de certitude:
+            second_form_id = second_app.xpath("descendant::tei:w/@xml:id", namespaces=self.ns_decl)
+            second_app_forms = [self.dict_ids_forms[splitted] for id in second_form_id for splitted in id.split("_")]
+
+            second_following_forms_id = last_app.xpath("following::tei:app[2]/descendant::tei:w/@xml:id",
+                                                       namespaces=self.ns_decl)
+            second_following_app_forms = [self.dict_ids_forms[splitted] for id in second_following_forms_id for splitted
+                                          in
+                                          id.split("_")]
+
+            result_B_2 = any(form in second_following_app_forms for form in second_app_forms)
+
+        result = result_A or result_B
+
+        if (result_A and result_A_2) or (result_B and result_B_2):
+            certainty = "high"
+        elif (result_A and not result_A_2) or (result_B and not result_B_2):
+            certainty = "medium"
+        else:
+            certainty = None
+
+        # Débug et log.
+        if result_A:
+            debug_result = f"New homeoteleuton found (method A).\n" \
+                           f"first omitted app forms: {', '.join(first_app_forms)}\n" \
+                           f"first omitted app ids: {', '.join(first_form_id)}\n" \
+                           f"first following app: {', '.join(following_app_forms)}\n" \
+                           f"first following id: {', '.join(following_forms_id)}\n"
+            utils.append_to_file(".debug/homeoteleuton.txt", debug_result)
+
+        if result_B:
+            debug_result = f"New homeoteleuton found (method B).\n" \
+                           f"last omitted app forms: {', '.join(last_app_forms)}\n" \
+                           f"last omitted app ids: {', '.join(last_form_id)}\n" \
+                           f"first preceding app: {', '.join(preceding_app_forms)}\n" \
+                           f"first preceding id: {', '.join(preceding_forms_id)}\n"
+            utils.append_to_file(".debug/homeoteleuton.txt", debug_result)
+
+        # On pourrait travailler à des niveaux de certitude, en comparant deux mots au lieu d'un par exemple.
+
+        return result, certainty
 
     def regroupement_omissions(self):
         """
@@ -142,7 +250,7 @@ class Injector:
     def injection_noeuds_non_textuels(self):
         """
         Le but de cette fonction est d'aller enrichir chaque rdg des informations originelles contenues dans les tei:w
-        de chaque témoin.
+        de chaque témoin. En particulier, elle crée de nouveaux tei:rdg si un noeud non textuel est identifié.
         INPUTS: *injected.xml
         OUTPUTS: *apparated.xml
         """
@@ -207,24 +315,35 @@ class Injector:
                     corresponding_wits = corresponding_rdg.xpath("@wit")[0]
                     corresponding_lemmas = corresponding_rdg.xpath("@lemma")[0]
                     corresponding_pos = corresponding_rdg.xpath("@pos")[0]
-
+                    corresponding_ids = corresponding_rdg.xpath("@n")[0]
+                    corresponding_w = corresponding_rdg.xpath("tei:w", namespaces=self.ns_decl)[0]
                     # On vérifie qu'il y a un seul témoin
 
                     # Cas complexe: le rdg concerne plusieurs témoins, il faut donc extraire
                     # et créer un nouveau tei:rdg avec le noeud non textuel.
                     # La deuxième condition est une rustine.
+
                     if " " in corresponding_wits and " " != corresponding_wits:
                         # On supprime le témoin et l'identifiant du rdg
                         new_rdg = etree.SubElement(corresponding_rdg.getparent(), tei + 'rdg')
                         corresponding_rdg.set("lemma", corresponding_lemmas)  # il faudrait nettoyer mais compliqué
                         corresponding_rdg.set("pos", corresponding_pos)  # idem
                         corresponding_rdg.set("wit", utils.clean_spaces_from_string(
-                            corresponding_wits.replace(f"#{sigle_input}", "")))  # idem
+                            corresponding_wits.replace(f"#{sigle_input}", "")
+                        ))  # idem
+
+                        updated_id = utils.clean_underscode_from_string(
+                            corresponding_ids.replace(f"{id}", "")
+                        )
+
+                        corresponding_rdg.set("n", updated_id)
+                        corresponding_w.set("{http://www.w3.org/XML/1998/namespace}id", updated_id)
                         new_rdg.set('n', id)
                         new_rdg.set('lemma', lemma)
                         new_rdg.set('pos', pos)
                         new_rdg.set('wit', "#" + sigle_input)
                         new_rdg.insert(0, element)
+
                         if corresponding_rdg.xpath(f"descendant::node()[@corresp = '#{sigle_input}']"):
                             print("Moving a node")
                             corresponding_node = \
@@ -234,7 +353,6 @@ class Injector:
                     # Cas simple: le rdg ne concerne qu'un témoin
                     else:
                         # On supprime le noeud
-                        corresponding_w = corresponding_rdg.xpath("tei:w", namespaces=self.ns_decl)[0]
                         corresponding_w.getparent().remove(corresponding_w)
                         corresponding_rdg.insert(0, element)
                         if corresponding_rdg.xpath(f"descendant::node()[@corresp = '#{sigle_input}']"):
@@ -244,7 +362,7 @@ class Injector:
                     corresponding_app = corresponding_rdg.xpath("ancestor::tei:app", namespaces=self.ns_decl)[0]
                     corresponding_app_typology = corresponding_app.xpath("@ana")[0]
                     # if not "#codico" in corresponding_app_typology:
-                        # corresponding_app.set("ana", corresponding_app_typology + " #codico")
+                    # corresponding_app.set("ana", corresponding_app_typology + " #codico")
 
                 # Enfin on supprime les éléments sans witness, qui signifie qu'ils ont tous été extraits individuellement.
                 for rdg_with_empty_wits in fichier_collatione_orig.xpath("//tei:rdg[not(contains(@wit, '#'))]",
@@ -308,12 +426,15 @@ class Injector:
                             set_tmp = []
                             for apparat in groupe_apparat:
                                 list_of_lemmas = "_".join(
-                                    apparat.xpath("descendant::tei:rdg/@*[name()='lemma']", namespaces=self.ns_decl)).split(
+                                    apparat.xpath("descendant::tei:rdg/@*[name()='lemma']",
+                                                  namespaces=self.ns_decl)).split(
                                     "_")
                                 list_of_pos = " ".join(
-                                    apparat.xpath("descendant::tei:rdg/@*[name()='pos']", namespaces=self.ns_decl)).split(
+                                    apparat.xpath("descendant::tei:rdg/@*[name()='pos']",
+                                                  namespaces=self.ns_decl)).split(
                                     " ")
-                                lemmas_and_pos = [pos + lemma if pos+lemma != "" else "om" for pos, lemma in list(zip(list_of_pos, list_of_lemmas))]
+                                lemmas_and_pos = [pos + lemma if pos + lemma != "" else "om" for pos, lemma in
+                                                  list(zip(list_of_pos, list_of_lemmas))]
                                 debug_file.write("|".join(lemmas_and_pos))
                                 debug_file.write("\n")
                                 ordered_set_tmp.append(OrderedSet(lemmas_and_pos))
@@ -350,9 +471,10 @@ class Injector:
                         if not ordered_set_equality and unordered_set_equality:
                             debug_file.write("Transposition detected.\n")
                             print("Transposition detected.")
-                            list_of_positions = [int(apparat.xpath("count(preceding::tei:app)", namespaces=self.ns_decl))
-                                                 for
-                                                 apparat in groupe_apparat]
+                            list_of_positions = [
+                                int(apparat.xpath("count(preceding::tei:app)", namespaces=self.ns_decl))
+                                for
+                                apparat in groupe_apparat]
                             max_pos = max(list_of_positions)
                             min_pos = min(list_of_positions) - 1
 
@@ -381,6 +503,26 @@ class Injector:
 
                             first_parent.insert(first_parent.index(first_app), starting_transposition_milestone)
                             last_parent.insert(last_parent.index(last_app) + 1, ending_transposition_milestone)
+
+                            # Finallement on va mettre à jour les omissions par homéotéleutes:
+                            # on peut confondre saut du même au même et transposition.
+                            if first_app.xpath("boolean(preceding::node()[self::tei:witEnd or self::tei:witStart][1]"
+                                               "[self::tei:witEnd[@ana='#homeoteleuton']])", namespaces=self.ns_decl):
+                                # on supprime l'analyse.
+                                print("Removing homeoteleuton analysis")
+                                preceding_witEnd = \
+                                    first_app.xpath("preceding::node()[self::tei:witEnd or self::tei:witStart][1]"
+                                                    "[self::tei:witEnd[@ana='#homeoteleuton']]",
+                                                    namespaces=self.ns_decl)[0]
+                                preceding_witEnd_ana = preceding_witEnd.xpath("@ana")[0]
+
+                                # Au cas où on aurait plus d'une analyse.
+                                if preceding_witEnd_ana == '#homeoteleuton':
+                                    del preceding_witEnd.attrib['ana']
+                                else:
+                                    updated_ana = utils.clean_spaces_from_string(
+                                        preceding_witEnd_ana.replace('#homeoteleuton', ''))
+                                    preceding_witEnd.set('ana', updated_ana)
 
                 with open(output_file, "w") as output_xml_file:
                     output_xml_file.write(etree.tostring(f, pretty_print=True).decode())
@@ -617,7 +759,9 @@ class Injector:
         Définition de lacune: une suite d'éléments d'apparats qui contiennent un élément vide
         Cette fonction regroupe les apparats marqués commes des ommissions dans un tei:seg pointant vers l'analyse d'omission.
         Fonction récursive. Une itération de la fonction correspond au regroupement d'un ensemble d'omissions.
-        param :sensibilite: le nombre minimum d'apparats consécutifs  pour que soit considérée la lacune.
+
+        :param chemin: le chemin vers le fichier xml d'entrée
+        :param output_file: le fichier à produire en sortie.
         """
         with open(chemin, "r") as file:
             xml_tree = etree.parse(file)
@@ -655,10 +799,19 @@ class Injector:
 
                 start_ident: str = utils.generateur_id()
                 end_ident: str = utils.generateur_id()
+
                 witEnd = etree.Element(namespace + 'witEnd')
                 witEnd.set('{http://www.w3.org/XML/1998/namespace}id', start_ident)
                 witEnd.set('corresp', sigle)
                 witEnd.set('next', f'#{end_ident}')
+
+                # On vérifie si l'omission correspond à un saut du même au même
+                meme_au_meme, certainty = self.detection_homeoteleuton(all_apps[position_inf:position_sup + 1])
+
+                if meme_au_meme:
+                    utils.append_to_file(".debug/homeoteleuton.txt", f"witEnd id: {start_ident}\n")
+                    witEnd.set('ana', '#homeoteleuton')
+                    witEnd.set('cert', certainty)
 
                 witStart = etree.Element(namespace + 'witStart')
                 witStart.set('{http://www.w3.org/XML/1998/namespace}id', end_ident)
@@ -706,7 +859,6 @@ class Injector:
             else:
                 omission.set('ana', current_att.replace('#omission', '#not_apparat'))
 
-
         # Ici on va regrouper tous les tei:witEnd et witStart individuels adjacents
         self.group_adjacent_nodes(xml_tree, 'witEnd')
         self.group_adjacent_nodes(xml_tree, 'witStart')
@@ -748,11 +900,14 @@ class Injector:
                 tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {pos_inf}]", namespaces=self.ns_decl)[0]
             corresp_attributes = [tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {cur_pos}]/@corresp",
                                              namespaces=self.ns_decl)[0] for cur_pos in range(pos_inf, pos_sup + 1)]
+            corresp_ids = [tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {cur_pos}]/@xml:id",
+                                      namespaces=self.ns_decl)[0] for cur_pos in range(pos_inf, pos_sup + 1)]
 
             # linked_elements = [tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {cur_pos}]/@{attribute}",
             # namespaces=self.ns_decl)[0] for cur_pos in range(pos_inf, pos_sup + 1)]
             corresp_attributes.sort()
             first_element.set('corresp', ' '.join(corresp_attributes))
+            first_element.set('{http://www.w3.org/XML/1998/namespace}id', '_'.join(corresp_ids))
 
         for element in coexistent_nodes:
             # xml_id = element.xpath("@xml:id")[0]
@@ -841,7 +996,7 @@ class Injector:
                 zip(final_list_of_tokens_id, elements_to_inject, final_witness_list, before_or_after, level_list))
             self.processed_list.extend(intermed_notes_tuples)
 
-    def reinjection_elements(self, target_file):
+    def reinjection_elements(self, target_file: str):
         """
         Cette fonction réinjecte dans chaque fichier l'ensemble des fichiers xml les éléments tei récupérés
         """
@@ -857,71 +1012,70 @@ class Injector:
                 print(etree.tostring(element_to_inject, pretty_print=True).decode())
                 print(f"Exiting. Please make sure the element is identified by an @xml:id.")
                 exit(0)
-            if orig_witness in target_file:
-                pass
+            if position == "before":
+                index_shift = 0
             else:
-                if position == "before":
-                    index_shift = 0
-                else:
-                    index_shift = 1
+                index_shift = 1
 
-                # Certains élément existent déjà (ceux du témoin de provenance)
-                if current_xml_tree.xpath(f"boolean(//node()[@xml:id='{element_id}'])"):
-                    pass
-                else:
-                    sigla_output_wit = "_".join(
-                        current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@xml:id",
-                                               namespaces=self.ns_decl)[
-                            0].split("_")[
-                        0:2])
-                    element_name = element_to_inject.xpath("local-name()")
-                    element_id = element_to_inject.xpath("@xml:id")[0]
-                    element_to_inject.set("injected", "injected")  # il faudra nettoyer ça à la fin de la boucle.
-                    element_to_inject.set("corresp",
-                                          f'#{orig_witness}')  # on indique de quel témoin provient l'élément.
-                    try:
-                        # Réécrire la fonction pour être plus spécifique sur l'exception.
-                        anchor_word = \
-                            current_xml_tree.xpath(f"//tei:w[@xml:id='{anchor_id}']", namespaces=self.ns_decl)[0]
+            # Certains élément existent déjà (ceux du témoin de provenance): dans ce cas, on va les déplacer.
+            # Pour ce faire, il suffit que la variable element_to_inject pointe vers le noeud existant dans
+            # le témoin cible, et non pas vers un noeuf extérieur à l'arbre xml.
+            if current_xml_tree.xpath(f"boolean(//node()[@xml:id='{element_id}'])"):
+                element_to_inject = current_xml_tree.xpath(f"//node()[@xml:id='{element_id}']")[0]
 
-                        # We want to inject the element in the tei:rdg containing our base witness.
-                        if anchor_word.xpath("boolean(ancestor::tei:app)", namespaces=self.ns_decl):
-                            # If  level eq work, we can reinject outside the apparatus.
-                            # Example: a general note can be injected in any rdg and it makes sense to inject it in the base wit rdg.
-                            if level == "work":
-                                anchor_word = anchor_word.xpath(f"ancestor::tei:app", namespaces=self.ns_decl)[0]
+            sigla_output_wit = "_".join(
+                current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@xml:id",
+                                       namespaces=self.ns_decl)[
+                    0].split("_")[
+                0:2])
+            element_name = element_to_inject.xpath("local-name()")
+            element_id = element_to_inject.xpath("@xml:id")[0]
+            element_to_inject.set("ana", "#injected")  # il faudra nettoyer ça à la fin de la boucle.
+            element_to_inject.set("corresp",
+                                  f'#{orig_witness}')  # on indique de quel témoin provient l'élément.
+            try:
+                # Réécrire la fonction pour être plus spécifique sur l'exception.
+                anchor_word = \
+                    current_xml_tree.xpath(f"//tei:w[@xml:id='{anchor_id}']", namespaces=self.ns_decl)[0]
 
-                            # If the level is witness, we have to search for the corresponding rdg.
-                            # For instance, an addition should be injected in the corresponding rdg. It makes no sense to inject
-                            # it in the base wit rdg
-                            elif level == "witness":
-                                if anchor_word.xpath(
-                                        f"boolean(ancestor::tei:app/descendant::tei:rdg[contains(@wit, '{orig_witness}')]/node())",
-                                        namespaces=self.ns_decl):
-                                    anchor_word = anchor_word.xpath(f"ancestor::tei:app/descendant::tei:rdg[contains("
-                                                                    f"@wit, '{orig_witness}')]/tei:w",
-                                                                    namespaces=self.ns_decl)[0]
-                                else:
-                                    # If there is an omission, we will inject the element after or before the tei:app.
-                                    anchor_word = anchor_word.xpath(f"ancestor::tei:app", namespaces=self.ns_decl)[0]
+                # We want to inject the element in the tei:rdg containing our base witness.
+                if anchor_word.xpath("boolean(ancestor::tei:app)", namespaces=self.ns_decl):
+                    # If  level eq work, we can reinject outside the apparatus.
+                    # Example: a general note can be injected in any rdg and it makes sense to inject it in the base wit rdg.
+                    if level == "work":
+                        anchor_word = anchor_word.xpath(f"ancestor::tei:app", namespaces=self.ns_decl)[0]
 
-                        # https://stackoverflow.com/questions/7474972/python-lxml-append-element-after-another-element
-                        parent_element = anchor_word.getparent()
-                        index = parent_element.index(anchor_word) + index_shift
+                    # If the level is witness, we have to search for the corresponding rdg.
+                    # For instance, an addition should be injected in the corresponding rdg. It makes no sense to inject
+                    # it in the base wit rdg
+                    elif level == "witness":
+                        if anchor_word.xpath(
+                                f"boolean(ancestor::tei:app/descendant::tei:rdg[contains(@wit, '{orig_witness}')]/node())",
+                                namespaces=self.ns_decl):
+                            anchor_word = anchor_word.xpath(f"ancestor::tei:app/descendant::tei:rdg[contains("
+                                                            f"@wit, '{orig_witness}')]/tei:w",
+                                                            namespaces=self.ns_decl)[0]
+                        else:
+                            # If there is an omission, we will inject the element after or before the tei:app.
+                            anchor_word = anchor_word.xpath(f"ancestor::tei:app", namespaces=self.ns_decl)[0]
 
-                        # index can be -1 in case of a tei:w in a tei:rdg.
-                        if index == -1:
-                            index = 0
+                # https://stackoverflow.com/questions/7474972/python-lxml-append-element-after-another-element
+                parent_element = anchor_word.getparent()
+                index = parent_element.index(anchor_word) + index_shift
 
-                        parent_element.insert(index, element_to_inject)
-                    except Exception as e:
-                        print(f"Injection failed for witness {sigla_output_wit}")
-                        print(f"Element failed: {element_name}. Id: {element_id}. Original witness: {orig_witness}")
-                        print(f"Element: {etree.tostring(element_to_inject, pretty_print=True)}")
-                        print(f"Anchor id: {anchor_id}")
-                        print("Make sure the order of the injection is correct (wrapping element should be injected "
-                              "first)")
-                        print(anchor_word.xpath("@xml:id")[0])
+                # index can be -1 in case of a tei:w in a tei:rdg.
+                if index == -1:
+                    index = 0
+
+                parent_element.insert(index, element_to_inject)
+            except Exception as e:
+                print(f"Injection failed for witness {sigla_output_wit}")
+                print(f"Element failed: {element_name}. Id: {element_id}. Original witness: {orig_witness}")
+                print(f"Element: {etree.tostring(element_to_inject, pretty_print=True)}")
+                print(f"Anchor id: {anchor_id}")
+                print("Make sure the order of the injection is correct (wrapping element should be injected "
+                      "first)")
+                print(anchor_word.xpath("@xml:id")[0])
 
         with open(target_file.replace("omitted", "omitted.injected"), "w") as output_file:
             output_file.write(etree.tostring(current_xml_tree).decode())
@@ -929,7 +1083,9 @@ class Injector:
     def same_word_identification(self, distance):
         """
         Cette fonction identifie les mots qui se répètent dans un rayon donné par la variable {distance}
-        Elle permet de désambiguiser ensuite les mots dans les apparats.
+        Elle permet de désambiguiser ensuite les mots dans les apparats. En place: *omitted.xml > *omitted.xml.
+
+        :param distance: la quantité de contexte à droite et à gauche.
         """
 
         liste_temoins = f"{self.chemin}/*_omitted.xml"
@@ -995,10 +1151,6 @@ class Injector:
         debug_file.close()
 
 
-def gestion_inversions(chemin, sensibilité=3):
-    pass
-
-
 def injection_ponctuation(fichier, div_type, div_n):
     """
     On prend le fichier originel et on réinjecte dans le fichier d'apparat.
@@ -1049,19 +1201,3 @@ def injection_ponctuation(fichier, div_type, div_n):
     # Et on écrit le fichier.
     with open(fichier.replace("omitted_with_nodes", "omitted_punct"), "w") as output_file:
         output_file.write(etree.tostring(f, pretty_print=True).decode())
-
-
-def verification_ngram(sensibilite, apps, borne_inferieure, sigle):
-    """
-    Fonction récursive qui permet d'estimer s'il y a une lacune pour un manuscrit donné
-    """
-    tei_namespace = 'http://www.tei-c.org/ns/1.0'
-    tei = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
-    borne_superieure = sensibilite
-    n_gram = [current_app for current_app in apps[borne_inferieure: (borne_inferieure + sensibilite)]]
-
-    target_sigla = f"boolean(descendant::tei:rdg[contains(@wit, {sigle})][not(descendant::node())])"
-    if all([apparat.xpath(target_sigla, namespaces=tei)
-            for apparat in n_gram]):
-        borne_inferieure, borne_superieure = verification_ngram(sensibilite + 1, apps, borne_inferieure, sigle)
-    return borne_inferieure, borne_superieure

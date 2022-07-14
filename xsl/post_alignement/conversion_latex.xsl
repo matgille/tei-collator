@@ -187,11 +187,11 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
         <xsl:variable name="division" select="ancestor::tei:div[not(ancestor::tei:div)]/@n"/>
         <xsl:variable name="corresponding_wit">
             <xsl:choose>
-                <xsl:when test="@injected">
+                <xsl:when test="@ana = '#injected'">
                     <xsl:value-of select="translate(@corresp, '#', '')"/>
                 </xsl:when>
-                <xsl:when test="ancestor::node()[@injected]">
-                    <xsl:value-of select="translate(ancestor::node()[@injected]/@corresp, '#', '')"/>
+                <xsl:when test="ancestor::node()[@ana = '#injected']">
+                    <xsl:value-of select="translate(ancestor::node()[@ana = '#injected']/@corresp, '#', '')"/>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:value-of

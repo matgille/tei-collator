@@ -2,6 +2,7 @@ import itertools
 import math
 
 import python.semantic_analysis.embeddings as embeddings
+import python.utils.utils as utils
 import lxml.etree as etree
 
 import itertools
@@ -23,7 +24,7 @@ def compute_similarity(fichier):
     with open(fichier, "r") as opened_file:
         fichier_parse = etree.parse(opened_file)
     print(fichier)
-    liste_d_apparats = fichier_parse.xpath("//tei:app[@ana='#lexicale'][count(descendant::tei:rdg) > 1]",
+    liste_d_apparats = fichier_parse.xpath("//tei:app[contains(@ana, '#lexicale')][count(descendant::tei:rdg) > 1]",
                                            namespaces=NSMAP)
 
     with open("embeddings_results/similarity_results.txt", "a") as similarity_file:
@@ -93,16 +94,15 @@ def compute_similarity(fichier):
     return embs
 
 
-def similarity_eval_set_creator(chapitre):
+def similarity_eval_set_creator(division, file):
     """
     Cette fonction produit un document html simple pour estimer le degré de similarité au niveau des lieux variants
     """
-
     # reprendre le chemin qui n'est pas le bon.
-    with open(f"divs/div{chapitre}/apparat_Mad_G_{chapitre}_out.xml", "r") as xml_file:
+    with open(file, "r") as xml_file:
         f = etree.parse(xml_file)
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
-    apps_list = f.xpath("//tei:app[@ana='#lexicale']", namespaces=tei)
+    apps_list = f.xpath("//tei:app[not(contains(@ana, '#graphique'))][not(descendant::tei:rdg[@pos='NP000P0'])]", namespaces=tei)
     output_list = []
     for app in apps_list:
         rdg_list = app.xpath("descendant::tei:rdg", namespaces=tei)
@@ -194,5 +194,6 @@ def similarity_eval_set_creator(chapitre):
     save_button.set("id", "enregistrer")
     save_button.text = "Enregistrer"
 
-    with open(f"divs/div{chapitre}/apparat_Mad_G_final.html", "w") as xml_file:
+    print("Similarity file saved")
+    with open(f"divs/div{division}/apparat_final_similarity.html", "w") as xml_file:
         xml_file.write(etree.tostring(root, pretty_print=True).decode())
