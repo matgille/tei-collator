@@ -3,7 +3,7 @@
     <sch:ns uri="http://www.tei-c.org/ns/1.0" prefix="tei"/>
     <sch:pattern>
         <sch:title>Notes</sch:title>
-        <sch:rule context="tei:note[ancestor::tei:TEI[@type = 'transcription']]">
+        <sch:rule context="tei:note[ancestor::tei:body][ancestor::tei:TEI[@type = 'transcription']]">
             <sch:assert role="fatal" test="@type">Les notes doivent être typée</sch:assert>
         </sch:rule>
     </sch:pattern>
@@ -21,9 +21,8 @@
                 tei:header !</sch:assert>
             <sch:assert test="not(descendant::tei:w)" role="fatal">Interdit d'enchâsser deux tei:w
                 !</sch:assert>
-            <!--<sch:assert role="warning"
-                test="not(contains(string-join(text()), ' '))"
-                >Pas d'espace dans un tei:w !</sch:assert>-->
+             <sch:assert role="fatal" test="not(ancestor::tei:add[@type='commentaire'])"
+                          >Pas de tei:w dans une transcription de glose ou de commentaire!</sch:assert>
         </sch:rule>
     </sch:pattern>
 </sch:schema>
