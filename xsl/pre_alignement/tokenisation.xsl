@@ -260,13 +260,13 @@
     </xsl:template>
 
     <xsl:template match="
-            tei:w[not(descendant::text())][not(@mode)] |
-            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:pb[@break = 'no']]] |
-            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:lb[@break = 'no']]] |
-            tei:w[preceding-sibling::tei:w[1][not(@mode)][child::tei:cb[@break = 'no']]] |
-            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:pb[@break = 'no']]] |
-            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:lb[@break = 'no']]] |
-            tei:w[following-sibling::tei:w[1][not(@mode)][child::tei:cb[@break = 'no']]]"
+            tei:w[not(descendant::text())][not(@ana = '#annotation_manuelle')] |
+            tei:w[preceding-sibling::tei:w[1][not(@ana = '#annotation_manuelle')][child::tei:pb[@break = 'no']]] |
+            tei:w[preceding-sibling::tei:w[1][not(@ana = '#annotation_manuelle')][child::tei:lb[@break = 'no']]] |
+            tei:w[preceding-sibling::tei:w[1][not(@ana = '#annotation_manuelle')][child::tei:cb[@break = 'no']]] |
+            tei:w[following-sibling::tei:w[1][not(@ana = '#annotation_manuelle')][child::tei:pb[@break = 'no']]] |
+            tei:w[following-sibling::tei:w[1][not(@ana = '#annotation_manuelle')][child::tei:lb[@break = 'no']]] |
+            tei:w[following-sibling::tei:w[1][not(@ana = '#annotation_manuelle')][child::tei:cb[@break = 'no']]]"
         mode="quatriemePasse"/>
 
 

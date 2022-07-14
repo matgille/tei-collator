@@ -57,7 +57,6 @@ def run_subprocess(liste):
 
 
 def nettoyage():
-    # TODO: ranger les fichiers dans des dossiers
     with Halo(text='Nettoyage du dossier', spinner='dots'):
         for i in ['tex', 'xml', 'aux', 'json']:
             if not os.path.exists(i):
@@ -102,6 +101,9 @@ def txt_to_liste(filename):
 
 
 def remove_files(files):
+    """
+    This function removes all files given path (with wildcard)
+    """
     for file in glob.glob(files):
         try:
             os.remove(file)
@@ -154,6 +156,31 @@ def clean_spaces_from_string(string) -> str:
     string = re.sub(regexp_1, "", string)
     return string
 
+def remove_debug_files():
+    for file in glob.glob(".debug/*"):
+        os.remove(file)
+
+
+def append_to_file(file, string):
+    """
+    This function appends to some file a given string.
+    """
+
+    with open(file, "a") as input_file:
+        input_file.write(string)
+
+def clean_underscode_from_string(string) -> str:
+    """
+    This function removes all redundant, trailing or leading underscore
+    """
+    regexp_1 = re.compile(r"^_")
+    regexp_2 = re.compile(r"_$")
+    regexp_3 = re.compile(r"_+")
+    string = re.sub(regexp_1, "", string)
+    string = re.sub(regexp_2, "", string)
+    string = re.sub(regexp_3, "_", string)
+
+    return string
 
 def filter_existing_divs(list_of_files, div_n, div_type) -> list:
     files_with_div = []
