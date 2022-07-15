@@ -61,9 +61,9 @@ class Injector:
             self.dict_ids_forms = {**self.dict_ids_forms, **witness_dict}
 
     def run_injections(self):
-        # self.injection_apparats()
-        # self.injection_omissions()
-        # self.same_word_identification(distance=10)
+        self.injection_apparats()
+        self.injection_omissions()
+        self.same_word_identification(distance=10)
         self.injection_intelligente()
         self.injection_noeuds_non_textuels()
         self.regroupement_omissions()
@@ -1017,11 +1017,16 @@ class Injector:
             else:
                 index_shift = 1
 
-            # Certains élément existent déjà (ceux du témoin de provenance): dans ce cas, on va les déplacer.
+            # Certains élément existent déjà et on a besoin de les déplacer à l'intérieur d'une tei:app
+            # (ceux du témoin de provenance): dans ce cas, on va les déplacer.
             # Pour ce faire, il suffit que la variable element_to_inject pointe vers le noeud existant dans
-            # le témoin cible, et non pas vers un noeuf extérieur à l'arbre xml.
-            if current_xml_tree.xpath(f"boolean(//node()[@xml:id='{element_id}'])"):
+            # le témoin cible. Si le niveau n'est pas "witness", on passe à l'étape de boucle suivante
+            if current_xml_tree.xpath(f"boolean(//node()[@xml:id='{element_id}'])") and level == "witness":
                 element_to_inject = current_xml_tree.xpath(f"//node()[@xml:id='{element_id}']")[0]
+
+            # Si le noeud est présent mais qu'on le veut au niveau global, pas besoin de le déplacer
+            else:
+                continue
 
             sigla_output_wit = "_".join(
                 current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@xml:id",
