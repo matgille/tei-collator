@@ -369,6 +369,8 @@ class Collateur:
         comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos[1:])
 
         list_lecon_sans_accents = [utils.remove_accents(lecon) for lecon in liste_lecons]
+        list_lecon_lower_case = [lecon.lower() for lecon in list_lecon_sans_accents]
+        normalized_forms = list_lecon_lower_case
 
         # S'il n'y a pas d'accent, on continue la typologie
         if list_lecon_sans_accents == liste_lecons:
@@ -376,9 +378,9 @@ class Collateur:
 
         # On regarde si la différence ne tient qu'aux accents: si tel est le cas, on présuppose qu'il n'y a pas de variation
         else:
-            similarity_without_accent = all(elem == list_lecon_sans_accents[0] for elem in list_lecon_sans_accents[1:])
-            similarity_with_accent = all(elem == liste_lecons for elem in liste_lecons[1:])
-            if not similarity_with_accent and similarity_without_accent:
+            similarity_normalized = all(elem == normalized_forms[0] for elem in normalized_forms[1:])
+            similarity_not_normalized = all(elem == liste_lecons for elem in liste_lecons[1:])
+            if not similarity_not_normalized and similarity_normalized:
                 similarity_after_normalization = True
             else:
                 similarity_after_normalization = False
@@ -402,7 +404,7 @@ class Collateur:
         # Ici il faut se rappeler qu'il y a une différence entre les formes
         type_de_variante = None
         if similarity_after_normalization:
-            return "accent"
+            return "normalisation"
         if not comparaison_lemme:  # si il y a une différence de lemmes seulement: 'vraie variante'
             if all(pos.startswith('NP') for pos in liste_pos):
                 type_de_variante = 'entite_nommee'
