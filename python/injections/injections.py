@@ -1,4 +1,6 @@
 import re
+import sys
+
 from ordered_set import OrderedSet
 
 from lxml import etree
@@ -63,7 +65,7 @@ class Injector:
     def run_injections(self):
         self.injection_apparats()
         self.injection_omissions()
-        self.same_word_identification(distance=10)
+        self.same_word_identification(distance=19)
         self.injection_intelligente()
         self.injection_noeuds_non_textuels()
         self.regroupement_omissions()
@@ -338,7 +340,7 @@ class Injector:
 
                         corresponding_rdg.set("n", updated_id)
                         corresponding_w.set("{http://www.w3.org/XML/1998/namespace}id", updated_id)
-                        new_rdg.set('n', id)
+                        new_rdg.set('id', id)
                         new_rdg.set('lemma', lemma)
                         new_rdg.set('pos', pos)
                         new_rdg.set('wit', "#" + sigle_input)
@@ -364,7 +366,8 @@ class Injector:
                     # if not "#codico" in corresponding_app_typology:
                     # corresponding_app.set("ana", corresponding_app_typology + " #codico")
 
-                # Enfin on supprime les éléments sans witness, qui signifie qu'ils ont tous été extraits individuellement.
+                # Enfin on supprime les éléments sans witness, qui signifie qu'ils ont tous été extraits
+                # individuellement.
                 for rdg_with_empty_wits in fichier_collatione_orig.xpath("//tei:rdg[not(contains(@wit, '#'))]",
                                                                          namespaces=self.ns_decl):
                     parent = rdg_with_empty_wits.getparent()
@@ -467,7 +470,8 @@ class Injector:
                             range(len(ordered_Set_list)))
                         unordered_set_equality = all(
                             sorted(set_list[n], key=len) == sorted(set_list[0], key=len) for n in range(len(set_list)))
-
+                        debug_file.write(f"Ordered set equality: {ordered_set_equality}\n")
+                        debug_file.write(f"Unordered set equality: {unordered_set_equality}\n")
                         if not ordered_set_equality and unordered_set_equality:
                             debug_file.write("Transposition detected.\n")
                             print("Transposition detected.")
@@ -486,7 +490,11 @@ class Injector:
 
                             # Let's update the typology for further use
                             for index, transposed_app in enumerate(concerned_apps):
-                                transposed_app.set('ana', concerned_apps_typology[index] + ' #transposition')
+                                # On regarde s'il y a omission; si c'est le cas, on marque la transposition. Sinon, on
+                                # ne fait rien.
+                                if len(transposed_app.xpath("descendant::tei:rdg[not(node())]",
+                                                            namespaces=self.ns_decl)) > 0:
+                                    transposed_app.set('ana', concerned_apps_typology[index] + ' #transposition')
 
                             last_app = concerned_apps[-1]
 
@@ -523,6 +531,8 @@ class Injector:
                                     updated_ana = utils.clean_spaces_from_string(
                                         preceding_witEnd_ana.replace('#homeoteleuton', ''))
                                     preceding_witEnd.set('ana', updated_ana)
+
+                        debug_file.write("\nNew app:\n")
 
                 with open(output_file, "w") as output_xml_file:
                     output_xml_file.write(etree.tostring(f, pretty_print=True).decode())
@@ -670,29 +680,12 @@ class Injector:
                   f"Exiting.")
             exit(0)
 
-    def injection_ponctuation_parallele(self):
-        """
-        Cette fonction réinjecte la ponctuation de chaque témoin dans les témoins avec apparat.
-        Sortie: "*omitted_punct.xml"
-        """
-        fichiers_apparat = f'{self.chemin}/apparat_*_*omitted_with_nodes.xml'
-        # fichier de sortie: "*out.xml"
-        liste = glob.glob(fichiers_apparat)
-        pool = mp.Pool(processes=self.coeurs)
-        print("Injection de la ponctuation: '*final.xml' -> '*omitted.xml'")
-        command_list = [(fichier, self.type_division, self.div_n) for fichier in liste]
-        pool.starmap(injection_ponctuation, command_list)
-        print("Injection de la ponctuation ✓")
-
     def injection_intelligente(self):
         """
         Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier.
         INPUTS: *omitted.xml
         OUTPUTS: *injected.xml
         """
-
-        with open(f".debug/injection.txt", "w+") as debug_file:
-            debug_file.truncate(0)
 
         liste_temoins = utils.get_file_list(f"{self.chemin}/*omitted.xml")
 
@@ -702,7 +695,7 @@ class Injector:
             print(witness)
             self.reinjection_elements(target_file=witness)
             # on regarde le nombre d'exemples qui n'ont pas été injectés par temoin
-            # self.verification_injections(temoin_a_verifier=witness)
+            self.verification_injections(temoin_a_verifier=witness)
         print("Done !")
 
     def regroupement_apparats(self):
@@ -774,12 +767,21 @@ class Injector:
             all_apps = xml_tree.xpath(
                 "//tei:app",
                 namespaces=self.ns_decl)
-            xpath_expression = f"//tei:app[contains(@ana,'#omission')][preceding::tei:app[1][contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]]][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]]"
+            xpath_expression = f"//tei:app[contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]][preceding::tei:app[1][contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]]]"
             apps = xml_tree.xpath(
                 xpath_expression,
                 namespaces=self.ns_decl)
-            apps_with_omission_id = [app.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0] for app in
-                                     apps]
+            try:
+                apps_with_omission_id = [app.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0] for app in
+                                         apps]
+            except IndexError:
+                for app in apps:
+                    try:
+                        app.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0]
+                    except IndexError:
+                        print(etree.tostring(app))
+                        print("Error here. Exiting")
+                        exit(0)
 
             # Cette expression est très probablement le raison du ralentissement.
             all_apps_id = xml_tree.xpath("//tei:app/descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)
@@ -923,8 +925,8 @@ class Injector:
         Cette fonction va récupérer tous les éléments à injecter, et renvoie un tuple
         On produit une liste de tuples de la forme :
         [
-        ('kNMdVRz', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9ac8>, 'Sev_R', position, level),
-        ('oqcqYPq', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9c08>, 'Sal_J', position, level)
+        ('kNMdVRz', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9ac8>, id,  'Sev_R', position, level),
+        ('oqcqYPq', <Element {http://www.tei-c.org/ns/1.0}note at 0x7f08a90f9c08>, id,  'Sal_J', position, level)
         ]
         Où:
         - le premier élément du tuple est l'ancre: l'élément du texte source où insérer l'élément à injecter
@@ -934,7 +936,7 @@ class Injector:
         - level, le niveau affecté par l'élément (oeuvre ou témoin)
         """
         for element, value in self.elements_to_inject.items():
-
+            print(element)
             # The position wrt the anchor. A note will appear after a word; while a milestone would appear before in general
             position = value["position"]
 
@@ -951,6 +953,7 @@ class Injector:
             final_witness_list = []
             before_or_after = []
             level_list = []
+            element_ids = []
             for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/{self.chemin}/*omitted.xml"):
                 sigla = file.split("/")[-1].split(f"_{self.div_n}")[0].replace("apparat_", "")
                 try:
@@ -971,15 +974,22 @@ class Injector:
                 elements_list = current_tree.xpath(
                     f"//{element}{excluded_elements_xpath}",
                     namespaces=self.ns_decl)
+                current_element_id_list = [element.xpath("@xml:id") for element in elements_list]
+                print(current_element_id_list)
                 number_of_elements = len(elements_list)
                 list_of_tokens_id = []
-                for current_element in elements_list:
+                for current_element, current_id in zip(elements_list, current_element_id_list):
+                    print(current_element)
+                    print(current_id)
+                    print(f'{following_or_preceding}::tei:w[ancestor::tei:rdg[contains(@wit, \'{sigla}\')]][1]/@xml:id')
                     try:
                         list_of_tokens_id.append(current_element.xpath(
                             f'{following_or_preceding}::tei:w[ancestor::tei:rdg[contains(@wit, \'{sigla}\')]][1]/@xml:id',
                             namespaces=self.ns_decl)[0])
                     except IndexError as e:
                         print("Index error. The element should be the first of the division.")
+                        # On décalle tout à cause de zip qui
+                        list_of_tokens_id.append(None)
                         print(witness_id)
                         print(etree.tostring(current_element))
 
@@ -991,10 +1001,19 @@ class Injector:
                 before_or_after.extend([position for _ in range(number_of_elements)])
                 final_list_of_tokens_id.extend(list_of_tokens_id)
                 elements_to_inject.extend(elements_list)
+                element_ids.extend(current_element_id_list)
                 level_list.extend([level for _ in range(number_of_elements)])
             intermed_notes_tuples = list(
-                zip(final_list_of_tokens_id, elements_to_inject, final_witness_list, before_or_after, level_list))
+                zip(final_list_of_tokens_id, elements_to_inject, element_ids, final_witness_list, before_or_after,
+                    level_list))
+
             self.processed_list.extend(intermed_notes_tuples)
+        original_stdout = sys.stdout
+        with open("logs/injection.txt", "w") as logs:
+            print(self.processed_list, file=logs)
+            sys.stdout = logs
+            # Reset the standard output
+            sys.stdout = original_stdout
 
     def reinjection_elements(self, target_file: str):
         """
@@ -1004,7 +1023,9 @@ class Injector:
         # Chaque élément de la liste est de la forme: id de l'ancre, objet lxml, témoin d'origine, position de l'ancre
         # par rapport à l'élément à injecter
         for item in self.processed_list:
-            anchor_id, element_to_inject, orig_witness, position, level = item
+            anchor_id, element_to_inject, element_ids, orig_witness, position, level = item
+            if not anchor_id:
+                continue
             try:
                 element_id = element_to_inject.xpath("@xml:id")[0]
             except IndexError as e:
@@ -1021,12 +1042,15 @@ class Injector:
             # (ceux du témoin de provenance): dans ce cas, on va les déplacer.
             # Pour ce faire, il suffit que la variable element_to_inject pointe vers le noeud existant dans
             # le témoin cible. Si le niveau n'est pas "witness", on passe à l'étape de boucle suivante
-            if current_xml_tree.xpath(f"boolean(//node()[@xml:id='{element_id}'])") and level == "witness":
-                element_to_inject = current_xml_tree.xpath(f"//node()[@xml:id='{element_id}']")[0]
-
-            # Si le noeud est présent mais qu'on le veut au niveau global, pas besoin de le déplacer
-            else:
-                continue
+            shifted = False
+            if current_xml_tree.xpath(f"boolean(//node()[@xml:id='{element_id}'])"):
+                if level == "work":
+                    continue
+                else:
+                    element_to_inject = current_xml_tree.xpath(f"//node()[@xml:id='{element_id}']")[0]
+                    shifted = True
+            # Si le noeud est présent mais qu'on le veut au niveau global, pas besoin de le déplacer.
+            # TODO: reprendre ici avec l'historique, quelque chose ne va pas.
 
             sigla_output_wit = "_".join(
                 current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@xml:id",
@@ -1038,6 +1062,7 @@ class Injector:
             element_to_inject.set("ana", "#injected")  # il faudra nettoyer ça à la fin de la boucle.
             element_to_inject.set("corresp",
                                   f'#{orig_witness}')  # on indique de quel témoin provient l'élément.
+
             try:
                 # Réécrire la fonction pour être plus spécifique sur l'exception.
                 anchor_word = \
@@ -1073,6 +1098,9 @@ class Injector:
                     index = 0
 
                 parent_element.insert(index, element_to_inject)
+                parent_element.insert(index + 1, etree.Comment(f"anchor: {anchor_id} ; index: {index}"))
+                parent_element.insert(index + 1, etree.Comment(f"shifted: {shifted}"))
+
             except Exception as e:
                 print(f"Injection failed for witness {sigla_output_wit}")
                 print(f"Element failed: {element_name}. Id: {element_id}. Original witness: {orig_witness}")
@@ -1122,9 +1150,10 @@ class Injector:
 
         debug_file = open(f".debug/injection.txt", "a")
         elements_a_verifier = [(element, temoin_origine, original_anchor) for
-                               original_anchor, element, temoin_origine, position, level in self.processed_list if
+                               original_anchor, element, element_ids, temoin_origine, position, level in
+                               self.processed_list if
                                temoin_origine not in temoin_a_verifier]
-        temoin_a_verifier = temoin_a_verifier.replace("apparated", "apparated.injected")
+        temoin_a_verifier = temoin_a_verifier.replace("omitted", "omitted.injected")
         with open(temoin_a_verifier, "r") as input_file:
             try:
                 arbre_a_verifier = etree.parse(input_file)
@@ -1154,55 +1183,3 @@ class Injector:
             f"{correct_injections} out of {target_length} target injections for witness {temoin_a_verifier}\n")
 
         debug_file.close()
-
-
-def injection_ponctuation(fichier, div_type, div_n):
-    """
-    On prend le fichier originel et on réinjecte dans le fichier d'apparat.
-    Pas intégré à la classe à cause du fonctionnement de mp.pool:
-    https://stackoverflow.com/a/8805244
-    """
-    tei_namespace = 'http://www.tei-c.org/ns/1.0'
-    NSMAP1 = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
-    sigle = "_".join(fichier.split("/")[-1].split("_")[1:3])
-    temoin_tokenise_correspondant = f"temoins_tokenises/{sigle}.xml"
-    print(f"Treating {sigle}")
-
-    # D'abord on récupère la ponctuation dans le fichier tokénisé
-    with open(temoin_tokenise_correspondant, "r") as input_xml_file:
-        f = etree.parse(input_xml_file)
-    punctuation = f.xpath(f"//tei:pc[ancestor::tei:div[@type= '{div_type}'][@n = '{div_n}']]", namespaces=NSMAP1)
-    # On va chercher tous les premiers éléments précédents avec un xml:id, sauf les pb et les cb qui peuvent être à l'intérieur
-    # d'un tei:w et donc fausser le jeu.
-
-    try:
-        preceding_element_id = [
-            punct.xpath("preceding-sibling::node()[@xml:id][not(self::tei:lb|self::tei:pb)][1]/@xml:id",
-                        namespaces=NSMAP1)[0] for punct in punctuation]
-    except IndexError as e:
-        print(f"Index error for punctuation retrieval: {e}")
-        print("The parser is looking for punctuation elements that are direct following"
-              "siblings of another element. Please make sure no punctuation element"
-              "starts a node.")
-        exit(0)
-
-    assert len(preceding_element_id) == len(punctuation)
-
-    punctuation_and_anchor = zip(punctuation, preceding_element_id)
-
-    with open(fichier, "r") as interm_file:
-        f = etree.parse(interm_file)
-    for punctuation_element in punctuation_and_anchor:
-        punctuation, anchor_id = punctuation_element
-        try:
-            current_anchor = f.xpath(f"//node()[contains(@xml:id, '{anchor_id}')]")[0]
-        except IndexError as e:
-            print(f"{fichier}: index error with token {anchor_id}. Exiting.\n {e}")
-            exit(0)
-
-        parent_anchor = current_anchor.getparent()
-        parent_anchor.insert(parent_anchor.index(current_anchor) + 1, punctuation)
-
-    # Et on écrit le fichier.
-    with open(fichier.replace("omitted_with_nodes", "omitted_punct"), "w") as output_file:
-        output_file.write(etree.tostring(f, pretty_print=True).decode())
