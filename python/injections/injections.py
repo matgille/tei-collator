@@ -1153,7 +1153,7 @@ class Injector:
         TODO: transformer cette fonction qui prend trop de ressources.
         """
 
-        debug_file = open(f".debug/injection.txt", "a")
+        debug_file = open(f"logs/injection_full.txt", "a")
         elements_a_verifier = [(element, temoin_origine, original_anchor) for
                                original_anchor, element, element_ids, temoin_origine, position, level in
                                self.processed_list if
