@@ -7,20 +7,19 @@ import os
 import subprocess
 from lxml import etree
 import re
+import sys
 
 import python.utils.utils as utils
 
 
 class Tokenizer:
-    def __init__(self, saxon: int, temoin_leader: str, nodes_to_reinject: dict):
+    def __init__(self, saxon: int, nodes_to_reinject: dict = {}, temoin_leader: str = "Sal_J",
+                 regularisation: bool = True):
         self.saxon = saxon
         self.temoin_leader = temoin_leader
         self.nodes_to_reinject = nodes_to_reinject
         self.tei_ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
-
-
-
-
+        self.regularisation = regularisation
 
     def ajout_xml_id(self, temoin: str):
         """Ajout de xml:id à chaque token."""
@@ -51,8 +50,9 @@ class Tokenizer:
     def tokenisation(self, path: str, correction_mode: bool = False):
         """
         Tokénise le corpus
-        :path: le chemin vers les fichiers d'entrée
+        :path: le chemin vers les fichiers d'entré
         :correction_mode: le mode correction
+        :regularisation: produire un fichier régularisé ? Défaut: oui
         """
         with Halo(text='Tokénisation du corpus parallélisé.', spinner='dots'):
             subprocess.run(["java", "-jar", self.saxon, "-xi:on", path,
@@ -60,7 +60,14 @@ class Tokenizer:
             for transcription_individuelle in os.listdir("temoins_tokenises"):
                 fichier_xml = f"temoins_tokenises/{transcription_individuelle}"
                 self.ajout_xml_id(fichier_xml)
-            param_correction = f"correction={correction_mode}"
-            subprocess.run(["java", "-jar", self.saxon, "-xi:on", f"temoins_tokenises/{self.temoin_leader}.xml",
-                            "xsl/pre_alignement/regularisation.xsl", param_correction])
+            if self.regularisation:
+                param_correction = f"correction={correction_mode}"
+                subprocess.run(["java", "-jar", self.saxon, "-xi:on", f"temoins_tokenises/{self.temoin_leader}.xml",
+                                "xsl/pre_alignement/regularisation.xsl", param_correction])
         print("Tokénisation et régularisation du corpus pour alignement ✓")
+
+
+if __name__ == '__main__':
+    saxon = "/home/mgl/Bureau/These/Edition/collator/saxon9he.jar"
+    tokeniser = Tokenizer(saxon=saxon, regularisation=False)
+    tokeniser.tokenisation(path=sys.argv[1])

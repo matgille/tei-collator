@@ -65,8 +65,6 @@ def main():
     fusion_only = args.fusiononly
     #####
 
-    # We start by removing all debug files
-    utils.remove_debug_files()
 
     if division is None:
         division = "*"
@@ -86,6 +84,7 @@ def main():
               "On switche à un alignement mot à mot.\n\n ---- \n\n")
         parametres.alignement = "mam"
 
+    align_on = parametres.align_on
     synonyms_datasets = parametres.create_synonym_dataset
     compute_similarity = parametres.compute_similarity
     chemin_corpus = parametres.corpus_path
@@ -102,7 +101,8 @@ def main():
         print("Création des fichiers xml maîtres")
         sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division)}",
                                      chemin_corpus=chemin_corpus,
-                                     xpath_transcriptions=xpath_transcriptions)
+                                     xpath_transcriptions=xpath_transcriptions,
+                                     output_dir=parametres.output_dir)
         exit(0)
 
     if test_only:
@@ -149,6 +149,8 @@ def main():
         sorties.nettoyage("divs")
         exit(0)
 
+    # We start by removing all debug files
+    utils.remove_debug_files()
     if parametres.prevalidation:
         corpus = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml"
         schema_sch = "/home/mgl/Bureau/These/Edition/collator/python/tests/validator.sch"
@@ -184,7 +186,6 @@ def main():
         for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
             temoin = f"temoins_tokenises_regularises/{temoin}"
             tokeniser.ajout_xml_id(temoin)
-            tokeniser.same_word_identification(temoin)
 
     if parametres.lemmatiser:
         print("Lemmatisation du corpus...")
@@ -238,6 +239,7 @@ def main():
                                     chemin=chemin_fichiers,
                                     moteur_transformation_xsl=saxon,
                                     correction_mode=correction,
+                                    align_on=align_on,
                                     parametres_alignement=parametres.alignement,
                                     nombre_de_coeurs=parametres.parallel_process_number)
         aligner.run()
@@ -352,22 +354,19 @@ def main():
             shutil.copy(file, f'divs/results')
 
         if parametres.fusion_documents:
-            sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
+            sorties.fusion_documents_tei(chemin_fichiers=chemin_fichiers,
+                                         chemin_corpus=chemin_corpus,
+                                         xpath_transcriptions=xpath_transcriptions,
+                                         output_dir=parametres.output_dir)
 
 
         # Tests de conformité
         print(f'Tests en cours...')
         for sigle in liste_sigles:
-            pass
-            # tests.tokentest(sigle, i)
-            # tests.witness_test(sigle, i)
-            # tests.test_word_alignment(i)
+            tests.tokentest(sigle, i)
+            tests.witness_test(sigle, i)
+            tests.test_word_alignment(i)
 
-    if parametres.latex and not parametres.fusion_documents:
-        for fichier in liste_fichiers_finaux:
-            print(fichier)
-            sorties.transformation_latex(saxon, fichier.replace("final", "injected_punct.transposed.lacuned"), False,
-                                         chemin_fichiers)
 
     sorties.nettoyage("divs")
     t1 = time.time()

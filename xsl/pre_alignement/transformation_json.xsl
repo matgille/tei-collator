@@ -8,7 +8,7 @@
     exclude-result-prefixes="xs math" xmlns:tei="http://www.tei-c.org/ns/1.0" version="3.0"
     xmlns:mgl="https://matthiasgillelevenson.fr">
     <xsl:output method="text"/>
-    <xsl:param name="correction"/>
+    <xsl:param name="align_on"/>
 
     <xsl:strip-space elements="*"/>
 
@@ -73,8 +73,8 @@
                             <xsl:otherwise>
                                 <xsl:choose>
                                     <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs-->
-                                    <xsl:when test="$correction = 'True'">
-                                        <xsl:value-of select="concat(@lemma, '|', @pos, '|')"/>
+                                    <xsl:when test="$align_on = '1'">
+                                        <xsl:value-of select="concat(@lemma, '|', @pos)"/>
                                     </xsl:when>
                                     <xsl:otherwise>
                                         <xsl:value-of select="@lemma"/>

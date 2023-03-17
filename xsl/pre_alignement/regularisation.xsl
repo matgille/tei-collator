@@ -55,7 +55,7 @@
     </xsl:template>
 
     <xsl:template match="tei:subst">
-        <xsl:value-of select="tei:add"/>
+        <xsl:apply-templates select="tei:add"/>
     </xsl:template>
 
 
@@ -77,7 +77,7 @@
 
     </xsl:template>
 
-    <xsl:template match="tei:sic">
+    <xsl:template match="tei:sic | tei:seg">
         <xsl:apply-templates/>
     </xsl:template>
 
@@ -85,17 +85,13 @@
         <xsl:apply-templates/>
     </xsl:template>
 
-    <xsl:template match="tei:pb | tei:cb | tei:note | tei:fw | tei:del | tei:add[@type = 'commentaire']"/>
+    <xsl:template
+        match="tei:pb | tei:cb | tei:note | tei:fw | tei:del | tei:add[@type = 'commentaire'] | tei:handShift"/>
 
     <xsl:template match="tei:lb">
         <xsl:if test="$correction = 'True'">
             <xsl:comment><xsl:value-of select="concat('br_', translate(@facs, '#', ''))"/></xsl:comment>
         </xsl:if>
-    </xsl:template>
-
-
-    <xsl:template match="tei:seg">
-        <xsl:apply-templates/>
     </xsl:template>
 
     <!--

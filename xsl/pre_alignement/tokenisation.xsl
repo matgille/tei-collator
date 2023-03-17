@@ -36,7 +36,7 @@
     </xsl:comment>
     </xsl:template>
 
-    <xsl:template match="tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'la'])]">
+    <xsl:template match="tei:TEI[@type = 'transcription'][not(@subtype='version_a')][not(descendant::tei:text[@xml:lang = 'la'])]">
         <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:namespace name="tei">http://www.tei-c.org/ns/1.0</xsl:namespace>
             <xsl:attribute name="xml:id" select="@xml:id"/>
@@ -284,6 +284,10 @@
 
 
 
+
+    <xsl:template match="tei:seg">
+        <xsl:apply-templates/>
+    </xsl:template>
 
 
     <!--Quatrième passe-->

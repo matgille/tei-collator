@@ -11,44 +11,26 @@ import itertools
 import python.utils.utils as utils
 
 
-def transformation_latex(saxon, fichier_xml, fusion, chemin='divs'):
-    '''
-    Production des fichiers pdf
-    :param saxon:
-    :param fichier_xml:
-    :param fusion: produit-on un pdf commun ou un pdf pour une division en particulier ?
-    :param chemin:
-    :return:
-    '''
-    fichier_tex = f"{fichier_xml.split('.')[0]}.tex"
-    fichier_tex_seul = f'{chemin}/{fichier_tex.split("/")[-1]}'
-    fichier_sans_extension = fichier_tex_seul.replace(".tex", "")
-    print(f"fichier tex seul: {chemin}/{fichier_tex_seul}")
-    chemin_xsl_apparat = "xsl/post_alignement/conversion_latex.xsl"
-    fichier_tex_sortie = f"-o:{fichier_tex_seul}"
-    param_fusion = f'fusion={str(fusion)}'
-    print("Création des fichiers pdf ✓")
-    subprocess.run(["java", "-jar", saxon, "-xi:on", fichier_tex_sortie, fichier_xml, param_fusion, chemin_xsl_apparat])
-    with open(fichier_tex_seul, "r") as input_tex_file:
-        tex_file = input_tex_file.read()
-        tex_file = tex_file.replace("%", "\%")
-        tex_file.replace("\\%", "\%")
-    with open(fichier_tex_seul, "w") as output_tex_file:
-        output_tex_file.write(tex_file)
-    print(f'current dir: {os.getcwd()}')
-    utils.clean_spaces(fichier_tex_seul)
-    subprocess.run(["latexmk", "-xelatex", "-f", f"-output-directory={chemin}", fichier_tex_seul])
 
-
-def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions):
+def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, output_dir):
     '''
     Cette fonction produit un document xml-tei maître permettant de lier chaque division entre elles.
     Ici l'universalité du code est cassée, il faut voir comment faire pour gérer ça
     :param temoin_a_traiter: le témoin à traiter sans extension pour l'instant
+    :output_dir: le chemin vers le dossier contenant les fichiers XML produits
     :return: None
     '''
+    try:
+        os.mkdir(f"{output_dir}/chapitres")
+    except FileExistsError:
+        pass
+    try:
+        os.mkdir(f"{output_dir}/temoins")
+    except FileExistsError:
+        pass
+
     for file in glob.glob(f"{chemin_fichiers}/*final.xml"):
-        shutil.copy(file, f'divs/results')
+        shutil.copy(file, f'{output_dir}/chapitres')
     print(chemin_corpus)
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
     xi = {'xi': 'http://www.w3.org/2001/XInclude'}
@@ -98,10 +80,10 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions):
             fichier = f'divs/results/apparat_{id}_{i}_final.xml'
             if os.path.exists(fichier):
                 partie = f.xpath("//div[@type='partie'][@n='3']", namespaces=tei)[0]
-                x_include = f"<xi:include href=\"../divs/results/{'/'.join(fichier.split('/')[2:])}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
+                x_include = f"<xi:include href=\"../chapitres/{'/'.join(fichier.split('/')[2:])}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
                 partie.insert(i, etree.fromstring(x_include))
 
-        with open(f'results/{id}.xml', "w") as xml_file:
+        with open(f'{output_dir}/temoins/{id}.xml', "w") as xml_file:
             xml_file.write(etree.tostring(f).decode())
 
 

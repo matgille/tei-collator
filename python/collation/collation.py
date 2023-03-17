@@ -37,7 +37,8 @@ class CorpusPreparation:
 class Aligner:
     def __init__(self, liste_fichiers_xml: list, chemin: str, moteur_transformation_xsl: str, correction_mode: bool,
                  parametres_alignement: str,
-                 nombre_de_coeurs):
+                 nombre_de_coeurs,
+                 align_on:int):
         self.nombre_de_coeurs = nombre_de_coeurs
         self.liste_fichiers_xml = liste_fichiers_xml
         self.chemin = chemin
@@ -45,14 +46,20 @@ class Aligner:
         self.correction_mode = correction_mode
         self.parametres_alignement = parametres_alignement
 
+        if align_on != 1 and align_on != 2:
+            raise ValueError("Le paramètre align_on doit valoir 1 "
+                             "(on aligne sur les lemmes et les parties du discours) ou 2 "
+                             "(on aligne sur les lemmes uniquement)")
+        self.align_on = align_on
+
     def transformation_json(self, input_fichier_xml, output_fichier_json):
         """
         Étape avant la collation: transformation en json selon la structure voulue par CollateX.
         Voir https://collatex.net/doc/#json-input
         """
-        param_correction = f"correction={self.correction_mode}"
+        param_align_on = f"align_on={str(self.align_on)}"
         subprocess.run(['java', '-jar', self.moteur_transformation_xsl, output_fichier_json, input_fichier_xml,
-                        'xsl/pre_alignement/transformation_json.xsl', param_correction])
+                        'xsl/pre_alignement/transformation_json.xsl', param_align_on])
 
     def alignement(self, fichier_a_collationer, numero):
         """
@@ -86,6 +93,9 @@ class Aligner:
             sortie_json.write(resultat_json)
 
     def alignement_collatex(self, fichier_xml):
+        """
+        Alignement avec collatex; il en sort du JSON
+        """
         fichier_sans_extension = os.path.basename(fichier_xml).split(".")[0]
         numero = fichier_sans_extension.split("_")[1]
         fichier_json = f"{fichier_sans_extension}.json"
@@ -125,7 +135,7 @@ class Collateur:
 
     def produce_typed_apps(self, fichier_entree):
         """
-            Cette fonction permet de passer de la table d'alignement à
+            Cette fonction permet de passer de la table d'alignement (JSON) à
             l'apparat proprement dit, avec création d'apparat s'il y a
             variation, et regroupement des leçons identiques.
             Elle fonctionne avec une liste de dictionnaires au format JSON,
@@ -388,7 +398,7 @@ class Collateur:
         # On a besoin de filtrer certaines erreurs dûes au fait que Freeling gère très mal l'homographie
         # Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
         # de corriger dans le XML ou car il n'y a pas d'intérêt à la variante.
-        filtre_lemmes = [('como', 'cómo'), ('et', 'e'), ('más', 'mas'), ('que', 'ca'), ('él', 'el'),
+        filtre_lemmes = [('como', 'cómo', 'commo'), ('et', 'e'), ('más', 'mas'), ('él', 'el'),
                          ('esta', 'está', 'ésta'), ('grande', 'gran'), ('el', 'lo'), ('uno', '1'),
                          ('probar', 'prueba'), ('daño', 'dañar'), ('atrever', 'atrevido')]
 

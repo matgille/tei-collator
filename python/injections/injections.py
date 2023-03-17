@@ -936,7 +936,6 @@ class Injector:
         - level, le niveau affecté par l'élément (oeuvre ou témoin)
         """
         for element, value in self.elements_to_inject.items():
-            print(element)
             # The position wrt the anchor. A note will appear after a word; while a milestone would appear before in general
             position = value["position"]
 
@@ -975,20 +974,16 @@ class Injector:
                     f"//{element}{excluded_elements_xpath}",
                     namespaces=self.ns_decl)
                 current_element_id_list = [element.xpath("@xml:id") for element in elements_list]
-                print(current_element_id_list)
                 number_of_elements = len(elements_list)
                 list_of_tokens_id = []
                 for current_element, current_id in zip(elements_list, current_element_id_list):
-                    print(current_element)
-                    print(current_id)
-                    print(f'{following_or_preceding}::tei:w[ancestor::tei:rdg[contains(@wit, \'{sigla}\')]][1]/@xml:id')
                     try:
                         list_of_tokens_id.append(current_element.xpath(
                             f'{following_or_preceding}::tei:w[ancestor::tei:rdg[contains(@wit, \'{sigla}\')]][1]/@xml:id',
                             namespaces=self.ns_decl)[0])
                     except IndexError as e:
                         print("Index error. The element should be the first of the division.")
-                        # On décalle tout à cause de zip qui
+                        # On risque de tout décaler si on ajoute pas un élément vide ici, le zip ne lève pas d'exception
                         list_of_tokens_id.append(None)
                         print(witness_id)
                         print(etree.tostring(current_element))
