@@ -953,7 +953,7 @@ class Injector:
             before_or_after = []
             level_list = []
             element_ids = []
-            for file in glob.iglob(f"/home/mgl/Bureau/These/Edition/collator/{self.chemin}/*omitted.xml"):
+            for file in glob.iglob(f"{self.chemin}/*omitted.xml"):
                 sigla = file.split("/")[-1].split(f"_{self.div_n}")[0].replace("apparat_", "")
                 try:
                     current_tree = etree.parse(file)

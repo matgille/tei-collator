@@ -136,7 +136,10 @@ def main():
                                        temoin_base=temoin_base)
         Injector.run_injections()
         chemin_fichiers = f"divs/div{str(division)}"
-        sorties.fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions)
+        sorties.fusion_documents_tei(chemin_fichiers=chemin_fichiers,
+                                     chemin_corpus=chemin_corpus,
+                                     xpath_transcriptions=xpath_transcriptions,
+                                     output_dir=parametres.output_dir)
         exit(0)
 
     if pdf_only:
@@ -152,8 +155,8 @@ def main():
     # We start by removing all debug files
     utils.remove_debug_files()
     if parametres.prevalidation:
-        corpus = "/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/corpus/corpus.xml"
-        schema_sch = "/home/mgl/Bureau/These/Edition/collator/python/tests/validator.sch"
+        corpus = parametres.corpus_path
+        schema_sch = "python/tests/validator.sch"
         if not tests.validation_xml(corpus, schema_sch)[0]:
             print("Une erreur fatale est apparue. Merci de vérifier l'encodage.")
             print(f"Erreurs: {';'.join(element.text for element in tests.validation_xml(corpus, schema_sch)[1])}")

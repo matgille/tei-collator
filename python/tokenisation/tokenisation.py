@@ -68,6 +68,6 @@ class Tokenizer:
 
 
 if __name__ == '__main__':
-    saxon = "/home/mgl/Bureau/These/Edition/collator/saxon9he.jar"
+    saxon = "saxon9he.jar"
     tokeniser = Tokenizer(saxon=saxon, regularisation=False)
     tokeniser.tokenisation(path=sys.argv[1])
