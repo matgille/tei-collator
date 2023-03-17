@@ -25,7 +25,7 @@ class Injector:
         puisqu'un milestone a des chances de se trouver au début d'un tei:p, contrairement à une note)
         :param liste_temoins: la liste des témoins
         """
-        self.debug_mode = debug
+        selflogs_mode = debug
         self.div_n = div_n
         self.elements_to_inject = elements_to_inject
         self.excluded_elements: list = excluded_elements
@@ -159,7 +159,7 @@ class Injector:
                            f"first omitted app ids: {', '.join(first_form_id)}\n" \
                            f"first following app: {', '.join(following_app_forms)}\n" \
                            f"first following id: {', '.join(following_forms_id)}\n"
-            utils.append_to_file(".debug/homeoteleuton.txt", debug_result)
+            utils.append_to_file("logs/homeoteleuton.txt", debug_result)
 
         if result_B:
             debug_result = f"New homeoteleuton found (method B).\n" \
@@ -167,7 +167,7 @@ class Injector:
                            f"last omitted app ids: {', '.join(last_form_id)}\n" \
                            f"first preceding app: {', '.join(preceding_app_forms)}\n" \
                            f"first preceding id: {', '.join(preceding_forms_id)}\n"
-            utils.append_to_file(".debug/homeoteleuton.txt", debug_result)
+            utils.append_to_file("logs/homeoteleuton.txt", debug_result)
 
         # On pourrait travailler à des niveaux de certitude, en comparant deux mots au lieu d'un par exemple.
 
@@ -403,7 +403,7 @@ class Injector:
         print("Reconnaissance des transpositions")
         files = glob.glob(f"{self.chemin}/*lacuned.xml")
         assert len(files) > 0
-        with open(".debug/debug_transp.txt", "w") as debug_file:
+        with open("logs/debug_transp.txt", "w") as debug_file:
             debug_file.truncate(0)
 
             for file in files:
@@ -817,7 +817,7 @@ class Injector:
                 meme_au_meme, certainty = self.detection_homeoteleuton(all_apps[position_inf:position_sup + 1])
 
                 if meme_au_meme:
-                    utils.append_to_file(".debug/homeoteleuton.txt", f"witEnd id: {start_ident}\n")
+                    utils.append_to_file("logs/homeoteleuton.txt", f"witEnd id: {start_ident}\n")
                     witEnd.set('ana', '#homeoteleuton')
                     witEnd.set('cert', certainty)
 
