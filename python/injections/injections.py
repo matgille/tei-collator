@@ -209,6 +209,7 @@ class Injector:
             # On veut un dictionnaire de la forme {ID: élément tei:app}
             apps = fichier_apparat.xpath(f"//tei:app",
                                          namespaces=self.ns_decl)
+            assert len(apps) > 0
             dictionnary = {}
             for app in apps:
                 identifiants_rdg = utils.merge_list_of_lists(
