@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 
@@ -1009,6 +1010,10 @@ class Injector:
 
             self.processed_list.extend(intermed_notes_tuples)
         original_stdout = sys.stdout
+        try:
+            os.mkdir(logs)
+        except FileExistsError:
+            pass
         with open("logs/injection.txt", "w") as logs:
             print(self.processed_list, file=logs)
             sys.stdout = logs
