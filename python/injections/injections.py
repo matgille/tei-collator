@@ -217,7 +217,7 @@ class Injector:
                                                        namespaces=self.ns_decl)])
                 # On met à jour le dictionnaire.
                 dictionnary = {**dictionnary, **{identifiant: app for identifiant in identifiants_rdg}}
-
+            assert len(dictionnary) > 0
             # Première étape, récupérer tous les tei:w du fichier tokénisé en ne filtrant que la division qui nous intéresse.
             try:
                 current_division = fichier_tokenise.xpath(f"//tei:div[@n='{self.div_n}'][@type='{self.type_division}']",
@@ -237,7 +237,6 @@ class Injector:
                 try:
                     corresponding_app = dictionnary[identifier]
                 except KeyError as error:
-                    print(dictionnary)
                     print(f"There was a problem with the injection with witness {sigle}. "
                           f"Please check there is no tei:w where there should not be "
                           f"(in the notes for example). ID: {identifier}"
