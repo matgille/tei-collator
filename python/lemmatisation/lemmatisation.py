@@ -5,7 +5,7 @@ import re
 import glob
 import traceback
 
-# import torch
+import torch
 from lxml import etree
 import os
 import multiprocessing as mp
