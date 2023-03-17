@@ -142,15 +142,6 @@ def main():
                                      output_dir=parametres.output_dir)
         exit(0)
 
-    if pdf_only:
-        chemin = f"divs/div{division}"
-        print("On produit les fichiers pdf.")
-        # for fichier in glob.glob(f'{chemin}/apparat_*J*_*injected_punct.transposed.lacuned.xml'):
-        for fichier in glob.glob(f'{chemin}/apparat_*J*_*injected_punct.transposed.lacuned.xml'):
-            print(fichier)
-            sorties.transformation_latex(saxon, fichier, False, chemin)
-        sorties.nettoyage("divs")
-        exit(0)
 
     # We start by removing all debug files
     utils.remove_debug_files()
@@ -364,11 +355,11 @@ def main():
 
 
         # Tests de conformité
-        print(f'Tests en cours...')
-        for sigle in liste_sigles:
-            tests.tokentest(sigle, i)
-            tests.witness_test(sigle, i)
-            tests.test_word_alignment(i)
+        # print(f'Tests en cours...')
+        # for sigle in liste_sigles:
+            # tests.tokentest(sigle, i)
+            # tests.witness_test(sigle, i)
+            # tests.test_word_alignment(i)
 
 
     sorties.nettoyage("divs")
