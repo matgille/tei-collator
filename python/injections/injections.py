@@ -237,6 +237,7 @@ class Injector:
                 try:
                     corresponding_app = dictionnary[identifier]
                 except KeyError as error:
+                    print(file)
                     print(f"There was a problem with the injection with witness {sigle}. "
                           f"Please check there is no tei:w where there should not be "
                           f"(in the notes for example). ID: {identifier}"
