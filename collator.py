@@ -46,12 +46,14 @@ def main():
     parser.add_argument("-so", "--similarityonly", default=False, help="Performs similarity computation and exit.")
     parser.add_argument("-w", "--witness", default="*", help="Witness to process")
     parser.add_argument("-fo", "--fusiononly", default=False, help="Create final xml document with xi:includes")
+    parser.add_argument("-id", "--integrer_deplacements", default=False, type=bool, help="On visualise la collation avec les déplacements (ne permet pas de les integrer a l edition)")
 
     ##### Settings
     args = parser.parse_args()
     similarity_only = args.similarityonly
     print(similarity_only)
     correction = args.correction
+    deplacements = args.integrer_deplacements
     log = correction
     inject_only = args.injectiononly
     lemmatize_only = args.lemmatizeonly
@@ -203,12 +205,12 @@ def main():
         argument = int(division)
         arg_plus_1 = argument + 1
         portee = range(argument, arg_plus_1)
-
     corpus_preparator = collation.CorpusPreparation(saxon=saxon,
                                                     temoin_leader=parametres.temoin_leader,
                                                     type_division=parametres.type_division,
                                                     element_base=parametres.element_base,
-                                                    liste_temoins=utils.chemin_temoins_tokenises_regularises())
+                                                    liste_temoins=utils.chemin_temoins_tokenises_regularises(),
+                                                    integrer_deplacements=deplacements)
 
     for i in portee:
 

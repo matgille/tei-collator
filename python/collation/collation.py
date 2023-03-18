@@ -13,12 +13,16 @@ from halo import Halo
 
 
 class CorpusPreparation:
-    def __init__(self, saxon, temoin_leader, type_division, element_base, liste_temoins):
+    def __init__(self, saxon, temoin_leader, type_division, element_base, liste_temoins, integrer_deplacements):
         self.saxon = saxon
         self.temoin_leader = temoin_leader
         self.type_division = type_division
         self.element_base = element_base
         self.liste_temoins = liste_temoins
+        if integrer_deplacements is True:
+            self.integrer_deplacements = 'True'
+        else:
+            self.integrer_deplacements = 'False'
 
     def prepare(self, div_number):
         """
@@ -26,10 +30,9 @@ class CorpusPreparation:
         qui seront donnés à CollateX pour alignement; elle produit aussi un fichier global qui rassemble l
         """
         print(f'Scission du corpus, création de dossiers et de fichiers par chapitre sur {div_number}.')
-        # Produit à la fois "juxtaposition_\d.xml" et "juxtaposition_orig.xml"
         cmd = f'java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement' \
               f'/preparation_corpus.xsl ' \
-              f'temoin_leader={self.temoin_leader} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
+              f'temoin_leader={self.temoin_leader} compare_with_shifting={self.integrer_deplacements} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
         subprocess.run(cmd.split())
         print("\nPréparation du corpus pour alignment ✓")
 

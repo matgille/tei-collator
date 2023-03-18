@@ -157,7 +157,7 @@ def clean_spaces_from_string(string) -> str:
     return string
 
 def remove_debug_files():
-    for file in glob.glob(".debug/*"):
+    for file in glob.glob("logs/*"):
         os.remove(file)
 
 
