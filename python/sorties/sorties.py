@@ -7,9 +7,7 @@ import subprocess
 from lxml import etree
 import itertools
 
-
 import python.utils.utils as utils
-
 
 
 def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, output_dir):
@@ -45,7 +43,8 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
     trancriptions = root.xpath(xpath_transcriptions, namespaces=mapping)
 
     if len(trancriptions) == 0:
-        raise ValueError("Something went wrong with the production of the main TEI file. Please check path to the corpus.")
+        raise ValueError(
+            "Something went wrong with the production of the main TEI file. Please check path to the corpus.")
 
     for f in trancriptions:
         id = f.xpath("@xml:id", namespaces=tei)[0]
@@ -77,7 +76,7 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
         # maître à l'aide de xi:include
         for i in range(1, 24):  # pas universel non plus, à corriger plus tard
             # fichier = f'divs/results/apparat_{id}_{i}_injected_punct.transposed.xml'
-            fichier = f'divs/results/apparat_{id}_{i}_final.xml'
+            fichier = f'{output_dir}/chapitres/apparat_{id}_{i}_final.xml'
             if os.path.exists(fichier):
                 partie = f.xpath("//div[@type='partie'][@n='3']", namespaces=tei)[0]
                 x_include = f"<xi:include href=\"../chapitres/{'/'.join(fichier.split('/')[2:])}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
