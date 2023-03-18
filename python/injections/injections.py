@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import time
 
 from ordered_set import OrderedSet
 
@@ -185,8 +186,145 @@ class Injector:
         assert len(files) > 0
 
         for fichier in files:
-            self.lacuna_identification(chemin=fichier, output_file=fichier.replace('.xml', '.lacuned.xml'))
+            self.lacuna_identification(chemin=fichier)
         print("Regroupement des omissions ✓")
+
+    def lacuna_identification(self, chemin):
+        """
+        Définition de lacune: une suite d'éléments d'apparats qui contiennent un élément vide
+        Cette fonction regroupe les apparats marqués commes des ommissions dans un tei:seg pointant vers l'analyse d'omission.
+        Fonction récursive. Une itération de la fonction correspond au regroupement d'un ensemble d'omissions.
+
+        :param chemin: le chemin vers le fichier xml d'entrée
+        :param output_file: le fichier à produire en sortie.
+        """
+
+        xml_tree = etree.parse(chemin)
+        print(f"Treating {chemin}")
+        output_file = chemin.replace('.xml', '.lacuned.xml')
+        liste_sigles = [f"#{sigle}" for sigle in self.liste_sigles]
+        all_apps = xml_tree.xpath("//tei:app", namespaces=self.ns_decl)
+
+        for sigle in liste_sigles:
+            # On essaie de faire le moins de requête avec lxml car c'est très lent. On va chercher le plus possible des listes pythons en amont
+
+            xpath_expression = f"//tei:app[contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]][preceding::tei:app[1][contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]]]"
+            apps = xml_tree.xpath(
+                xpath_expression,
+                namespaces=self.ns_decl)
+            try:
+                apps_with_omission_id = [app.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0] for app in
+                                         apps]
+            except IndexError:
+                for app in apps:
+                    try:
+                        app.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0]
+                    except IndexError:
+                        print(etree.tostring(app))
+                        print("Error here. Exiting")
+                        exit(0)
+
+            # Cette expression est très probablement le raison du ralentissement.
+            all_apps_id = xml_tree.xpath("//tei:app/descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)
+            positions = [all_apps_id.index(app) for app in apps_with_omission_id]
+
+            ranges: list = utils.group_adjacent_positions(positions)
+
+            # We filter the list with a given threshold
+            omissions = [(a - 1, b) for a, b in ranges if b - a >= (self.lacuna_sensibility - 1)]
+
+            for index, omission_span in enumerate(omissions):
+                position_inf, position_sup = omission_span
+
+                first_omitted_app = all_apps[position_inf]
+
+                namespace = '{%s}' % self.tei_ns
+
+                start_ident: str = utils.generateur_id()
+                end_ident: str = utils.generateur_id()
+
+                witEnd = etree.Element(namespace + 'witEnd')
+                witEnd.set('{http://www.w3.org/XML/1998/namespace}id', start_ident)
+                witEnd.set('corresp', sigle)
+                witEnd.set('next', f'#{end_ident}')
+
+                # On vérifie si l'omission correspond à un saut du même au même
+                meme_au_meme, certainty = self.detection_homeoteleuton(all_apps[position_inf:position_sup + 1])
+
+                if meme_au_meme:
+                    utils.append_to_file("logs/homeoteleuton.txt", f"witEnd id: {start_ident}\n")
+                    witEnd.set('ana', '#homeoteleuton')
+                    witEnd.set('cert', certainty)
+
+                witStart = etree.Element(namespace + 'witStart')
+                witStart.set('{http://www.w3.org/XML/1998/namespace}id', end_ident)
+                witStart.set('corresp', sigle)
+                witStart.set('previous', f'#{start_ident}')
+
+                first_parent = first_omitted_app.getparent()
+                first_parent.insert(first_parent.index(first_omitted_app), witEnd)
+
+                last_omitted_app = all_apps[position_sup]
+
+                last_parent = last_omitted_app.getparent()
+                last_parent.insert(last_parent.index(last_omitted_app) + 1, witStart)
+
+                # On supprime tous les tei:rdg vides.
+                omitted_apps = all_apps[position_inf:position_sup + 1]
+
+                for apparat in omitted_apps:
+                    try:
+                        empty_rdg = apparat.xpath("descendant::tei:rdg[not(node())]", namespaces=self.ns_decl)[0]
+                    except:
+                        print("Error for apparatus. Try relauching the program.")
+                        print(apparat)
+                        print(etree.tostring(apparat))
+                        id = apparat.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0]
+                        print(id)
+                        exit(0)
+                    witnesses = apparat.xpath("descendant::tei:rdg[not(node())]/@wit", namespaces=self.ns_decl)[0]
+                    pattern = re.compile(f"\s?{sigle}")
+                    updated_wit_att = re.sub(pattern, '', witnesses)
+                    empty_rdg.set('wit', updated_wit_att)
+
+        utils.remove_elements(xml_tree, "//tei:rdg[@wit='']", self.ns_decl)
+        utils.remove_elements(xml_tree, "//tei:rdgGrp[not(descendant::tei:rdg)]", self.ns_decl)
+
+        # On va mettre à jour la typologie des variantes (à garder?)
+        update_omissions = xml_tree.xpath("//tei:app[contains(@ana, '#omission')][not(descendant::tei:rdg[not(node("
+                                          "))])]", namespaces=self.ns_decl)
+        for omission in update_omissions:
+            current_att = omission.xpath("@ana", namespaces=self.ns_decl)[0]
+
+            # On change pour not_apparat si le type est seulement omission; sinon on supprime #omission.
+            if " " in current_att:
+                omission.set('ana', current_att.replace('#omission ', ''))
+            else:
+                omission.set('ana', current_att.replace('#omission', '#not_apparat'))
+
+        # Ici on va regrouper tous les tei:witEnd et witStart individuels adjacents
+        self.group_adjacent_nodes(xml_tree, 'witEnd')
+        self.group_adjacent_nodes(xml_tree, 'witStart')
+
+        # On va maintenant identifier les omissions simples où un seul témoin diverge
+        # for witEnd in xml_tree.xpath("descendant::tei:witEnd", namespaces=self.ns_decl):
+        #     witnesses = witEnd.xpath("@corresp")[0]
+        #     if len(witnesses.split()) == len(self.liste_sigles) - 1:
+        #         corresponding_witStart_id = witEnd.xpath("@next")[0].replace("#", "")
+        #         witEnd.set("ana", "#omission_constante_temoin")
+        #         print(corresponding_witStart_id)
+        #         try:
+        #             corresponding_witStart = witEnd.xpath(f"following::tei:witStart[@xml:id='{corresponding_witStart_id}']", namespaces=self.ns_decl)[0]
+        #         except IndexError as e:
+        #             print(output_file)
+        #         corresponding_witStart.set("ana", "#omission_constante_temoin")
+        #     # Sinon, on passer à l'itération suivante
+        #     else:
+        #         continue
+
+        with open(output_file, "w") as output_file:
+            output_file.write(etree.tostring(xml_tree).decode())
+        print("Done !")
 
     def injection_apparats(self):
         """
@@ -686,6 +824,9 @@ class Injector:
                   f"Exiting.")
             exit(0)
 
+
+
+
     def injection_intelligente(self):
         """
         Cette fonction permet d'injecter sur tous les fichiers les éléments d'un seul fichier.
@@ -697,6 +838,7 @@ class Injector:
 
         self.recuperation_elements()
         print("Reinjecting non apparatus elements in the other witnesses:")
+
         for witness in liste_temoins:
             print(witness)
             self.reinjection_elements(target_file=witness)
@@ -752,144 +894,6 @@ class Injector:
             parent = old_app.getparent()
             new_app = etree.SubElement(parent, self.tei_ns + "app")
             pass
-
-    def lacuna_identification(self, chemin, output_file):
-        """
-        Définition de lacune: une suite d'éléments d'apparats qui contiennent un élément vide
-        Cette fonction regroupe les apparats marqués commes des ommissions dans un tei:seg pointant vers l'analyse d'omission.
-        Fonction récursive. Une itération de la fonction correspond au regroupement d'un ensemble d'omissions.
-
-        :param chemin: le chemin vers le fichier xml d'entrée
-        :param output_file: le fichier à produire en sortie.
-        """
-        with open(chemin, "r") as file:
-            xml_tree = etree.parse(file)
-        print(f"Treating {chemin}")
-
-        liste_sigles = [f"#{sigle}" for sigle in self.liste_sigles]
-
-        for sigle in liste_sigles:
-            # On essaie de faire le moins de requête avec lxml car c'est très lent. On va chercher le plus possible des listes pythons en amont
-            all_apps = xml_tree.xpath(
-                "//tei:app",
-                namespaces=self.ns_decl)
-            xpath_expression = f"//tei:app[contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]][preceding::tei:app[1][contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]]]"
-            apps = xml_tree.xpath(
-                xpath_expression,
-                namespaces=self.ns_decl)
-            try:
-                apps_with_omission_id = [app.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0] for app in
-                                         apps]
-            except IndexError:
-                for app in apps:
-                    try:
-                        app.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0]
-                    except IndexError:
-                        print(etree.tostring(app))
-                        print("Error here. Exiting")
-                        exit(0)
-
-            # Cette expression est très probablement le raison du ralentissement.
-            all_apps_id = xml_tree.xpath("//tei:app/descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)
-            positions = [all_apps_id.index(app) for app in apps_with_omission_id]
-
-            ranges: list = utils.group_adjacent_positions(positions)
-
-            # We filter the list with a given threshold
-            omissions = [(a - 1, b) for a, b in ranges if b - a >= (self.lacuna_sensibility - 1)]
-
-            for index, omission_span in enumerate(omissions):
-                position_inf, position_sup = omission_span
-
-                first_omitted_app = all_apps[position_inf]
-
-                namespace = '{%s}' % self.tei_ns
-
-                start_ident: str = utils.generateur_id()
-                end_ident: str = utils.generateur_id()
-
-                witEnd = etree.Element(namespace + 'witEnd')
-                witEnd.set('{http://www.w3.org/XML/1998/namespace}id', start_ident)
-                witEnd.set('corresp', sigle)
-                witEnd.set('next', f'#{end_ident}')
-
-                # On vérifie si l'omission correspond à un saut du même au même
-                meme_au_meme, certainty = self.detection_homeoteleuton(all_apps[position_inf:position_sup + 1])
-
-                if meme_au_meme:
-                    utils.append_to_file("logs/homeoteleuton.txt", f"witEnd id: {start_ident}\n")
-                    witEnd.set('ana', '#homeoteleuton')
-                    witEnd.set('cert', certainty)
-
-                witStart = etree.Element(namespace + 'witStart')
-                witStart.set('{http://www.w3.org/XML/1998/namespace}id', end_ident)
-                witStart.set('corresp', sigle)
-                witStart.set('previous', f'#{start_ident}')
-
-                first_parent = first_omitted_app.getparent()
-                first_parent.insert(first_parent.index(first_omitted_app), witEnd)
-
-                last_omitted_app = all_apps[position_sup]
-
-                last_parent = last_omitted_app.getparent()
-                last_parent.insert(last_parent.index(last_omitted_app) + 1, witStart)
-
-                # On supprime tous les tei:rdg vides.
-                omitted_apps = all_apps[position_inf:position_sup + 1]
-
-                for apparat in omitted_apps:
-                    try:
-                        empty_rdg = apparat.xpath("descendant::tei:rdg[not(node())]", namespaces=self.ns_decl)[0]
-                    except:
-                        print("Error for apparatus. Try relauching the program.")
-                        print(apparat)
-                        print(etree.tostring(apparat))
-                        id = apparat.xpath("descendant::tei:rdg[1]/@id", namespaces=self.ns_decl)[0]
-                        print(id)
-                        exit(0)
-                    witnesses = apparat.xpath("descendant::tei:rdg[not(node())]/@wit", namespaces=self.ns_decl)[0]
-                    pattern = re.compile(f"\s?{sigle}")
-                    updated_wit_att = re.sub(pattern, '', witnesses)
-                    empty_rdg.set('wit', updated_wit_att)
-
-        utils.remove_elements(xml_tree, "//tei:rdg[@wit='']", self.ns_decl)
-        utils.remove_elements(xml_tree, "//tei:rdgGrp[not(descendant::tei:rdg)]", self.ns_decl)
-
-        # On va mettre à jour la typologie des variantes (à garder?)
-        update_omissions = xml_tree.xpath("//tei:app[contains(@ana, '#omission')][not(descendant::tei:rdg[not(node("
-                                          "))])]", namespaces=self.ns_decl)
-        for omission in update_omissions:
-            current_att = omission.xpath("@ana", namespaces=self.ns_decl)[0]
-
-            # On change pour not_apparat si le type est seulement omission; sinon on supprime #omission.
-            if " " in current_att:
-                omission.set('ana', current_att.replace('#omission ', ''))
-            else:
-                omission.set('ana', current_att.replace('#omission', '#not_apparat'))
-
-        # Ici on va regrouper tous les tei:witEnd et witStart individuels adjacents
-        self.group_adjacent_nodes(xml_tree, 'witEnd')
-        self.group_adjacent_nodes(xml_tree, 'witStart')
-
-        # On va maintenant identifier les omissions simples où un seul témoin diverge
-        # for witEnd in xml_tree.xpath("descendant::tei:witEnd", namespaces=self.ns_decl):
-        #     witnesses = witEnd.xpath("@corresp")[0]
-        #     if len(witnesses.split()) == len(self.liste_sigles) - 1:
-        #         corresponding_witStart_id = witEnd.xpath("@next")[0].replace("#", "")
-        #         witEnd.set("ana", "#omission_constante_temoin")
-        #         print(corresponding_witStart_id)
-        #         try:
-        #             corresponding_witStart = witEnd.xpath(f"following::tei:witStart[@xml:id='{corresponding_witStart_id}']", namespaces=self.ns_decl)[0]
-        #         except IndexError as e:
-        #             print(output_file)
-        #         corresponding_witStart.set("ana", "#omission_constante_temoin")
-        #     # Sinon, on passer à l'itération suivante
-        #     else:
-        #         continue
-
-        with open(output_file, "w") as output_file:
-            output_file.write(etree.tostring(xml_tree).decode())
-        print("Done !")
 
     def group_adjacent_nodes(self, tree, node):
         """
