@@ -30887,7 +30887,8 @@ menos
 Mas
 aqui
 conuiene
-denotar
+de
+notar
 en
 como
 el
@@ -30913,16 +30914,18 @@ vinieron
 en
 su
 ayuda
-por
-que
+porque
 era
-lamas
+la
+mas
 fuerte
 çibdat
 que
 ouiese
-entodo
-elmundo
+en
+todo
+el
+mundo
 .
 
 E
@@ -30930,7 +30933,8 @@ ayunto
 muy
 grant
 flota
-paraueuir
+para
+veuir
 sobrella
 en
 guisa
@@ -31012,7 +31016,8 @@ todo
 el
 canpo
 cubierto
-desangre
+de
+sangre
 .
 
 E
@@ -31027,7 +31032,8 @@ don
 paris
 .
 
-porvos
+por
+vos
 nos
 es
 venido

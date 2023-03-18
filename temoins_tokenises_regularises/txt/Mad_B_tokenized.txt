@@ -29487,8 +29487,7 @@ en
 su
 ayuda
 ,
-por
-que
+porque
 era
 la
 mas

@@ -30887,7 +30887,8 @@ menos menos RG 1
 Mas mas CC 0.345275
 aqui aquí RG 1
 conuiene convenir VMIP3S0 1
-denotar denotar VMN0000 1
+de de SPS00 0.999758
+notar notar VMN0000 1
 en en SPS00 1
 como como CS 0.953008
 el el DA0MS0 0.880831
@@ -30913,16 +30914,18 @@ vinieron venir VMIS3P0 1
 en en SPS00 1
 su su DP3CS0 1
 ayuda ayuda NCFS000 0.846154
-por por SPS00 1
-que que PR0CN000 0.648953
+porque porque CS 0.996454
 era ser VSII1S0 0.483357
-lamas lama NCMP000 0.804145
+la el DA0FS0 0.897854
+mas más RG 0.654277
 fuerte fuerte AQ0CS0 1
 çibdat ciudad NCFS000 1
 que que PR0CN000 0.648953
 ouiese haber VMSI1S0 0.354167
-entodo entodo_en+entodo_todo SP+DI 1
-elmundo elmundo NCMS000 1
+en en SPS00 1
+todo todo DI0MS0 0.746894
+el el DA0MS0 0.880831
+mundo mundo NCMS000 1
 . . Fp 1
 
 E e CC 1
@@ -30930,7 +30933,8 @@ ayunto ayuntar VMIP1S0 0.5
 muy muy RG 1
 grant grande AQ0CS0 1
 flota flota NCFS000 0.815377
-paraueuir paraueuir VMN0000 1
+para para SPS00 0.988789
+veuir vivir VMN0000 0.604447
 sobrella sobrella_sobre+sobrella_el SP+PP 1
 en en SPS00 1
 guisa guisa NCFS000 0.988439
@@ -31012,7 +31016,8 @@ todo todo DI0MS0 0.746894
 el el DA0MS0 0.880831
 canpo campo NCMS000 1
 cubierto cubrir VMPS0SM 0.460071
-desangre desangrar VMIS1S0 0.519261
+de de SPS00 0.999758
+sangre sangre NCFS000 0.885714
 . . Fp 1
 
 E e CC 1
@@ -31027,7 +31032,8 @@ don don NCMS000 1
 paris paris NP000P0 0.5
 . . Fp 1
 
-porvos porvos_por+porvos_vos SP+PP 1
+por por SPS00 1
+vos te PP2CP000 0.5
 nos me PP1CP000 0.5
 es ser VSIP3S0 1
 venido venir VMPS0SM 1

@@ -30742,8 +30742,7 @@ el
 rey
 menalao
 :
-aparejaron
-se
+aparejaronse
 para
 la
 pelea
@@ -31350,7 +31349,8 @@ castillo
 a
 las
 puertas
-deTroya
+de
+Troya
 :
 e
 los

@@ -29487,8 +29487,7 @@ en en SPS00 1
 su su DP3CS0 1
 ayuda ayuda NCFS000 0.846154
 , , Fc 1
-por por SPS00 1
-que que PR0CN000 0.648953
+porque porque CS 0.996454
 era ser VSII1S0 0.483357
 la el DA0FS0 0.897854
 mas más RG 0.654277
