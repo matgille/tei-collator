@@ -79,7 +79,7 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
             fichier = f'{output_dir}/chapitres/apparat_{id}_{i}_final.xml'
             if os.path.exists(fichier):
                 partie = f.xpath("//div[@type='partie'][@n='3']", namespaces=tei)[0]
-                x_include = f"<xi:include href=\"../chapitres/{'/'.join(fichier.split('/')[2:])}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
+                x_include = f"<xi:include href=\"../chapitres/{fichier.split('/')[-1]}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
                 partie.insert(i, etree.fromstring(x_include))
 
         with open(f'{output_dir}/temoins/{id}.xml', "w") as xml_file:
