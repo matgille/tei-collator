@@ -35768,7 +35768,7 @@ camino camino NCMS000 0.441713
 a a SPS00 0.956937
 Alixander alejandro NP000P0 1
 con con SPS00 1
-seysçientos seiscientos AQ0MP0 0.666391
+seysçientos 600 AQ0MP0 0.666391
 mill mil NCMS000 0.5
 caualleros caballero NCMP000 0.954545
 , , Fc 1

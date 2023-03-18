@@ -7953,7 +7953,6 @@ e
 .
 
 Conviene
-
 de
 notar
 que
@@ -9397,7 +9396,6 @@ correr
 .
 
 Conviene
-
 de
 notar
 que
@@ -13328,7 +13326,6 @@ ellos
 .
 
 Conviene
-
 de
 notar
 que
@@ -15495,7 +15492,6 @@ deve
 fazer
 publicamente
 Conviene
-
 de
 notar
 que
@@ -17065,7 +17061,6 @@ e
 los
 mayorales
 Conviene
-
 de
 notar
 que
@@ -18365,7 +18360,6 @@ daño
 .
 
 Conviene
-
 de
 notar
 que
@@ -20042,7 +20036,6 @@ enemigos
 .
 
 Conviene
-
 de
 notar
 que
@@ -21659,7 +21652,6 @@ estocando
 .
 
 Conviene
-
 de
 notar
 ca
@@ -22875,7 +22867,6 @@ enemigos
 .
 
 Conviene
-
 de
 saber
 que
@@ -26024,7 +26015,6 @@ las
 .
 
 Conviene
-
 de
 notar
 que
@@ -27257,7 +27247,6 @@ soterrañas
 .
 
 Conviene
-
 de
 notar
 que
@@ -30298,7 +30287,6 @@ o
 el
 castillo
 Conviene
-
 de
 saber
 que
@@ -31119,7 +31107,6 @@ a
 los
 muros
 Conviene
-
 de
 notar
 que

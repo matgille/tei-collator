@@ -21442,7 +21442,7 @@ fueron ser VSIS3P0 0.938596
 seys seis NCMS000 0.628442
 mill mil AQ0MS0 0.5
 e e CC 1
-seysçientos seiscientos AQ0MP0 0.666391
+seysçientos 600 AQ0MP0 0.666391
 e e CC 1
 sessenta sesenta AQ0MS0 0.375802
 e e CC 1

@@ -7953,7 +7953,6 @@ e e CC 1
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -9397,7 +9396,6 @@ correr correr VMN0000 1
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -13328,7 +13326,6 @@ ellos ellos PP3MP000 1
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -15495,7 +15492,6 @@ deue deber VMIP3S0 0.993174
 fazer hacer VMN0000 1
 publicamente publicamente RG 1
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -17065,7 +17061,6 @@ e e CC 1
 los el DA0MP0 0.964169
 mayorales mayoral NCMP000 1
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -18365,7 +18360,6 @@ daño dañar VMIS3S0 0.609156
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -20042,7 +20036,6 @@ enemigos enemigo NCMP000 0.65625
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -21417,7 +21410,7 @@ fueron ser VSIS3P0 0.938596
 seys seis NCMS000 0.628442
 mill mil AQ0MS0 0.5
 e e CC 1
-seysçientos seiscientos AQ0MP0 0.666391
+seysçientos 600 AQ0MP0 0.666391
 e e CC 1
 lx 60 Z 1
 e e CC 1
@@ -21659,7 +21652,6 @@ estocando estocando VMG0000 1
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 ca ca CS 0.982082
@@ -22875,7 +22867,6 @@ enemigos enemigo NCMP000 0.65625
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 saber saber VMN0000 0.665563
 que que CS 0.351047
@@ -26024,7 +26015,6 @@ las el DA0FP0 0.860393
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -27257,7 +27247,6 @@ soterrañas subterráneo AQ0FP0 1
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -30298,7 +30287,6 @@ o o CC 0.99692
 el el DA0MS0 0.880831
 castillo castillo NCMS000 1
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 saber saber VMN0000 0.665563
 que que CS 0.351047
@@ -31119,7 +31107,6 @@ a a SPS00 0.956937
 los el DA0MP0 0.964169
 muros muro NCMP000 1
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
