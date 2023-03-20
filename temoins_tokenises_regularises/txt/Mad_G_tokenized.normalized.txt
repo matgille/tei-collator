@@ -29,7 +29,6 @@ guerra
 Capitulo
 primero
 Despues
-
 que
 mostro
 en
@@ -7951,7 +7950,6 @@ cibdadanos
 .
 
 Despues
-
 que
 puso
 en
@@ -15584,7 +15582,6 @@ publicamente
 .
 
 Porque
-
 las
 auenturas
 de
@@ -18311,7 +18308,6 @@ camino
 .
 
 Non
-
 solamente
 deuen
 los
@@ -19995,7 +19991,6 @@ enemigos
 .
 
 Conviene
-
 de
 notar
 que
@@ -29528,7 +29523,6 @@ castillo
 .
 
 Algunas
-
 çibdades
 e
 fortalezas
@@ -29988,8 +29982,8 @@ en
 el
 cabo
 del
-engonzes
 ,
+engonzes
 este
 linaje
 de
@@ -30096,6 +30090,7 @@ arca
 que
 se
 mueue
+,
 engonzes
 enbia
 la
@@ -31176,7 +31171,6 @@ muros
 .
 
 Despues
-
 que
 fablo
 de
@@ -33419,7 +33413,6 @@ tomar
 .
 
 Despues
-
 que
 dixo
 de

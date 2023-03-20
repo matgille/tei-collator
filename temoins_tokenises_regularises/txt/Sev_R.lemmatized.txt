@@ -515,7 +515,7 @@ yglesia iglesia NCFS000 1
 segund según SPS00 0.994186
 que que PR0CN000 0.648953
 dixo decir VMIS3S0 1
-archior archior RG 0.249986
+Archior archior RG 0.249986
 quando cuándo PT000000 1
 daua dar VMII1S0 0.5
 conseio consejo NCMS000 0.73494

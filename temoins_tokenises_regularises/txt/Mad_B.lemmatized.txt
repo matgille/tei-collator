@@ -30598,7 +30598,7 @@ esta estar VAIP3S0 0.037234
 ayuntada ayuntar VMPS0SF 1
 con con SPS00 1
 el el DA0MS0 0.880831
-cubo cubo NCMS000 1
+cabo cabo NCMS000 1
 del del_de+del_el SP+DA 0.5
 piertego pértigo NCMS000 1
 , , Fc 1
@@ -30765,8 +30765,8 @@ en en SPS00 1
 el el DA0MS0 0.880831
 cabo cabo NCMS000 1
 del del_de+del_el SP+DA 0.5
-engonzes gonce NCMS000 1
 , , Fc 1
+engonzes gonce NCMS000 1
 este este DD0MS0 0.93323
 linaje linaje NCMS000 1
 de de SPS00 0.999758

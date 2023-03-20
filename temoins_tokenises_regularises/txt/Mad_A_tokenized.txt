@@ -9538,7 +9538,6 @@ cibdadanos
 .
 
 DEspues
-
 que
 puso
 en
@@ -33776,7 +33775,6 @@ tomar
 .
 
 DEspues
-
 que
 dixo
 de

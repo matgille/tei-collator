@@ -29,8 +29,7 @@ guerra guerra NCFS000 1
 Capitulo capítulo NCMS000 1
 primero 1 AO0MS0 0.73057
 Despues después RG 1
-
-que que PR0CN000 0.648953
+que que CS 0.351047
 mostro mostrar VMIS3S0 1
 en en SPS00 1
 la el DA0FS0 0.897854
@@ -7951,8 +7950,7 @@ cibdadanos ciudadano NCMP000 0.633609
 . . Fp 1
 
 Despues después RG 1
-
-que que PR0CN000 0.648953
+que que CS 0.351047
 puso poner VMIS3S0 1
 en en SPS00 1
 los el DA0MP0 0.964169
@@ -15584,7 +15582,6 @@ publicamente publicamente RG 1
 . . Fp 1
 
 Porque porque CS 0.996454
-
 las el DA0FP0 0.860393
 auenturas aventura NCFP000 0.916667
 de de SPS00 0.999758
@@ -18311,7 +18308,6 @@ camino camino NCMS000 0.441713
 . . Fp 1
 
 Non no RN 0.99968
-
 solamente solamente RG 1
 deuen deber VMIP3P0 1
 los el DA0MP0 0.964169
@@ -19995,7 +19991,6 @@ enemigos enemigo NCMP000 0.65625
 . . Fp 1
 
 Conviene convenir VMIP3S0 1
-
 de de SPS00 0.999758
 notar notar VMN0000 1
 que que CS 0.351047
@@ -29528,7 +29523,6 @@ castillo castillo NCMS000 1
 . . Fp 1
 
 Algunas alguno DI0FP0 0.990196
-
 çibdades ciudad NCFP000 1
 e e CC 1
 fortalezas fortaleza NCFP000 1
@@ -29988,8 +29982,8 @@ en en SPS00 1
 el el DA0MS0 0.880831
 cabo cabo NCMS000 1
 del del_de+del_el SP+DA 0.5
-engonzes gonce NCMS000 1
 , , Fc 1
+engonzes gonce NCMS000 1
 este este DD0MS0 0.93323
 linaje linaje NCMS000 1
 de de SPS00 0.999758
@@ -30096,6 +30090,7 @@ arca arca NCFS000 1
 que que PR0CN000 0.648953
 se saber VMIP1S0 0.763441
 mueue mover VMIP3S0 0.930769
+, , Fc 1
 engonzes gonce NCMS000 1
 enbia enviar VMIP3S0 0.880881
 la el DA0FS0 0.897854
@@ -31176,8 +31171,7 @@ muros muro NCMP000 1
 . . Fp 1
 
 Despues después RG 1
-
-que que PR0CN000 0.648953
+que que CS 0.351047
 fablo hablar VMIS3S0 0.607143
 de de SPS00 0.999758
 las el DA0FP0 0.860393
@@ -33419,8 +33413,7 @@ tomar tomar VMN0000 1
 . . Fp 1
 
 Despues después RG 1
-
-que que PR0CN000 0.648953
+que que CS 0.351047
 dixo decir VMIS3S0 1
 de de SPS00 0.999758
 la el DA0FS0 0.897854

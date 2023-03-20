@@ -9538,8 +9538,7 @@ cibdadanos ciudadano NCMP000 0.633609
 . . Fp 1
 
 DEspues después RG 1
-
-que que PR0CN000 0.648953
+que que CS 0.351047
 puso poner VMIS3S0 1
 en en SPS00 1
 los el DA0MP0 0.964169
@@ -33776,8 +33775,7 @@ tomar tomar VMN0000 1
 . . Fp 1
 
 DEspues después RG 1
-
-que que PR0CN000 0.648953
+que que CS 0.351047
 dixo decir VMIS3S0 1
 de de SPS00 0.999758
 la el DA0FS0 0.897854
