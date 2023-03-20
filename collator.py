@@ -104,7 +104,8 @@ def main():
         sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division)}",
                                      chemin_corpus=chemin_corpus,
                                      xpath_transcriptions=xpath_transcriptions,
-                                     output_dir=parametres.output_dir)
+                                     output_dir=parametres.output_dir,
+                                     div_n=division)
         exit(0)
 
     if test_only:
@@ -141,7 +142,8 @@ def main():
         sorties.fusion_documents_tei(chemin_fichiers=chemin_fichiers,
                                      chemin_corpus=chemin_corpus,
                                      xpath_transcriptions=xpath_transcriptions,
-                                     output_dir=parametres.output_dir)
+                                     output_dir=parametres.output_dir,
+                                     div_n=division)
         exit(0)
 
 
@@ -353,7 +355,8 @@ def main():
             sorties.fusion_documents_tei(chemin_fichiers=chemin_fichiers,
                                          chemin_corpus=chemin_corpus,
                                          xpath_transcriptions=xpath_transcriptions,
-                                         output_dir=parametres.output_dir)
+                                         output_dir=parametres.output_dir,
+                                         div_n=division)
 
 
         # Tests de conformité

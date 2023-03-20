@@ -10,7 +10,7 @@ import itertools
 import python.utils.utils as utils
 
 
-def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, output_dir):
+def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, output_dir, div_n):
     '''
     Cette fonction produit un document xml-tei maître permettant de lier chaque division entre elles.
     Ici l'universalité du code est cassée, il faut voir comment faire pour gérer ça
@@ -27,8 +27,8 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
     except FileExistsError:
         pass
 
-    for file in glob.glob(f"{chemin_fichiers}/*final.xml"):
-        shutil.copy(file, f'{output_dir}/chapitres')
+    file = glob.glob(f"{chemin_fichiers}/*{div_n}*final.xml")
+    shutil.copy(file, f'{output_dir}/chapitres')
     print(chemin_corpus)
     tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
     xi = {'xi': 'http://www.w3.org/2001/XInclude'}
