@@ -3,7 +3,7 @@ import os
 import re
 import subprocess
 import multiprocessing as mp
-
+import Levenshtein
 import python.utils.utils as utils
 
 from lxml import etree
@@ -41,7 +41,7 @@ class Aligner:
     def __init__(self, liste_fichiers_xml: list, chemin: str, moteur_transformation_xsl: str, correction_mode: bool,
                  parametres_alignement: str,
                  nombre_de_coeurs,
-                 align_on:int):
+                 align_on: int):
         self.nombre_de_coeurs = nombre_de_coeurs
         self.liste_fichiers_xml = liste_fichiers_xml
         self.chemin = chemin
@@ -125,12 +125,13 @@ class Aligner:
 
 
 class Collateur:
-    def __init__(self, log: bool, chemin_fichiers, div_n, div_type):
+    def __init__(self, log: bool, chemin_fichiers, div_n, div_type, temoin_base):
         self.log = log
         self.chemin_fichiers = chemin_fichiers
         self.div_n = div_n
         self.div_type = div_type
         self.tei_ns = {'tei': 'http://www.tei-c.org/ns/1.0'}
+        self.temoin_base = temoin_base
 
     def run_collation(self):
         self.produce_typed_apps(f'apparat_final.json')
@@ -185,7 +186,7 @@ class Collateur:
                     dictionnaire de sortie: on va donc modifier la valeur de l'item dont la clé est cette chaîne,
                     en ajoutant le témoin correspondant ainsi que les identifiants de token, de lemme et de pos.
 
-            3 ) Une fois le dictionnaire créé, on le transforme en xml en suivant la grammaire de la TEI pour les apparat.
+            3 ) Une fois le dictionnaire créé, on le transforme en xml en suivant la grammaire de la TEI pour les apparats.
 
             4) On va effectuer une opération de comparaison des lemmes et des POS pour déterminer le type de variante
 
@@ -376,27 +377,40 @@ class Collateur:
         # TODO: idem, si adjectifs du même lemme, on peut ignorer le reste.
 
         # On commence par supprimer les accents: il est très peu probable que deux homographes se retrouvent
-        # dans un même lieu variant.
+        # dans un même lieu variant. Ensuite, on normalise la casse et les ramistes, car les normes de transcription diffèrent
+        # entre transcription manuelle et OCR/HTR
 
         comparaison_lemme = all(elem == liste_lemmes[0] for elem in liste_lemmes[1:])
         comparaison_pos = all(elem == liste_pos[0] for elem in liste_pos[1:])
 
         list_lecon_sans_accents = [utils.remove_accents(lecon) for lecon in liste_lecons]
         list_lecon_lower_case = [lecon.lower() for lecon in list_lecon_sans_accents]
-        normalized_forms = list_lecon_lower_case
+        list_lecon_ramistes = [utils.normalize_ramistes(lecon) for lecon in list_lecon_lower_case]
+        normalized_forms = list_lecon_ramistes
 
-        # S'il n'y a pas d'accent, on continue la typologie
-        if list_lecon_sans_accents == liste_lecons:
-            similarity_after_normalization = False
-
+        list_lecon_corrected = [utils.compensate_freeling_normalisation(lecon) for lecon in liste_lecons]
         # On regarde si la différence ne tient qu'aux accents: si tel est le cas, on présuppose qu'il n'y a pas de variation
+
+        similarity_not_normalized = all(elem == liste_lecons[0] for elem in liste_lecons[1:])
+        similarity_normalized = all(elem == normalized_forms[0] for elem in normalized_forms[1:])
+        if not similarity_not_normalized and similarity_normalized:
+            normalization_discrepancy = True
         else:
-            similarity_normalized = all(elem == normalized_forms[0] for elem in normalized_forms[1:])
-            similarity_not_normalized = all(elem == liste_lecons for elem in liste_lecons[1:])
-            if not similarity_not_normalized and similarity_normalized:
-                similarity_after_normalization = True
-            else:
-                similarity_after_normalization = False
+            normalization_discrepancy = False
+
+        similarity_freeling = all(elem == list_lecon_corrected[0] for elem in list_lecon_corrected[1:])
+
+        if not similarity_not_normalized and similarity_freeling:
+            freeling_discrepancy = True
+        else:
+            freeling_discrepancy = False
+
+        similarity_accent = all(elem == list_lecon_sans_accents[0] for elem in list_lecon_sans_accents[1:])
+
+        if not similarity_not_normalized and similarity_accent:
+            accent_discrepancy = True
+        else:
+            accent_discrepancy = False
 
         # On a besoin de filtrer certaines erreurs dûes au fait que Freeling gère très mal l'homographie
         # Les éléments du filtre seront ignorés, soit parce que c'est trop coûteux
@@ -407,17 +421,26 @@ class Collateur:
 
         # Idem pour les pos: on va ignorer les lieux variants avec POS dans le filtre et lemmes identiques.
         # Ce filtrage est à supprimer si le lemmatiseur est de meilleure qualité
-        filtre_pos = [('AQ0MS0', 'PI0MS000'), ('NCMP000', 'AQ0MP0'), ('NCMS000', 'AQ0MS0'), ('NCFP000', 'NCMP000'),
-                      ('PR000000', 'RG'),
-                      ('VMIS3S0', 'VMIP1S0'), ('VSSI3S0', 'VSSI1S0'), ('Z', 'PI0FS000', 'DI0FS0'), ('PR0CN000', 'CS')]
+        filtre_pos = [('AQ0MS0', 'PI0MS000'), ('SP', 'SPS00'),  ('NCMP000', 'AQ0MP0'), ('NCMS000', 'AQ0MS0'), ('NCFP000', 'NCMP000'),
+                      ('PR000000', 'RG'), ('CS', 'PT000000', 'PR000000'),
+                      ('VMIS3S0', 'VMIP1S0'), ('VMII1S0', 'VMII3S0'), ('VSSI3S0', 'VSSI1S0'),
+                      ('Z', 'PI0FS000', 'DI0FS0'), ('PR0CN000', 'CS')]
 
         filtre_nombres = re.compile("\d+")
 
         # si tous les lemmes et tous les pos sont identiques: il s'agit d'une variante graphique.
         # Ici il faut se rappeler qu'il y a une différence entre les formes
         type_de_variante = None
-        if similarity_after_normalization:
+
+        # on veut identifier correctement les problèmes de normalisation, et les distinguer des
+        # variantes graphiques
+        if freeling_discrepancy and not comparaison_pos:
+            return "graphique"
+        elif freeling_discrepancy and not comparaison_lemme:
+            return "graphique"
+        if normalization_discrepancy or accent_discrepancy:
             return "normalisation"
+
         if not comparaison_lemme:  # si il y a une différence de lemmes seulement: 'vraie variante'
             if all(pos.startswith('NP') for pos in liste_pos):
                 type_de_variante = 'entite_nommee'
@@ -436,10 +459,10 @@ class Collateur:
                 type_de_variante = 'numerale'
             # On peut avoir un lemme identique et un pos qui change ('como' p.ex)
             elif any(all(lemme in couple for lemme in liste_lemmes) for couple in filtre_lemmes):
-                if all(liste_pos[0] == pos for pos in liste_pos):
+                if any(all(pos in couple for pos in liste_pos) for couple in filtre_pos):
                     type_de_variante = 'filtre'
                 else:
-                    type_de_variante = 'morphosyntactique'
+                    type_de_variante = 'morphosyntaxique'
             elif all(pos.startswith('NC') for pos in liste_pos):
                 # On rappelle la structure de l'étiquette du nom: NCMS000 pour un nom masculin singulier
                 if all(pos[2] == liste_pos[0][2] for pos in liste_pos):
@@ -459,12 +482,12 @@ class Collateur:
                     if any(all(pos in couple for pos in liste_pos) for couple in filtre_pos):
                         type_de_variante = "filtre"
                     else:
-                        type_de_variante = "morphosyntactique"
+                        type_de_variante = "morphosyntaxique"
             else:
                 if any(all(pos in couple for pos in liste_pos) for couple in filtre_pos):
                     type_de_variante = "filtre"
                 else:
-                    type_de_variante = 'morphosyntactique'
+                    type_de_variante = 'morphosyntaxique'
         elif comparaison_pos and comparaison_lemme:  # si lemmes et pos sont indentiques
             if liste_lemmes[0] == '' or liste_pos[0] == '':  # si égaux parce que nuls, variante
                 # indéterminée
@@ -480,7 +503,7 @@ class Collateur:
     def raffinage_apparats(self, fichier):
         """
         Cette fonction permet de raffiner les apparats en rassemblant les variantes graphiques au sein d'un apparat qui
-        comporte des variantes "vraies" ou morphosyntactiques. On va créer des tei:rdgGroup qui rassembleront les rdg.
+        comporte des variantsviudgadoses "vraies" ou morphosyntaxiques. On va créer des tei:rdgGroup qui rassembleront les rdg.
         À intégrer à la classe Collateur puisque c'est une partie de la collation.
         Cette fonction réécrit le fichier d'entrée.
         """
@@ -495,7 +518,9 @@ class Collateur:
         root = f.getroot()
 
         # On travaille d'abord sur les apparats de type graphique: un seul tei:rdgGrp qui va tout englober
-        liste_apps_graphique = root.xpath(f"//tei:app[@ana='#graphique']", namespaces=self.tei_ns)
+        liste_apps_graphique = root.xpath(
+            f"//tei:app[@ana='#graphique'] | //tei:app[@ana='#normalisation'] | //tei:app[@ana='#filtre']",
+            namespaces=self.tei_ns)
         for apparat in liste_apps_graphique:
             lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=self.tei_ns)
             # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat, on crée des tei:rdgGrp pour plus de
@@ -505,7 +530,9 @@ class Collateur:
                 rdg_grp.append(rdg)
 
         # Puis on s'intéresse aux autres apparats
-        liste_apps = root.xpath(f"//tei:app[not(@ana='#graphique')]", namespaces=self.tei_ns)
+        liste_apps = root.xpath(
+            f"//tei:app[not(@ana='#graphique') and not(@ana='#normalisation') and not(@ana='#filtre')]",
+            namespaces=self.tei_ns)
         for apparat in liste_apps:
             lecon = apparat.xpath(f"descendant::tei:rdg", namespaces=self.tei_ns)
             # S'il n'y a que deux lemmes, pas besoin de raffiner l'apparat, on crée des tei:rdgGrp pour plus de
@@ -527,6 +554,7 @@ class Collateur:
                     lemme = lecon.xpath("@lemma")[0]
                     pos = lecon.xpath("@pos")[0]
                     pos_reduit = pos.split(" ")[0]
+                    wit = lecon.xpath("@wit")
                     lemme_reduit = "_".join(lemme.split("_")[:len(pos_reduit.split("_"))])
                     liste_annotations.append((identifiant_rdg, pos_reduit, lemme_reduit))
 
@@ -548,10 +576,117 @@ class Collateur:
                 # Ce qui nous intéresse, c'est de produire les groupes: on ne garde que les valeurs
                 # du dictionnaire
                 rdg_groups = list(dictionnaire_de_regroupement.values())
+                groups_dict = {}
+                for analyse, identifiants in dictionnaire_de_regroupement.items():
+                    wit = []
+                    for ident in identifiants:
+                        wit.append(apparat.xpath(f"tei:rdg[@id = '{ident}']/@wit", namespaces=self.tei_ns)[0])
+                    groups_dict[analyse] = (identifiants, wit)
 
                 # On va pouvoir maintenant créer des rdgGroups autour des tei:rdg que l'on a identifiés
                 # comme similaires.
 
+                output_dict = {}
+                # On itère sur les groupes constitués pour trouver le témoin-base et on initialise
+                # le dictionnaire qui va contenir notre ordre final et nos identifiants
+                for analyse, (identifiants, wits) in groups_dict.items():
+                    if any([self.temoin_base in wit for wit in wits]):
+                        output_dict[0] = identifiants
+                        # On récupère la forme.
+                        try:
+                            forme_temoin_base = \
+                                apparat.xpath(
+                                    f"tei:rdg[contains(@wit, '{self.temoin_base}')]/descendant::tei:w/descendant::text()",
+                                    namespaces=self.tei_ns)[0]
+                        except IndexError:
+                            forme_temoin_base = ''
+                        del groups_dict[analyse]
+                        break
+
+                # On veut maintenant trier l'ordre d'apparition des leçons, en mettant toujours le témoin base
+                # (ou, plus tard, le lemme retenu) en premier dans l'ordre, et les omissions des autres témoins en dernier.
+                # Pour le reste, il s'agit de calculer des distances formelles.
+                # Le but ici est de faire des distances de levenshtein sur chaque couple {base-autre} pour déterminer
+                # l'ordre correct d'apparition par proximité lexicale. On travaille sur les formes et c'est p.e.
+                # ce qui pêche ici cependant, mais travailler sur les lemmes poserait pb en cas de variante morphosyntaxique
+
+                if len(rdg_groups) > 2:
+                    assert len(rdg_groups) == len(groups_dict) + 1
+                    idents_to_compare = [ident for analyse, (ident, wit) in groups_dict.items()]
+                    forms_to_compare = []
+                    for ident in idents_to_compare:
+                        try:
+                            corresponding_form = \
+                                apparat.xpath(f"tei:rdg[@id = '{ident[0]}']/descendant::tei:w/descendant::text()",
+                                              namespaces=self.tei_ns)[0]
+                        except IndexError:
+                            corresponding_form = ''
+                        forms_to_compare.append(corresponding_form)
+                    forms_and_idents = list(zip(forms_to_compare, idents_to_compare))
+
+                    if forme_temoin_base == '':
+                        # Cas où le témoin base omet: dans ce cas, on ordonne alphabétiquement
+                        forms_and_idents.sort(key=lambda x: x[0])
+                        output_dict = {**output_dict, **{index + 1:
+                                                             identifiants for index, (forme, identifiants) in
+                                                         enumerate(forms_and_idents)}}
+
+                    elif len(forms_to_compare) == 2 and '' in forms_to_compare:
+                        # Cas où on a 3 groupes de variantes, dont une omission
+                        # L'ordre choisi est donc: temoin-base / temoin / omission
+                        forms_and_idents.sort(key=lambda x: x[0], reverse=True)
+                        output_dict = {**output_dict, **{index + 1:
+                                                             identifiants for index, (forme, identifiants) in
+                                                         enumerate(forms_and_idents)}}
+
+                    else:
+                        # Dans les autres cas seulement, on peut produire la distance de Levenstein.
+
+                        # Par la suite il suffira de brancher l'analyseur sémantique ici pour améliorer le classement.
+
+                        interm_list = []
+                        for form, ident in forms_and_idents:
+                            normalized_form = utils.remove_accents(form)
+                            normalized_form = utils.normalize_ramistes(normalized_form)
+                            normalized_temoin_base = utils.remove_accents(forme_temoin_base)
+                            if form == "":
+                                # On pénalise les formes vides pour pouvoir les classer en dernier par tri de distance.
+                                distance = 20
+                            else:
+                                distance = Levenshtein.distance(normalized_temoin_base, normalized_form)
+                            interm_list.append((distance, (form, ident)))
+
+                        # Si la distance est la même, on trie par ordre alphabétique.
+                        if all([distance == interm_list[0][0] for distance, (form, idents) in interm_list]):
+                            interm_list = sorted(interm_list, key=lambda x: x[1][0])
+                        else:
+                            interm_list = sorted(interm_list, key=lambda x: x[0])
+                        output_dict = {**output_dict,
+                                       **{index + 1: value[1][1] for index, value in enumerate(interm_list)}}
+
+
+
+                # Sinon, c'est simple (=2 groupes seulement)
+                # il suffit juste d'ajouter en 2e position le 2e groupe de lieux variants
+                else:
+                    try:
+                        output_dict[1] = [identifiants for analyse, (identifiants, wits) in groups_dict.items()][0]
+                        output_dict = {key: identifiants for key, identifiants in output_dict.items()}
+                    except IndexError:
+                        print("Erreur dans l'ordonnement des apparats. "
+                              "Cette erreur ne devrait pas exister, elle suppose un "
+                              "apparat ne contenant qu'un rdgGrp et qui ne serait pas "
+                              "classifié comme 'not_apparat'. En général, cela est dû à "
+                              "un problème de lemmatisation ou d'analyse grammaticale.")
+                        # Dans ce cas, c'est que le dictionnaire de compte qu'un item.
+                        print(dictionnaire_de_regroupement)
+                        output_dict = {0: list(dictionnaire_de_regroupement.values())[0]}
+
+                # Modifier le nom de la variable une fois que ça marchera
+                rdg_groups = [output_dict[index] for index in range(len(output_dict))]
+
+                # Les lignes précédentes ne marchent pas. voir + tard
+                # rdg_groups = list(dictionnaire_de_regroupement.values())
                 # Créons donc des tei:rdgGrp parents pour ces groupes
                 for group in rdg_groups:
                     tei_namespace = 'http://www.tei-c.org/ns/1.0'
@@ -567,6 +702,8 @@ class Collateur:
                                   f"The error could come from the lemmatization.")
                             exit(0)
                         rdg_grp.append(orig_rdg)
+                # Enfin, on va trier les groupes par ordre de proximité formelle
+                # avec la leçon du témoin-base, dans le cas de +2 groupes
 
         with open(fichier, 'w+') as sortie_xml:
             output = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode('utf8')
