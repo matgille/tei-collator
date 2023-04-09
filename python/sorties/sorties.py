@@ -34,10 +34,10 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
     xi = {'xi': 'http://www.w3.org/2001/XInclude'}
     mapping = {**tei, **xi}
     parser = etree.XMLParser(load_dtd=True,
-                             resolve_entities=True)
+                             resolve_entities=True, remove_blank_text=True)
     with open(f'{chemin_corpus}', "r") as xml_file:
         # On va copier la structure du document-base
-        root = etree.parse(xml_file, parser=parser)
+        root = etree.parse(xml_file, parser=parser,)
         # https://lxml.de/1.3/api.html#xinclude-and-elementinclude
         root.xinclude()
     trancriptions = root.xpath(xpath_transcriptions, namespaces=mapping)
@@ -53,7 +53,7 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
         with open(f'results/{id}.xml', "w") as xml_file:
             xml_file.write(etree.tostring(f).decode())
         with open(f'results/{id}.xml', "r") as xml_file:
-            f = etree.parse(xml_file)
+            f = etree.parse(xml_file, parser=parser)
             f = f.getroot()
             del f.attrib["{http://www.w3.org/XML/1998/namespace}base"]
         id = f.xpath("@xml:id", namespaces=tei)[0]
@@ -81,7 +81,7 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
                 partie = f.xpath("//div[@type='partie'][@n='3']", namespaces=tei)[0]
                 x_include = f"<xi:include href=\"../chapitres/{fichier.split('/')[-1]}\" xmlns:xi=\"http://www.w3.org/2001/XInclude\"/>"
                 partie.insert(i, etree.fromstring(x_include))
-
+        etree.indent(f, space='  ', level=0)
         with open(f'{output_dir}/temoins/{id}.xml', "w") as xml_file:
             xml_file.write(etree.tostring(f).decode())
 
