@@ -67,7 +67,7 @@ class Injector:
     def run_injections(self):
         self.injection_apparats()
         self.injection_omissions()
-        self.same_word_identification(distance=19)
+        self.same_word_identification(distance=20)
         self.injection_intelligente()
         self.injection_noeuds_non_textuels()
         self.regroupement_omissions()
@@ -337,7 +337,7 @@ class Injector:
         input_files = utils.filter_existing_divs(glob.glob("temoins_tokenises/*.xml"), div_n=self.div_n,
                                                  div_type=self.type_division)
         assert len(input_files) > 0
-
+        parser = etree.XMLParser()
         for file in input_files:
             sigle = file.split("/")[-1].split(".xml")[0]
             print(sigle)
@@ -534,7 +534,7 @@ class Injector:
 
     def transposition_recognition(self):
         """
-        Cette fonction détecte les transpositions de la forme inversion de mots
+        Cette fonction détecte les transpositions de la forme déplacement de mots
         INPUTS: *lacuned.xml
         OUTPUTS: *transposed.xml
         """
@@ -552,15 +552,14 @@ class Injector:
                     f = etree.parse(input_file)
                 # On va travailler sur des n-grams de 3 à 5.
                 for distance in range(2, 5):
-                    # On exclut d'emblée
+                    # On exclut d'emblée les transpositions déjà détectées (problème: l'overlapping)
                     apps = f.xpath("//tei:app[not(preceding::tei:milestone[@ana='#transposition'][1][@type='start'])]",
                                    namespaces=self.ns_decl)
 
-                    # D'abord on crée des bigrammes, et on va comparer chaque bigramme avec le suivant
-                    # Il faudrait faire tourner cette fonction sur des bigrammes, puis des trigrammes, etc.
-                    bigram_apps = [apps[i:i + distance] for i in range(len(apps))]
+                    # D'abord on crée des ngrammes, et on va comparer chaque ngramme avec le suivant
+                    ngram_apps = [apps[i:i + distance] for i in range(len(apps))]
 
-                    for index in range(len(bigram_apps)):
+                    for index in range(len(ngram_apps)):
                         debug_file.write(f"New {str(distance)}-gram\n")
                         ordered_Set_list = []
                         set_list = []
@@ -568,7 +567,7 @@ class Injector:
                         # On crée des bigrammes de ces bigrammes
                         # (i.e., on aura trois apparats différents répartis dans deux couples avec l'apparat central en commun)
                         # On en extrait les analyses morphosyntaxiques et on en supprime la redondance
-                        for groupe_apparat in bigram_apps[index:index + 2]:
+                        for groupe_apparat in ngram_apps[index:index + 2]:
                             ordered_set_tmp = []
                             set_tmp = []
                             for apparat in groupe_apparat:
@@ -582,6 +581,22 @@ class Injector:
                                     " ")
                                 lemmas_and_pos = [pos + lemma if pos + lemma != "" else "om" for pos, lemma in
                                                   list(zip(list_of_pos, list_of_lemmas))]
+                                lemmas_and_pos = [lemma if lemma != "" else "om." for pos, lemma in
+                                                  list(zip(list_of_pos, list_of_lemmas))]
+
+
+                                # On filtre certains lemmes synonymes
+                                lemmas_and_pos = []
+                                for pos, lemma in list(zip(list_of_pos, list_of_lemmas)):
+                                    if lemma == "":
+                                        lemmas_and_pos.append("om.")
+                                    elif lemma == "e" or lemma == "et":
+                                        lemmas_and_pos.append("CC")
+                                    else:
+                                        lemmas_and_pos.append(lemma)
+
+
+                                        
                                 debug_file.write("|".join(lemmas_and_pos))
                                 debug_file.write("\n")
                                 ordered_set_tmp.append(OrderedSet(lemmas_and_pos))
@@ -634,10 +649,12 @@ class Injector:
 
                             # Let's update the typology for further use
                             for index, transposed_app in enumerate(concerned_apps):
-                                # On regarde s'il y a omission; si c'est le cas, on marque la transposition. Sinon, on
-                                # ne fait rien.
+                                # Deux cas: soit il y a omission, quand collatex ajoute un item; soit c'est une inversion
+                                # et dans ce cas on a un apparat de type lexical.
                                 if len(transposed_app.xpath("descendant::tei:rdg[not(node())]",
-                                                            namespaces=self.ns_decl)) > 0:
+                                                            namespaces=self.ns_decl)) > 0 \
+                                        or transposed_app.xpath("contains(@ana, 'lexicale')",
+                                                            namespaces=self.ns_decl):
                                     transposed_app.set('ana', concerned_apps_typology[index] + ' #transposition')
 
                             last_app = concerned_apps[-1]
@@ -710,7 +727,7 @@ class Injector:
                     # TODO: il y a un problème d'ordre dans ce cas, voir comment régler cela.
                     # On va chercher l'élément soeur précédent (w ou app).
                     preceding_sibling = \
-                        apparat.xpath("preceding-sibling::node()[self::tei:app|self::tei:w]", namespaces=self.ns_decl)[
+                        apparat.xpath("preceding::node()[self::tei:app]", namespaces=self.ns_decl)[
                             -1]
                     anchor = \
                         preceding_sibling.xpath(
@@ -783,6 +800,7 @@ class Injector:
                                 print(f"Please check file {temoin}")
                                 exit(0)
                         elif anchor_name in ["p", "head"]:
+                            # TODO: pas universel.
                             # TODO: il y a un problème d'ordre dans ce cas, voir comment régler cela.
                             try:
                                 anchor_element = \
@@ -850,7 +868,7 @@ class Injector:
         """
         Cette fonction regroupe les apparats qui peuvent l'être. Si deux apparats
         consécutifs contiennent les mêmes groupes de témoins, on peut les fusionner.
-        TODO: continuer ici.
+        TODO: fonction non implémentée. continuer ici.
         """
         file = "divs/div1/apparat_Sal_J_1_final.xml"
 
@@ -1107,8 +1125,6 @@ class Injector:
                     index = 0
 
                 parent_element.insert(index, element_to_inject)
-                parent_element.insert(index + 1, etree.Comment(f"anchor: {anchor_id} ; index: {index}"))
-                parent_element.insert(index + 1, etree.Comment(f"shifted: {shifted}"))
 
             except Exception as e:
                 print(f"Injection failed for witness {sigla_output_wit}")
