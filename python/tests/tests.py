@@ -6,6 +6,7 @@ from lxml import etree
 from lxml import isoschematron
 import os
 import datetime
+import python.utils as utils
 
 tei_namespace = 'http://www.tei-c.org/ns/1.0'
 NSMAP = {'tei': tei_namespace}  # pour la recherche d'éléments avec la méthode xpath
@@ -44,7 +45,79 @@ def test_word_alignment(div):
                     good_tuple_list.append((witness, element))
                     test = True
 
-    # print(f"Éléments tei:w qu'on ne retrouve que dans certains témoins: {good_tuple_list}")
+    print(f"Éléments tei:w qu'on ne retrouve que dans certains témoins: {good_tuple_list}")
+
+
+def order_test(fichier_a_tester, temoin_tokenise, sigle, division, div_type):
+    """
+    Cette fonction teste si des tokens ont été perdus ou si leur ordre a été inversé lors de la collation.
+    """
+    print(f"Testing {fichier_a_tester} against {temoin_tokenise}")
+    xml_temoins_tokenise = etree.parse(temoin_tokenise)
+    try:
+        root_a_tester = etree.parse(fichier_a_tester)
+    except OSError:
+        print("Témoin absent sur la division concernée.")
+        return
+    correct_ids = xml_temoins_tokenise.xpath(f"//tei:div[@type='{div_type}'][@n='{division}']/descendant::tei:w/@xml:id", namespaces=NSMAP)
+    all_rdg_wit_a_tester = root_a_tester.xpath(
+        f"//tei:div[@n='{division}']/descendant::tei:app[descendant::tei:rdg[contains(@wit, '{sigle}')]]/descendant::tei:rdg[tei:w][contains(@wit, '{sigle}')]/@wit",
+        namespaces=NSMAP)
+    all_rdg_id_a_tester = root_a_tester.xpath(
+        f"//tei:div[@n='{division}']/descendant::tei:app[descendant::tei:rdg[contains(@wit, '{sigle}')]]/descendant::tei:rdg[@n][tei:w][contains(@wit, '{sigle}')]/@n | //tei:div[@n='{division}']/descendant::tei:app[descendant::tei:rdg[contains(@wit, '{sigle}')]]/descendant::tei:rdg[not(@n)][tei:w][contains(@wit, '{sigle}')]/@id",
+        namespaces=NSMAP)
+
+    if len(all_rdg_id_a_tester) != len(all_rdg_wit_a_tester):
+        print("The length is not the same.")
+        print(len(all_rdg_id_a_tester))
+        print(len(all_rdg_wit_a_tester))
+
+    zipped = zip(all_rdg_id_a_tester, all_rdg_wit_a_tester)
+    list_of_ids = []
+    for id, wits in zipped:
+        splitted_wits = [wit.replace('#', '') if " " in wits else wits.replace('#', '') for wit in wits.split()]
+        if "_" in id:
+            splitted_ids = id.split("_")
+        else:
+            splitted_ids = [id]
+        assert "" not in splitted_ids
+        assert "" not in splitted_wits
+        wit_position = [index for index, witness in enumerate(splitted_wits) if sigle in witness][0]
+        try:
+            corresponding_id = splitted_ids[wit_position]
+        except IndexError:
+            print("Error")
+            exit(0)
+        list_of_ids.append(corresponding_id)
+    # Normalement avec ça on a deux listes, qui devraient être égales
+
+    # Trouver comment comparer l'ordre des listes.
+    if len(list_of_ids) != len(correct_ids):
+        print("Something went wrong with the injections; some tokens have been lost.")
+        exit(0)
+    elif list_of_ids != correct_ids:
+        # Ici on compare les listes
+        print("Differences:")
+        print([element for element in correct_ids if element not in list_of_ids])
+        print("The order of some tokens has been modified.")
+        identify_order_modification(list_of_ids, correct_ids)
+        exit(0)
+
+    identify_order_modification(list_of_ids, correct_ids)
+
+
+    print("No tokens lost; order check passed.")
+
+    # trouver un moyen de tester l'égalité des listes
+
+
+def identify_order_modification(list_1, list_2):
+    zipped = zip(list_1, list_2)
+    compared_list = [(computed, target) for (computed, target) in zipped if computed != target]
+    if compared_list != []:
+        print("Order issue. Problematic tokens: ")
+        print(compared_list)
+    return
 
 
 def test_lemmatization(div_n, div_type, temoin_leader):
@@ -58,8 +131,8 @@ def test_lemmatization(div_n, div_type, temoin_leader):
     target_div = f.xpath(f"//tei:div[@type='{div_type}'][@n = '{div_n}']", namespaces=NSMAP)[0]
     first_token = target_div.xpath("descendant::tei:w[not(@ana='#annotation_manuelle')][1]", namespaces=NSMAP)[0]
     try:
-        lemma = first_token.xpath("@lemma")[0]
-        pos = first_token.xpath("@pos")[0]
+        first_token.xpath("@lemma")[0]
+        first_token.xpath("@pos")[0]
     except:
         return False
     return True
