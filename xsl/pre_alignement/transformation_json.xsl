@@ -3,10 +3,9 @@
 
 
 <!--Troisième partie: transformer en json les sources xml pour pouvoir utiliser au mieux collatex -->
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:math="http://www.w3.org/2005/xpath-functions/math"
-    exclude-result-prefixes="xs math" xmlns:tei="http://www.tei-c.org/ns/1.0" version="3.0"
-    xmlns:mgl="https://matthiasgillelevenson.fr">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:math="http://www.w3.org/2005/xpath-functions/math" exclude-result-prefixes="xs math"
+    xmlns:tei="http://www.tei-c.org/ns/1.0" version="3.0" xmlns:mgl="https://matthiasgillelevenson.fr">
     <xsl:output method="text"/>
     <xsl:param name="align_on"/>
 
@@ -29,6 +28,7 @@
         <xsl:text>",
         "tokens" : [</xsl:text>
         <!--<xsl:for-each select="descendant::tei:w[text()]|descendant::tei:pc">-->
+        <!--Le cas échéant, on aligne synch pour les ancres d'alignement-->
         <xsl:for-each select="descendant::tei:w[text()] | tei:milestone[@type = 'ancre_alignement']">
             <xsl:text>{"t": "</xsl:text>
             <xsl:choose>
@@ -41,12 +41,12 @@
                 </xsl:otherwise>-->
             </xsl:choose>
             <!--pour éviter des sauts de ligne qui ne sont vraiment pas appréciés par le validateur JSON-->
-            <xsl:text> "</xsl:text>
+            <xsl:text>"</xsl:text>
             <xsl:choose>
                 <xsl:when test="@synch">
                     <xsl:text>,</xsl:text>
                     <xsl:text>"n": "</xsl:text>
-                    <xsl:value-of select="@synch"/>
+                    <xsl:value-of select="translate(@synch, '#', '')"/>
                     <xsl:text>" </xsl:text>
                     <xsl:if test="@lemma">
                         <xsl:text>,</xsl:text>

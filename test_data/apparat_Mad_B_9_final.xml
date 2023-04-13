@@ -98,7 +98,7 @@
       <w>en</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Mad_B #Sal_J #Sev_Z">
       <w>la</w>
     </rdg>
@@ -373,7 +373,7 @@
     </rdg>
     </rdgGrp><rdgGrp><rdg wit="#Mad_A #Mad_G #Sev_R #Sal_J #Sev_Z"/>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q">
       <w>puede</w>
     </rdg>
@@ -787,7 +787,7 @@
       <w>Et</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Sal_J #Sev_Z">
       <w>esto</w>
     </rdg>
@@ -932,7 +932,7 @@
     </rdg>
   </rdgGrp></app>
   <pc xml:id="aGggXNR">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A">
       <w>deuen</w>
     </rdg>
@@ -1161,7 +1161,7 @@
       <w ana="#same_word">el</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Sev_Z">
       <w>filosofo</w>
     </rdg>
@@ -1204,7 +1204,7 @@
       <w>de</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Mad_B #Sal_J #Sev_Z">
       <w>las</w>
     </rdg>
@@ -1307,7 +1307,7 @@
       <w>assy</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Mad_B #Sal_J">
       <w>commo</w>
     </rdg>
@@ -1387,7 +1387,7 @@
   <rdg wit="#Mad_A"><w pos="NCMS000" ana="#annotation_manuelle">se<lb break="no" facs="#facs_xygLpn" xml:id="elem_xygLpn" copyOf="file:/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Mad_A.xml#facs_xygLpn"/>gundo</w>
                 </rdg></rdgGrp></app>
   <pc xml:id="dQ4dOmx">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A">
       <w>deuen</w>
     </rdg>
@@ -1554,7 +1554,7 @@
       <w ana="#same_word">pueden</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_G #Sev_R #Mad_B #Sal_J #Sev_Z">
       <w>mejor</w>
     </rdg>
@@ -1620,7 +1620,7 @@
     </rdg>
   </rdgGrp></app>
   <pc xml:id="vXiuCdk">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A #Sev_Z">
       <w>deuen</w>
     </rdg>
@@ -1691,7 +1691,7 @@
       <w ana="#same_word">los</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Sev_R #Mad_B #Sal_J #Sev_Z">
       <w>da&#241;os</w>
     </rdg>
@@ -1863,7 +1863,7 @@
       <w>o</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_G #Mad_B #Sal_J">
       <w>d&#233;xanse</w>
     </rdg>
@@ -2282,7 +2282,7 @@
       <w>quando</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Mad_B #Sev_Z">
       <w>vienen</w>
     </rdg>
@@ -2640,7 +2640,7 @@
       <w>se</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_B #Sal_J">
       <w>tiran</w>
     </rdg>
@@ -2722,7 +2722,7 @@
       <w>por</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_G #Sev_R #Mad_B">
       <w>eso</w>
     </rdg>
@@ -2742,7 +2742,7 @@
       <w>el</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Sev_Z">
       <w>filosofo</w>
     </rdg>
@@ -2786,7 +2786,7 @@
       <w ana="#same_word">para</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#omission #morphosyntactique">
+  <app ana="#omission #morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A #Mad_G #Sal_J #Sev_Z">
       <w>la</w>
     </rdg>
@@ -2981,7 +2981,7 @@
       <w>aqu&#233;llos</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q">
       <w>puede</w>
     </rdg>
@@ -3067,7 +3067,7 @@
   <rdg wit="#Mad_A"><w lemma="6" pos="NCMS000" ana="#annotation_manuelle">ses<lb break="no" facs="#facs_xSX8h9" xml:id="elem_xSX8h9" copyOf="file:/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Mad_A.xml#facs_xSX8h9"/>to</w>
                 </rdg></rdgGrp></app>
   <pc xml:id="mi0qWob">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Sev_R">
       <w>deven</w>
     </rdg>
@@ -3490,7 +3490,7 @@
       <w>que</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Sal_J #Sev_Z">
       <w>pueden</w>
     </rdg>
@@ -3512,7 +3512,7 @@
       <w ana="#same_word">tener</w>
     </rdg>
     </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Sev_R">
       <w>deven</w>
     </rdg>
@@ -3593,7 +3593,7 @@
       <w ana="#same_word">parte</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Mad_B #Sev_Z">
       <w ana="#same_word">ay</w>
     </rdg>
@@ -3784,7 +3784,7 @@
       <w>parte</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Mad_B #Sev_Z">
       <w>ay</w>
     </rdg>
@@ -3943,7 +3943,7 @@
   <rdg wit="#Mad_A"><w lemma="4" pos="NCMS000" ana="#annotation_manuelle">quar<lb break="no" facs="#facs_gUdlKR" xml:id="elem_gUdlKR" copyOf="file:/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Mad_A.xml#facs_gUdlKR"/>to</w>
                 </rdg></rdgGrp></app>
   <pc xml:id="jbmMF2z">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A #Sev_Z">
       <w>deuen</w>
     </rdg>
@@ -4068,7 +4068,7 @@
     </rdg>
   </rdgGrp></app>
   <pc xml:id="eMYsGZ8">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Sev_R #Mad_B">
       <w>deven</w>
     </rdg>
@@ -4159,7 +4159,7 @@
     </rdg>
   <rdg wit="#Sev_Z"><w>tien<lb break="no" facs="#c9-78" xml:id="br_c9-78" copyOf="file:/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Sev_Z.xml#br_c9-78"/>po</w>
                 </rdg></rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Sev_R #Mad_B">
       <w>deven</w>
     </rdg>
@@ -4215,7 +4215,7 @@
     </rdg>
     </rdgGrp><rdgGrp><rdg wit="#Mad_A #Mad_G #Sev_R #Mad_B #Sal_J #Sev_Z"/>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q">
       <w>le</w>
     </rdg>
@@ -4309,7 +4309,7 @@
       <w>les</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_G #Sev_R #Mad_B #Sal_J">
       <w>levante</w>
     </rdg>
@@ -4336,7 +4336,7 @@
       <w>los</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A">
       <w>ciegue</w>
     </rdg>
@@ -4410,7 +4410,7 @@
     </rdg>
   </rdgGrp></app>
   <pc xml:id="wpczPn1">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A #Sev_Z">
       <w>deuen</w>
     </rdg>
@@ -4526,7 +4526,7 @@
       <w>de</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#omission #morphosyntactique">
+  <app ana="#omission #morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_B"/>
     </rdgGrp><rdgGrp><rdg wit="#Mad_A #Sev_Z">
       <w>auer</w>
@@ -4681,7 +4681,7 @@
     </rdg>
     </rdgGrp><rdgGrp><rdg wit="#Mad_A #Mad_G #Sal_J #Sev_Z"/>
   </rdgGrp></app>
-  <milestone ana="#transposition" type="end"/><app ana="#morphosyntactique">
+  <milestone ana="#transposition" type="end"/><app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Sev_R">
       <w>antes</w>
     </rdg>
@@ -4783,7 +4783,7 @@
       <w ana="#same_word">que</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_B">
       <w>viese</w>
     </rdg>
@@ -4854,7 +4854,7 @@
       <w>d&#233;llas</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_B #Sal_J">
       <w>puede</w>
     </rdg>
@@ -5279,7 +5279,7 @@
       <w>en</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Mad_B #Sal_J #Sev_Z">
       <w ana="#same_word">las</w>
     </rdg>
@@ -5351,7 +5351,7 @@
       <w>se</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Sal_J #Sev_Z">
       <w>dexan</w>
     </rdg>
@@ -5469,7 +5469,7 @@
       <w>esto</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_G #Sev_R #Sal_J">
       <w>ten&#237;an</w>
     </rdg>
@@ -5610,7 +5610,7 @@
       <w>asy</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Mad_B #Sal_J">
       <w>commo</w>
     </rdg>
@@ -5752,7 +5752,7 @@
       <w>et</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_B">
       <w ana="#same_word">las</w>
     </rdg>
@@ -5784,7 +5784,7 @@
       <w ana="#same_word">muy</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_B">
       <w>medrosas</w>
     </rdg>
@@ -5830,7 +5830,7 @@
       <w ana="#same_word">e</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_G">
       <w>vencedores</w>
     </rdg>
@@ -5889,7 +5889,7 @@
       <w>ii&#176;</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_G #Sev_R #Mad_B #Sal_J #Sev_Z">
       <w>&#231;erca</w>
     </rdg>
@@ -6074,7 +6074,7 @@
   <rdg wit="#Sev_Z"><w lemma="12" pos="AQ0MS0" ana="#annotation_manuelle">do<lb break="no" facs="#c9-113" xml:id="br_c9-113" copyOf="file:/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Sev_Z.xml#br_c9-113"/>zeno</w>
                 </rdg></rdgGrp></app>
   <witStart xml:id="u9rM93U" corresp="#Esc_Q" previous="#mmbWPCz"/><pc xml:id="vHGpiNJ">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A #Mad_G #Sev_R #Sal_J">
       <w>la</w>
     </rdg>
@@ -6121,7 +6121,7 @@
       <w>vezes</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q">
       <w>fueron</w>
     </rdg>
@@ -6129,7 +6129,7 @@
       <w>fue</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q">
       <w>ven&#231;idas</w>
     </rdg>
@@ -6146,7 +6146,7 @@
     </rdg>
   <rdg wit="#Mad_A"><w>por<lb break="no" facs="#facs_kFLEEr" xml:id="elem_kFLEEr" copyOf="file:/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Mad_A.xml#facs_kFLEEr"/>que</w>
                 </rdg></rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q">
       <w>eran</w>
     </rdg>
@@ -6706,7 +6706,7 @@
                 </note>
                 <pc xml:id="bOWklKh">.</pc>
                 <milestone unit="item_rang_1" n="3" xml:id="dakQFZ7" ana="#injected" corresp="#Sev_Z"/>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A">
       <w>lo</w>
     </rdg>
@@ -6742,7 +6742,7 @@
     </rdg>
     </rdgGrp></app>
   <pc xml:id="rSVaKaQ">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Sev_R #Mad_B">
       <w>deven</w>
     </rdg>
@@ -6924,7 +6924,7 @@
       <w>quando</w>
     </rdg>
     </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_B">
       <w>estavan</w>
     </rdg>
@@ -7003,7 +7003,7 @@
       <w>assy</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Sev_Z">
       <w>como</w>
     </rdg>
@@ -7097,7 +7097,7 @@
       <w>assy</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Sev_R #Mad_B #Sal_J">
       <w>commo</w>
     </rdg>
@@ -7110,7 +7110,7 @@
       <w ana="#same_word">de</w>
     </rdg>
     </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_B">
       <w>vaca</w>
     </rdg>
@@ -7356,7 +7356,7 @@
   <rdg wit="#Mad_A"><w>comie<lb break="no" facs="#facs_yIJabB" xml:id="elem_yIJabB" copyOf="file:/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Mad_A.xml#facs_yIJabB"/>sen</w>
                 </rdg><rdg wit="#Sev_Z"><w>comie<lb break="no" facs="#c9-137" xml:id="br_c9-137" copyOf="file:/home/mgl/Bureau/These/Edition/hyperregimiento-de-los-principes/Dedans/XML/analyse_linguistique/Sev_Z.xml#br_c9-137"/>sen</w>
                   </rdg></rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_B">
       <w>otros</w>
     </rdg>
@@ -7438,7 +7438,7 @@
       <w>et</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Sal_J">
       <w>Esso</w>
     </rdg>
@@ -7566,7 +7566,7 @@
       <w>la</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_G #Sal_J #Sev_Z">
       <w>hueste</w>
     </rdg>
@@ -7688,7 +7688,7 @@
       <w>que</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A #Sev_Z">
       <w>comian</w>
     </rdg>
@@ -7926,7 +7926,7 @@
       <w>les</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_G #Sev_R #Mad_B #Sal_J">
       <w>mengu&#243;</w>
     </rdg>
@@ -7998,7 +7998,7 @@
       <w>assy</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Mad_B #Sal_J">
       <w>commo</w>
     </rdg>
@@ -8511,7 +8511,7 @@
       <w>no</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Sev_R #Mad_B">
       <w>rrobase</w>
     </rdg>
@@ -8600,7 +8600,7 @@
     </rdg>
   </rdgGrp></app>
   <pc xml:id="cECkM49">,</pc>
-                <app ana="#morphosyntactique">
+                <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Mad_B #Sev_Z">
       <w ana="#same_word">ninguno</w>
     </rdg>
@@ -8618,7 +8618,7 @@
       <w>se</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Sev_R">
       <w>atreviesen</w>
     </rdg>
@@ -8715,7 +8715,7 @@
       <w>desto</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Mad_B #Sal_J #Sev_Z">
       <w>dize</w>
     </rdg>
@@ -8884,7 +8884,7 @@
       <w>le</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_G">
       <w ana="#annotation_manuelle">
                   <sic>cortase</sic>
@@ -9289,7 +9289,7 @@
       <w ana="#same_word">que</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A #Sev_Z">
       <w>ouiese</w>
     </rdg>
@@ -9567,7 +9567,7 @@
       <w ana="#same_word">o</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Sev_R #Mad_B #Sal_J">
       <w ana="#same_word">commo</w>
     </rdg>
@@ -9613,7 +9613,7 @@
       <w ana="#same_word">o</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Esc_Q #Mad_A #Mad_G #Sev_R #Mad_B #Sal_J">
       <w ana="#same_word">commo</w>
     </rdg>
@@ -10082,7 +10082,7 @@
       <w>se</w>
     </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit=" #Sev_R #Mad_B #Sev_Z">
       <w ana="#same_word">fiziesen</w>
     </rdg>
@@ -10150,7 +10150,7 @@
     <del rend="barre" xml:id="fbOLH9v" ana="#injected" corresp="#Mad_G">fe que</del>
                 </rdg>
   </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Mad_A #Sev_R #Mad_B">
       <w ana="#same_word">fiziesen</w>
     </rdg>
@@ -10256,7 +10256,7 @@
       <w>con</w>
     </rdg>
     </rdgGrp></app>
-  <app ana="#morphosyntactique">
+  <app ana="#morphosyntaxique">
     <rdgGrp><rdg wit="#Sev_R">
       <w>ellos</w>
     </rdg>

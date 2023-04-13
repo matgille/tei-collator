@@ -885,7 +885,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     </xsl:template>
 
     <xsl:template
-        match="tei:app[@ana = '#lexicale'][count(descendant::tei:rdg) = 1] | tei:ana[@type = '#morphosyntactique'][count(descendant::tei:rdg) = 1] | tei:app[@ana = '#indetermine'][count(descendant::tei:rdg) = 1]">
+        match="tei:app[@ana = '#lexicale'][count(descendant::tei:rdg) = 1] | tei:ana[@type = '#morphosyntaxique'][count(descendant::tei:rdg) = 1] | tei:app[@ana = '#indetermine'][count(descendant::tei:rdg) = 1]">
         <!--Essayer de trouver un moyen de faire apparaître les omissions clairement. Par exemple: dans un niveau de note spécifique.-->
         <!--On omet les omissions pour l'instant-->
         <xsl:apply-templates mode="apparat"/>
@@ -1358,7 +1358,7 @@ pourra modifier les espaces simplement (translate ou un autre truc) ainsi qu'ada
     <xsl:template match="
             tei:app[@ana = '#entite_nommee'][count(descendant::tei:rdg) > 1]
             | tei:app[@ana = '#lexicale'][count(descendant::tei:rdg) > 1]
-            | tei:app[@ana = '#morphosyntactique'][count(descendant::tei:rdg) > 1]
+            | tei:app[@ana = '#morphosyntaxique'][count(descendant::tei:rdg) > 1]
             | tei:app[@ana = '#indetermine'][count(descendant::tei:rdg) > 1]
             | tei:app[@ana = '#personne'][count(descendant::tei:rdg) > 1]
             ">

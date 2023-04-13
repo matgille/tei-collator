@@ -46,7 +46,8 @@ def main():
     parser.add_argument("-so", "--similarityonly", default=False, help="Performs similarity computation and exit.")
     parser.add_argument("-w", "--witness", default="*", help="Witness to process")
     parser.add_argument("-fo", "--fusiononly", default=False, help="Create final xml document with xi:includes")
-    parser.add_argument("-id", "--integrer_deplacements", default=False, type=bool, help="On visualise la collation avec les déplacements (ne permet pas de les integrer a l edition)")
+    parser.add_argument("-id", "--integrer_deplacements", default=False, type=bool,
+                        help="On visualise la collation avec les déplacements (ne permet pas de les integrer a l edition)")
 
     ##### Settings
     args = parser.parse_args()
@@ -66,7 +67,6 @@ def main():
     witness = args.witness
     fusion_only = args.fusiononly
     #####
-
 
     if division is None:
         division = "*"
@@ -99,7 +99,10 @@ def main():
         for file in glob.glob(f"divs/div{division}/*transposed.xml"):
             sigle = utils.get_sigla_from_path(file)
             print(sigle)
-            utils.clean_xml_file(input_file=file, output_file=f"divs/div{division}/apparat_{sigle}_{division}_final.xml")
+            pattern = re.compile(r"div\d+")
+            division = re.search(pattern, file)[0].replace("div", "")
+            utils.clean_xml_file(input_file=file,
+                                 output_file=f"divs/div{division}/apparat_{sigle}_{division}_final.xml")
         print("Création des fichiers xml maîtres")
         sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division)}",
                                      chemin_corpus=chemin_corpus,
@@ -109,14 +112,24 @@ def main():
 
     if test_only:
         print(f'Tests en cours...')
-        tests.test_word_alignment(division)
         for sigle in liste_sigles:
-            tests.tokentest(sigle, division)
-            tests.witness_test(sigle, division)
+            # On teste sur les fichiers non nettoyés.
+            fichier = f"divs/div{division}/apparat_{sigle}_{division}_omitted.injected.apparated.lacuned.transposed.xml"
+            tokenise = f"temoins_tokenises_regularises/{sigle}.xml"
+            tests.order_test(fichier_a_tester=fichier,
+                             temoin_tokenise=tokenise,
+                             sigle=sigle,
+                             division=division,
+                             div_type=parametres.type_division)
+        # tests.test_word_alignment(division)
+        # for sigle in liste_sigles:
+        #     tests.tokentest(sigle, division)
+        #     tests.witness_test(sigle, division)
         exit(0)
 
     if similarity_only:
-        for fichier in glob.glob(f"divs/div{division}/apparat_Mad_G_{division}_omitted.injected.apparated.lacuned.transposed.xml"):
+        for fichier in glob.glob(
+                f"divs/div{division}/apparat_Mad_G_{division}_omitted.injected.apparated.lacuned.transposed.xml"):
             # similarity.compute_similarity(fichier)
             print(fichier)
             similarity.similarity_eval_set_creator(division, fichier)
@@ -143,7 +156,6 @@ def main():
                                      xpath_transcriptions=xpath_transcriptions,
                                      output_dir=parametres.output_dir)
         exit(0)
-
 
     # We start by removing all debug files
     utils.remove_debug_files()
@@ -293,7 +305,8 @@ def main():
         collationeur = collation.Collateur(log=False,
                                            chemin_fichiers=chemin_fichiers,
                                            div_n=division,
-                                           div_type=parametres.type_division)
+                                           div_type=parametres.type_division,
+                                           temoin_base=temoin_base)
         collationeur.run_collation()
         print("Création des apparats ✓")
 
@@ -334,13 +347,12 @@ def main():
         for file in glob.glob(f"{chemin_fichiers}/*_injected_punct.transposed.lacuned.xml"):
             shutil.copy(file, f'divs/results')
 
-
         if synonyms_datasets:
             similarity.similarity_eval_set_creator(i)
 
         liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
 
-
+        print("Cleaning files, producing final documents")
         for file in glob.glob(f"divs/div{i}/*transposed.xml"):
             sigle = utils.get_sigla_from_path(file)
             print(sigle)
@@ -355,14 +367,21 @@ def main():
                                          xpath_transcriptions=xpath_transcriptions,
                                          output_dir=parametres.output_dir)
 
-
         # Tests de conformité
-        # print(f'Tests en cours...')
         # for sigle in liste_sigles:
-            # tests.tokentest(sigle, i)
-            # tests.witness_test(sigle, i)
-            # tests.test_word_alignment(i)
-
+        # tests.tokentest(sigle, i)
+        # tests.witness_test(sigle, i)
+        # tests.test_word_alignment(i)
+        print(f'Tests en cours...')
+        for sigle in liste_sigles:
+            # On teste sur les fichiers non nettoyés.
+            fichier = f"divs/div{division}/apparat_{sigle}_{division}_omitted.injected.apparated.lacuned.transposed.xml"
+            tokenise = f"temoins_tokenises_regularises/{sigle}.xml"
+            tests.order_test(fichier_a_tester=fichier,
+                             temoin_tokenise=tokenise,
+                             sigle=sigle,
+                             division=division,
+                             div_type=parametres.type_division)
 
     sorties.nettoyage("divs")
     t1 = time.time()

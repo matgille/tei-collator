@@ -130,14 +130,30 @@ def clean_xml_file(input_file, output_file):
 
     # First, the tei:rdg
     readings = tree.xpath("//tei:rdg", namespaces=tei_ns)
-
     for reading in readings:
         # https://stackoverflow.com/a/2720418
-        for attr in ["lemma", "pos", "n", "id"]:
+        # On simplifie les lemmes et les pos et on les déplace au tei:w
+        try:
+            lemma = reading.xpath("@lemma")[0].split("_")[0]
+            pos = reading.xpath("@pos")[0].split()[0]
+        except IndexError:
+            lemma = None
+            pos = None
+        for attr in ["n", "id", "pos", "lemma"]:
             try:
                 reading.attrib.pop(attr)
             except:
-                continue
+                pass
+
+        try:
+            word = reading.xpath("descendant::tei:w", namespaces=tei_ns)[0]
+            if lemma != "" and lemma != "_" and lemma:
+                word.set("lemma", lemma)
+            if pos != "" and pos != " " and pos:
+                word.set("pos", pos)
+        except IndexError:
+            pass
+
 
     # Then, the tei:w
     words = tree.xpath("//tei:w", namespaces=tei_ns)
@@ -377,7 +393,7 @@ def normalize_ramistes(input_string):
     return output_string
 
 
-def parse_xml_file(file, parser):
+def parse_xml_file(file, parser=etree.XMLParser()):
     with open(file, "r") as input_xml:
         return etree.parse(input_xml, parser=parser)
 

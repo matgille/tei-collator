@@ -725,7 +725,7 @@ class Injector:
                     "").split()
                 try:
                     # TODO: il y a un problème d'ordre dans ce cas, voir comment régler cela.
-                    # On va chercher l'élément soeur précédent (w ou app).
+                    # On va chercher l'élément app précédent.
                     preceding_sibling = \
                         apparat.xpath("preceding::node()[self::tei:app]", namespaces=self.ns_decl)[
                             -1]
