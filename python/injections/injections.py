@@ -715,6 +715,7 @@ class Injector:
         assert len(liste_temoins) > 0
         for temoin in liste_temoins:
             with open(temoin, "r") as input_xml:
+                print(temoin)
                 f = etree.parse(input_xml)
                 apps_with_omission = f.xpath("//tei:app[descendant::tei:rdg[not(node())]]", namespaces=self.ns_decl)
 
@@ -723,11 +724,12 @@ class Injector:
                     0].replace(
                     "#",
                     "").split()
+                corresponding_div = apparat.xpath("ancestor::node()[self::tei:p or self::tei:head]/@n", namespaces=self.ns_decl)[0]
                 try:
-                    # TODO: il y a un problème d'ordre dans ce cas, voir comment régler cela.
                     # On va chercher l'élément app précédent.
                     preceding_sibling = \
-                        apparat.xpath("preceding::node()[self::tei:app]", namespaces=self.ns_decl)[
+                        apparat.xpath(f"preceding::node()[self::tei:app][ancestor::node()[self::tei:p or "
+                                      f"self::tei:head][@n = '{corresponding_div}']]", namespaces=self.ns_decl)[ 
                             -1]
                     anchor = \
                         preceding_sibling.xpath(
