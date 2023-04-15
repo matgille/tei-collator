@@ -25,6 +25,7 @@ class Parametres:
         self.type_division = self.settings['scission']['scinder_par']
         self.corpus_path = self.settings['localisation_fichiers']
         self.files_path = self.settings['chemin_vers_TEI']
+        self.output_dir = self.settings['output_dir']
         self.alignement = self.settings['alignement']
         self.temoin_base = self.settings['temoin_base']
         self.lacuna_sensibility = self.settings['sensibilite_lacunes']
@@ -32,11 +33,11 @@ class Parametres:
         self.lang = self.settings['lang']
         self.teiCorpus = self.settings['tei:teiCorpus']
         self.tableauxAlignement = self.settings['sortie']['tableaux_alignement']
-        self.latex = self.settings['sortie']['LaTeX']
         self.exclude_descendant_of: list = self.settings['exclude_descendant_of']
 
         self.compute_similarity = self.settings['compute_similarity']
         self.create_synonym_dataset = self.settings['create_synonym_dataset']
+        self.align_on = self.settings['align_on']
 
         if isinstance(self.settings['parallel_process_number'], int):
             self.parallel_process_number = self.settings['parallel_process_number']

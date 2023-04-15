@@ -44,12 +44,13 @@ class CorpusALemmatiser:
         table_normalisation = collections.OrderedDict({
             re.compile(r'^rr(.*)'): r'r\g<1>',
             re.compile(r'(.*)mm(.*)'): r'\g<1>m\g<2>',
-            re.compile(r'uj([aeiouyáéíóúý])'): r'vi\g<1>',
+            # Provoque ne erreur dans `sujudgado`
+            # re.compile(r'uj([aeiouyáéíóúý])'): r'vi\g<1>',
             re.compile(r'lv([aeiouyáéíóúý])'): r'lu\g<1>',
             re.compile(r'([aeiouyáéíóúý])v([aeiouyáéíóúý])'): r'\g<1>u\g<2>',
         })
 
-        accent_mapping = {'á': 'a',
+        normalisation = {'á': 'a',
                           'é': 'e',
                           'í': 'i',
                           'ó': 'o',
@@ -68,7 +69,7 @@ class CorpusALemmatiser:
                 normalized_list.append(form)
             normalized_list.append("")
             text = "\n".join(normalized_list)
-            for orig, reg in accent_mapping.items():
+            for orig, reg in normalisation.items():
                 text = text.replace(orig, reg)
 
             with open(text_file.replace('.txt', '.normalized.txt'), "w") as output_text_file:

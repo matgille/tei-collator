@@ -123,31 +123,55 @@ def move_files(files: list, output_dir: str) -> None:
 
 def clean_xml_file(input_file, output_file):
     """
-    This function removes unwanted attributes from the xml file to produce a "final" version
+    This function removes unwanted attributes (analysis for instance) from the xml file to produce a "final" version
     """
-
-    tree = parse_xml_file(input_file)
+    parser = etree.XMLParser(remove_blank_text=True)
+    tree = parse_xml_file(input_file, parser=parser)
 
     # First, the tei:rdg
     readings = tree.xpath("//tei:rdg", namespaces=tei_ns)
-
     for reading in readings:
         # https://stackoverflow.com/a/2720418
-        for attr in ["lemma", "pos", "n", "id"]:
+        # On simplifie les lemmes et les pos et on les déplace au tei:w
+        try:
+            lemma = reading.xpath("@lemma")[0].split("_")[0]
+            pos = reading.xpath("@pos")[0].split()[0]
+        except IndexError:
+            lemma = None
+            pos = None
+        for attr in ["n", "id", "pos", "lemma"]:
             try:
                 reading.attrib.pop(attr)
             except:
-                continue
+                pass
+
+        try:
+            word = reading.xpath("descendant::tei:w", namespaces=tei_ns)[0]
+            if lemma != "" and lemma != "_" and lemma:
+                word.set("lemma", lemma)
+            if pos != "" and pos != " " and pos:
+                word.set("pos", pos)
+        except IndexError:
+            pass
+
 
     # Then, the tei:w
     words = tree.xpath("//tei:w", namespaces=tei_ns)
 
     for word in words:
         # https://stackoverflow.com/a/2720418
+        # On supprime les identifiants uniques
         [word.attrib.pop(attr) for attr in ['{http://www.w3.org/XML/1998/namespace}id']]
+
+        # on supprime l'information d'annotation manuelle (bonne idée?)
+        ana = word.xpath("@ana")
+        if len(ana) > 0 and ana[0] == '#annotation_manuelle':
+            word.attrib.pop('ana')
+    etree.indent(tree, space='  ', level=0)
 
     with open(output_file, "w") as output_file:
         output_file.write(etree.tostring(tree, pretty_print=True).decode())
+
 
 def clean_spaces_from_string(string) -> str:
     regexp_1 = re.compile(r"^\s | \s$")
@@ -156,8 +180,9 @@ def clean_spaces_from_string(string) -> str:
     string = re.sub(regexp_1, "", string)
     return string
 
+
 def remove_debug_files():
-    for file in glob.glob(".debug/*"):
+    for file in glob.glob("logs/*"):
         os.remove(file)
 
 
@@ -168,6 +193,7 @@ def append_to_file(file, string):
 
     with open(file, "a") as input_file:
         input_file.write(string)
+
 
 def clean_underscode_from_string(string) -> str:
     """
@@ -182,6 +208,7 @@ def clean_underscode_from_string(string) -> str:
 
     return string
 
+
 def filter_existing_divs(list_of_files, div_n, div_type) -> list:
     files_with_div = []
     for file in list_of_files:
@@ -191,6 +218,7 @@ def filter_existing_divs(list_of_files, div_n, div_type) -> list:
             files_with_div.append(file)
 
     return files_with_div
+
 
 def get_sigla_from_path(path: str) -> str:
     """
@@ -326,22 +354,48 @@ def return_adjacent_positions(positions: list) -> list:
             print(f"Output: None")
             return
 
-def remove_accents(string):
+
+def remove_accents(input_string):
     accent_mapping = {'á': 'a',
                       'é': 'e',
                       'í': 'i',
                       'ó': 'o',
                       'ú': 'u',
                       'ý': 'y'}
+    output_string = input_string
     for orig, reg in accent_mapping.items():
-        string = string.replace(orig, reg)
+        output_string = output_string.replace(orig, reg)
 
-    return string
+    return output_string
 
 
-def parse_xml_file(file):
+def compensate_freeling_normalisation(input_string):
+    """
+    Cette fonction a pour but de compenser au niveau de la collation les erreurs probables de freeling
+    """
+    freeling_mapping = {'ý': 'i',
+                        'y': 'i',
+                        'í': 'i'}
+    output_string = input_string
+    for orig, reg in freeling_mapping.items():
+        output_string = output_string.replace(orig, reg)
+
+    return output_string
+
+
+def normalize_ramistes(input_string):
+    ramistes_mapping = {'v': 'u',
+                        'j': 'i'}
+    output_string = input_string
+    for orig, reg in ramistes_mapping.items():
+        output_string = output_string.replace(orig, reg)
+
+    return output_string
+
+
+def parse_xml_file(file, parser=etree.XMLParser()):
     with open(file, "r") as input_xml:
-        return etree.parse(input_xml)
+        return etree.parse(input_xml, parser=parser)
 
 
 def remove_elements(xml_tree, xpath_expression, namespace):
