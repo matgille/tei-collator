@@ -14,6 +14,7 @@ myenv/
 Outils_correction/out/correction.*
 saxon9ee.jar
 *.bak
+temoins_tokenises*/
 *.tif*
 .*lock*
 chapitres/
