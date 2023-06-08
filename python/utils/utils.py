@@ -46,7 +46,6 @@ def get_file_list(path):
     """
     Return list of files and check if they exist.
     """
-
     file_list = glob.glob(path)
     assert len(file_list) > 0
     return file_list
@@ -133,9 +132,11 @@ def clean_xml_file(input_file, output_file):
     for reading in readings:
         # https://stackoverflow.com/a/2720418
         # On simplifie les lemmes et les pos et on les déplace au tei:w
+        all_lemmas = reading.xpath("@lemma")[0].split("_")
+        all_pos = reading.xpath("@pos")[0].split()
         try:
-            lemma = reading.xpath("@lemma")[0].split("_")[0]
-            pos = reading.xpath("@pos")[0].split()[0]
+            lemma = all_lemmas[0]
+            pos = all_pos[0]
         except IndexError:
             lemma = None
             pos = None
@@ -144,9 +145,29 @@ def clean_xml_file(input_file, output_file):
                 reading.attrib.pop(attr)
             except:
                 pass
+        lemma_error = None
+        pos_error = None
+        if lemma is not None:
+            if all(all_lemmas[n] == all_lemmas[0] for n in range(len(all_lemmas))):
+                pass
+            else:
+                lemma_error = True
+        if pos is not None:
+            if all(all_pos[n] == all_pos[0] for n in range(len(all_pos))):
+                pass
+            else:
+                pos_error = True
+
 
         try:
             word = reading.xpath("descendant::tei:w", namespaces=tei_ns)[0]
+            analysis = []
+            if lemma_error:
+                analysis.append('#lemma_error')
+            if pos_error:
+                analysis.append('#pos_error')
+            if len(analysis) > 0:
+                reading.set('ana', ' '.join(analysis))
             if lemma != "" and lemma != "_" and lemma:
                 word.set("lemma", lemma)
             if pos != "" and pos != " " and pos:

@@ -67,11 +67,11 @@ class Injector:
     def run_injections(self):
         self.injection_apparats()
         self.injection_omissions()
-        self.same_word_identification(distance=20)
         self.injection_intelligente()
         self.injection_noeuds_non_textuels()
         self.regroupement_omissions()
         self.transposition_recognition()
+        self.same_word_identification(distance=20)
 
     def detection_homeoteleuton(self, lacune: list) -> bool:
         """
@@ -357,7 +357,6 @@ class Injector:
                 # On met à jour le dictionnaire.
                 dictionnary = {**dictionnary, **{identifiant: app for identifiant in identifiants_rdg}}
 
-
             assert len(dictionnary) > 0
             # Première étape, récupérer tous les tei:w du fichier tokénisé en ne filtrant que la division qui nous intéresse.
             try:
@@ -538,6 +537,15 @@ class Injector:
         INPUTS: *lacuned.xml
         OUTPUTS: *transposed.xml
         """
+
+        # On commence par récupérer toutes les corrections de transposition en amont
+        voided_transpositions = []
+        for i in self.liste_sigles:
+            with open(f"temoins_tokenises_regularises/{i}.xml", "r") as input_xml:
+                parsed = etree.parse(input_xml)
+            voided_transpositions.extend(parsed.xpath("//tei:w[contains(@ana, 'not_transposition')]/@xml:id", namespaces=self.ns_decl))
+
+
         print("Reconnaissance des transpositions")
         files = glob.glob(f"{self.chemin}/*lacuned.xml")
         assert len(files) > 0
@@ -584,7 +592,6 @@ class Injector:
                                 lemmas_and_pos = [lemma if lemma != "" else "om." for pos, lemma in
                                                   list(zip(list_of_pos, list_of_lemmas))]
 
-
                                 # On filtre certains lemmes synonymes
                                 lemmas_and_pos = []
                                 for pos, lemma in list(zip(list_of_pos, list_of_lemmas)):
@@ -595,8 +602,6 @@ class Injector:
                                     else:
                                         lemmas_and_pos.append(lemma)
 
-
-                                        
                                 debug_file.write("|".join(lemmas_and_pos))
                                 debug_file.write("\n")
                                 ordered_set_tmp.append(OrderedSet(lemmas_and_pos))
@@ -632,8 +637,19 @@ class Injector:
                         debug_file.write(f"Ordered set equality: {ordered_set_equality}\n")
                         debug_file.write(f"Unordered set equality: {unordered_set_equality}\n")
                         if not ordered_set_equality and unordered_set_equality:
+
+                            # Gestion des faux négatifs indiqués en amont.
+                            ids = [apparat.xpath("descendant::tei:w/@xml:id", namespaces=self.ns_decl) for apparat in groupe_apparat]
+                            cleaned_ids = []
+                            for id in ids:
+                                cleaned_ids.extend("_".join(id).split("_"))
+                            if any(id in voided_transpositions for id in cleaned_ids):
+                                print("Voided transposition")
+                                break
+
                             debug_file.write("Transposition detected.\n")
                             print("Transposition detected.")
+
                             list_of_positions = [
                                 int(apparat.xpath("count(preceding::tei:app)", namespaces=self.ns_decl))
                                 for
@@ -654,7 +670,7 @@ class Injector:
                                 if len(transposed_app.xpath("descendant::tei:rdg[not(node())]",
                                                             namespaces=self.ns_decl)) > 0 \
                                         or transposed_app.xpath("contains(@ana, 'lexicale')",
-                                                            namespaces=self.ns_decl):
+                                                                namespaces=self.ns_decl):
                                     transposed_app.set('ana', concerned_apps_typology[index] + ' #transposition')
 
                             last_app = concerned_apps[-1]
@@ -724,12 +740,13 @@ class Injector:
                     0].replace(
                     "#",
                     "").split()
-                corresponding_div = apparat.xpath("ancestor::node()[self::tei:p or self::tei:head]/@n", namespaces=self.ns_decl)[0]
+                corresponding_div = \
+                    apparat.xpath("ancestor::node()[self::tei:p or self::tei:head]/@n", namespaces=self.ns_decl)[0]
                 try:
                     # On va chercher l'élément app précédent.
                     preceding_sibling = \
                         apparat.xpath(f"preceding::node()[self::tei:app][ancestor::node()[self::tei:p or "
-                                      f"self::tei:head][@n = '{corresponding_div}']]", namespaces=self.ns_decl)[ 
+                                      f"self::tei:head][@n = '{corresponding_div}']]", namespaces=self.ns_decl)[
                             -1]
                     anchor = \
                         preceding_sibling.xpath(
@@ -843,9 +860,6 @@ class Injector:
                   f"The problematic apps are: {problematic_apps_id}\n"
                   f"Exiting.")
             exit(0)
-
-
-
 
     def injection_intelligente(self):
         """
@@ -1079,7 +1093,6 @@ class Injector:
                     element_to_inject = current_xml_tree.xpath(f"//node()[@xml:id='{element_id}']")[0]
                     shifted = True
             # Si le noeud est présent mais qu'on le veut au niveau global, pas besoin de le déplacer.
-            # TODO: reprendre ici avec l'historique, quelque chose ne va pas.
 
             sigla_output_wit = "_".join(
                 current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@xml:id",
@@ -1125,6 +1138,20 @@ class Injector:
                 # index can be -1 in case of a tei:w in a tei:rdg.
                 if index == -1:
                     index = 0
+                # On s'occupe ici de déplacer les noeuds dans un apparat (ponctuation à la fin par exemple)
+                if level == 'witness':
+                    following = anchor_word.xpath(f"following-sibling::tei:{element_name}[@corresp = '#{orig_witness}']", namespaces=self.ns_decl)
+                    # following_note = anchor_word.xpath(f"following-sibling::tei:note[@type='codico' or @type='sources']", namespaces=self.ns_decl)
+                    # number_of_nodes = int(anchor_word.xpath(f"count(parent::tei:rdg/node()[not(self::tei:w)])", namespaces=self.ns_decl))
+                    # if element_name == "pc" and not(len(following) > 0):
+                    #     if len(following_note) > 0:
+                    #         print(f"Shifting pc after note")
+                    #         # on la met en dernier.
+                    #         index = number_of_nodes - 1
+                    if len(following) > 0:
+                        print(f"Shifting {element_name}")
+                        index += 1
+
 
                 parent_element.insert(index, element_to_inject)
 
@@ -1148,8 +1175,8 @@ class Injector:
         :param distance: la quantité de contexte à droite et à gauche.
         """
 
-        liste_temoins = f"{self.chemin}/*_omitted.xml"
-
+        liste_temoins = f"{self.chemin}/*.transposed.xml"
+        print(f"Identifying same words in context of {distance}")
         for temoin in glob.glob(liste_temoins):
             sigle = utils.get_sigla_from_path(temoin)
             print(sigle)

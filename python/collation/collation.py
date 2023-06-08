@@ -503,8 +503,8 @@ class Collateur:
     def raffinage_apparats(self, fichier):
         """
         Cette fonction permet de raffiner les apparats en rassemblant les variantes graphiques au sein d'un apparat qui
-        comporte des variantsviudgadoses "vraies" ou morphosyntaxiques. On va créer des tei:rdgGroup qui rassembleront les rdg.
-        À intégrer à la classe Collateur puisque c'est une partie de la collation.
+        comporte des variantes "vraies" ou morphosyntaxiques. On va créer des tei:rdgGroup qui rassembleront les rdg.
+        La dernière étape est l'ordonnement des variantes par proximité avec la leçon du témoin-base.
         Cette fonction réécrit le fichier d'entrée.
         """
         # TODO: fusionner cette fonction avec la fonction de création d'apparat ?
@@ -585,7 +585,7 @@ class Collateur:
 
                 # On va pouvoir maintenant créer des rdgGroups autour des tei:rdg que l'on a identifiés
                 # comme similaires.
-
+                # TODO: adapter cet ordonnement à chaque témoin-base (pas possible pour l'instant)
                 output_dict = {}
                 # On itère sur les groupes constitués pour trouver le témoin-base et on initialise
                 # le dictionnaire qui va contenir notre ordre final et nos identifiants

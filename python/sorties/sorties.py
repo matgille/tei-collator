@@ -64,6 +64,10 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
         partie = etree.SubElement(livre, "div", nsmap={'tei': 'http://www.tei-c.org/ns/1.0'})
         partie.set("type", "partie")
         partie.set("n", "3")
+        encodingDesc = f.xpath("//tei:encodingDesc", namespaces=tei)[0]
+        variantEncoding = etree.SubElement(encodingDesc, "variantEncoding", nsmap={'tei': 'http://www.tei-c.org/ns/1.0'})
+        variantEncoding.set('method', 'parallel-segmentation')
+        variantEncoding.set('location', 'internal')
 
         # On met à jour le titre du document
         titre = f.xpath("//tei:teiHeader//tei:title", namespaces=tei)[0]
