@@ -46,7 +46,6 @@ def get_file_list(path):
     """
     Return list of files and check if they exist.
     """
-
     file_list = glob.glob(path)
     assert len(file_list) > 0
     return file_list
