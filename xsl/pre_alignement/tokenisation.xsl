@@ -1,7 +1,6 @@
 
-<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:cw="chezwam"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tei="http://www.tei-c.org/ns/1.0"
+    xmlns:cw="chezwam" xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xsl:output method="xml" indent="no"/>
     <xsl:strip-space elements="*"/>
     <!--Première phase de la tokénisation: -->
@@ -36,7 +35,8 @@
     </xsl:comment>
     </xsl:template>
 
-    <xsl:template match="tei:TEI[@type = 'transcription'][not(@subtype='version_a')][not(descendant::tei:text[@xml:lang = 'la'])]">
+    <xsl:template
+        match="tei:TEI[@type = 'transcription'][not(@subtype = 'version_a')][not(descendant::tei:text[@xml:lang = 'la'])]">
         <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:namespace name="tei">http://www.tei-c.org/ns/1.0</xsl:namespace>
             <xsl:attribute name="xml:id" select="@xml:id"/>
@@ -57,7 +57,13 @@
             </xsl:if>
             <!--On ajoute cet attribut pour ne pas confondre ces tei:w avec ceux produits par le tokéniseur (cas de la correction de corpus);
             À supprimer après.-->
-            <xsl:attribute name="ana">#annotation_manuelle</xsl:attribute>
+            <xsl:attribute name="ana">
+                <xsl:if test="@ana">
+                    <xsl:value-of select="@ana"/>
+                    <xsl:text> </xsl:text>
+                </xsl:if>
+                <xsl:text>#annotation_manuelle</xsl:text>
+            </xsl:attribute>
             <!--On ajoute cet attribut pour ne pas confondre ces tei:w avec ceux produits par le tokéniseur (cas de la correction de corpus)-->
             <xsl:copy-of select="child::node()"/>
         </xsl:element>
@@ -96,8 +102,7 @@
     <!--Il faut faire la même chose avec les unclear|damage|add-->
     <!--Qu'est-ce que le texte: c'est ici ce que tu va processer. Donc un élément éliminé marqué par un <del> n'est pas le texte-->
     <!--Meilleure idée: plutôt que les supprimer, les traiter comme une note (pas de tokénisation donc)-->
-    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'initiale'][not(ancestor::tei:w)]"
-        mode="secondePasse">
+    <xsl:template match="tei:hi[following-sibling::text()][@rend = 'initiale'][not(ancestor::tei:w)]" mode="secondePasse">
         <xsl:element name="w" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:copy-of select="preceding-sibling::tei:hi[@rend = 'lettre_attente']"/>
             <xsl:copy-of select="."/>
@@ -107,8 +112,7 @@
     </xsl:template>
 
 
-    <xsl:template match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']"
-        mode="secondePasse"/>
+    <xsl:template match="tei:hi[@rend = 'lettre_attente'] | tei:hi[@rend = 'lettre_capitulaire']" mode="secondePasse"/>
 
     <!--https://stackoverflow.com/questions/17468891/substring-after-last-character-in-xslt-->
     <xsl:function name="cw:substring-after-last" as="xs:string" xmlns:cw="chezwam">
@@ -116,8 +120,7 @@
         <xsl:param name="separator" as="xs:string"/>
         <xsl:choose>
             <xsl:when test="contains($value, $separator)">
-                <xsl:value-of
-                    select="cw:substring-after-last(substring-after($value, $separator), $separator)"/>
+                <xsl:value-of select="cw:substring-after-last(substring-after($value, $separator), $separator)"/>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:value-of select="$value"/>
@@ -208,8 +211,7 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template
-        match="tei:w[preceding-sibling::tei:w[not(@ana = '#annotation_manuelle')][1][tei:hi][text() = text()]]"
+    <xsl:template match="tei:w[preceding-sibling::tei:w[not(@ana = '#annotation_manuelle')][1][tei:hi][text() = text()]]"
         mode="troisiemePasse"/>
 
 
@@ -276,8 +278,8 @@
             select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'lat'])][not(@subtype = 'version_a')]">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
             <xsl:result-document href="temoins_tokenises/{$nom_fichier}.xml">
-                <xsl:apply-templates select="$ResultatTroisiemePasse//tei:TEI[@xml:id = $nom_fichier]"
-                    mode="quatriemePasse" xpath-default-namespace="tei"/>
+                <xsl:apply-templates select="$ResultatTroisiemePasse//tei:TEI[@xml:id = $nom_fichier]" mode="quatriemePasse"
+                    xpath-default-namespace="tei"/>
             </xsl:result-document>
         </xsl:for-each>
     </xsl:template>
