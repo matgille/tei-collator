@@ -287,10 +287,10 @@
 
 
 
-    <xsl:template match="tei:seg">
+    <!--<xsl:template match="tei:seg[not(@ana='#exclamation') or not(@ana='#interrogation')]">
         <xsl:apply-templates/>
     </xsl:template>
-
+-->
 
     <!--Quatrième passe-->
 
