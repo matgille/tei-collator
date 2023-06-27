@@ -100,11 +100,11 @@ def main():
             sigle = utils.get_sigla_from_path(file)
             print(sigle)
             pattern = re.compile(r"div\d+")
-            division = re.search(pattern, file)[0].replace("div", "")
+            division_n = re.search(pattern, file)[0].replace("div", "")
             utils.clean_xml_file(input_file=file,
-                                 output_file=f"divs/div{division}/apparat_{sigle}_{division}_final.xml")
+                                 output_file=f"divs/div{division_n}/apparat_{sigle}_{division_n}_final.xml")
         print("Création des fichiers xml maîtres")
-        sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division)}",
+        sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division_n)}",
                                      chemin_corpus=chemin_corpus,
                                      xpath_transcriptions=xpath_transcriptions,
                                      output_dir=parametres.output_dir)
@@ -203,7 +203,14 @@ def main():
             moteur_transformation=saxon,
             nombre_coeurs=parametres.parallel_process_number
         )
-        corpus_a_lemmatiser.lemmatisation_parallele(division)
+        # On lemmatise toujours l'intégralité du corpus, pour pouvoir copier les fichiers lemmatisés
+        # dans le git principal.
+        corpus_a_lemmatiser.lemmatisation_parallele("*")
+        # On les copie. Ily aura forcément une discordance si on ne traite pas les 23 chapitres d'un coup.
+        for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
+            shutil.copy(temoin, "/home/mgl/Bureau/These/Edition"
+                                               "/hyperregimiento-de-los-principes/Dedans/XML/corpus_lemmatise")
+        # corpus_a_lemmatiser.lemmatisation_parallele(division)
 
     if lemmatize_only:
         t1 = time.time()
