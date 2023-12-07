@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs tei" version="2.0"
-    xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:f="urn:stylesheet-func" xmlns:mgl="https://matthiasgillelevenson.fr">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    exclude-result-prefixes="xs tei" version="2.0" xmlns:tei="http://www.tei-c.org/ns/1.0"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:f="urn:stylesheet-func" xmlns:mgl="https://matthiasgillelevenson.fr">
 
     <xsl:strip-space elements="*"/>
     <xsl:param name="temoin_leader">Sal_J</xsl:param>
@@ -24,8 +23,17 @@
         <xsl:for-each
             select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = $temoin_leader]/descendant::tei:div[@type = $type_division][@n = $numero_div]/descendant::node()[name() = $element_base or name() = 'head']">
             <xsl:variable name="ident_paragraphe" select="@n"/>
-            <xsl:variable name="ident"
-                select="count((self::* | preceding::*)[name() = $element_base][ancestor::tei:div[@type = $type_division][@n = $numero_div]]) + 1"/>
+            <xsl:variable name="ident">
+                <xsl:choose>
+                    <xsl:when
+                        test="count(ancestor::tei:div[@type = $type_division][@n = $numero_div]/descendant::node()[name() = $element_base]) != 1">
+                        <xsl:value-of
+                            select="count((self::* | preceding::*)[name() = $element_base][ancestor::tei:div[@type = $type_division][@n = $numero_div]]) + 1"
+                        />
+                    </xsl:when>
+                    <xsl:otherwise>1</xsl:otherwise>
+                </xsl:choose>
+            </xsl:variable>
             <xsl:result-document href="divs/div{$numero_div}/juxtaposition_{$ident}.xml">
                 <xsl:element name="groupe" namespace="https://matthiasgillelevenson.fr">
                     <xsl:element name="temoin" namespace="https://matthiasgillelevenson.fr">
@@ -46,9 +54,8 @@
                                     test="$compare_with_shifting = 'True' and ancestor::tei:TEI/descendant::tei:div[@type = $type_division]/descendant::node()[name() = $element_base or name() = 'head'][translate(@sameAs, '#', '') = $ident_paragraphe]">
                                     <xsl:apply-templates
                                         select="ancestor::tei:TEI/descendant::tei:div[@type = $type_division]/descendant::node()[name() = $element_base or name() = 'head'][translate(@sameAs, '#', '') = $ident_paragraphe]"/>
-                                    <xsl:message>Dans ce chapitre, on a détecté un déplacement de
-                                        paragraphe pour un ou plusieurs autres témoins. La lemmatisation
-                                        de l'ensemble du corpus est donc nécessaire pour le bon
+                                    <xsl:message>Dans ce chapitre, on a détecté un déplacement de paragraphe pour un ou plusieurs
+                                        autres témoins. La lemmatisation de l'ensemble du corpus est donc nécessaire pour le bon
                                         fonctionnement de la collation.</xsl:message>
                                 </xsl:when>
                                 <!--On gère les déplacements de texte ici-->
