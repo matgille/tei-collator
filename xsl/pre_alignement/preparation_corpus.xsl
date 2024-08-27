@@ -23,6 +23,9 @@
         <xsl:for-each
             select="collection('../../temoins_tokenises_regularises?select=*.xml')//tei:TEI[@xml:id = $temoin_leader]/descendant::tei:div[@type = $type_division][@n = $numero_div]/descendant::node()[name() = $element_base or name() = 'head']">
             <xsl:variable name="ident_paragraphe" select="@n"/>
+            <xsl:message><xsl:value-of select="$numero_div"></xsl:value-of> </xsl:message>
+            <xsl:message><xsl:value-of select="$type_division"></xsl:value-of> </xsl:message>
+            <xsl:message><xsl:value-of select="$element_base"></xsl:value-of> </xsl:message>
             <xsl:variable name="ident">
                 <xsl:choose>
                     <xsl:when

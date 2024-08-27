@@ -3,6 +3,8 @@ import os
 import re
 import subprocess
 import multiprocessing as mp
+import sys
+
 import Levenshtein
 import python.utils.utils as utils
 
@@ -85,7 +87,8 @@ class Aligner:
             print(f'error in json [{fichier_a_collationer}]: \n {e}')
         # JSON: https://stackoverflow.com/a/29827074
         if alignement == 'global':
-            resultat_json = collatex.collate(json_str, output='json', segmentation=True, near_match=True)
+            print("Global alignment")
+            resultat_json = collatex.collate(json_str, output='json', segmentation=True, near_match=True, astar=False)
         else:
             resultat_json = collatex.collate(json_str, output='json', segmentation=False, near_match=True, astar=False,
                                              detect_transpositions=False)
@@ -107,11 +110,11 @@ class Aligner:
         input_fichier_xml = f"{self.chemin}/{fichier_xml}"
         # Étape avant la collation: transformation en json selon la structure voulue par CollateX
         self.transformation_json(input_fichier_xml, output_fichier_json)
-
         # Alignement avec CollateX. Il en ressort du JSON, encore
         self.alignement(fichier_json_complet, numero)
+        print(f"{fichier_xml}: done !")
 
-    def run(self):
+    def  run(self):
         with mp.Pool(processes=self.nombre_de_coeurs) as pool:
             # https://www.kite.com/python/answers/how-to-map-a-function-with-
             # multiple-arguments-to-a-multiprocessing-pool-in-python

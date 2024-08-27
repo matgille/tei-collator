@@ -26,11 +26,15 @@ class CorpusALemmatiser:
         self.nsmap = {'tei': 'http://www.tei-c.org/ns/1.0'}
 
     def lemmatisation_parallele(self, division="*"):
-        with mp.Pool(processes=self.nombre_coeurs) as pool:
-            # https://www.kite.com/python/answers/how-to-map-a-function-with-
-            # multiple-arguments-to-a-multiprocessing-pool-in-python
-            data = [(temoin, division) for temoin in self.chemin_vers_temoin]
-            pool.starmap(self.lemmatisation, data)
+        data = [(temoin, division) for temoin in self.chemin_vers_temoin]
+        if self.langue == "la":
+            for temoin, division in data:
+                self.lemmatisation(temoin=temoin, division=division)
+        else:
+            with mp.Pool(processes=self.nombre_coeurs) as pool:
+                # https://www.kite.com/python/answers/how-to-map-a-function-with-
+                # multiple-arguments-to-a-multiprocessing-pool-in-python
+                pool.starmap(self.lemmatisation, data)
 
     def normalize_spelling(self):
         '''
@@ -146,9 +150,10 @@ class CorpusALemmatiser:
                     mot.set("lemma", lemme_position)
                     mot.set("pos", pos_position)
 
-        elif self.langue == "lat_o":
+        elif self.langue == "la":
             modele_latin = "python/lemmatisation/model.tar"
-            device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
+            fichier_lemmatise = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}.lemmatized.txt'
+            device = "cpu"
             cmd = f"pie tag --device {device} {fichier_entree_txt} " \
                   f"<{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
             print(cmd)
@@ -168,7 +173,7 @@ class CorpusALemmatiser:
             fichier_lemmatise = temoin_tokenise
             for index, mot in enumerate(tokens):
                 liste_correcte = maliste[index]
-                _, cas, mode, nombre, personne, temps, lemme, pos, *autres_arguments = liste_correcte
+                forme, cas, mode, nombre, personne, temps, lemme, pos, *autres_arguments = liste_correcte
 
                 # on nettoie la morphologie pour supprimer les entrées vides
                 morph = f"CAS={cas}|MODE={mode}|NOMB.={nombre}|PERS.={personne}|TEMPS={temps}"
@@ -182,6 +187,10 @@ class CorpusALemmatiser:
                 mot.set("pos", pos)
                 if morph:
                     mot.set("morph", morph)
+                if mot.xpath("name()") == "pc":
+                    mot.set("lemma", forme)
+                    mot.set("pos", forme)
+                    
 
         with open(fichier_lemmatise, "w+") as sortie_xml:
             a_ecrire = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode(

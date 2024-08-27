@@ -1,6 +1,7 @@
 import glob
 import unittest
 from functools import reduce
+import json
 
 from lxml import etree
 from lxml import isoschematron
@@ -59,7 +60,8 @@ def order_test(fichier_a_tester, temoin_tokenise, sigle, division, div_type):
     except OSError:
         print("Témoin absent sur la division concernée.")
         return
-    correct_ids = xml_temoins_tokenise.xpath(f"//tei:div[@type='{div_type}'][@n='{division}']/descendant::tei:w/@xml:id", namespaces=NSMAP)
+    correct_ids = xml_temoins_tokenise.xpath(
+        f"//tei:div[@type='{div_type}'][@n='{division}']/descendant::tei:w/@xml:id", namespaces=NSMAP)
     all_rdg_wit_a_tester = root_a_tester.xpath(
         f"//tei:div[@n='{division}']/descendant::tei:app[descendant::tei:rdg[contains(@wit, '{sigle}')]]/descendant::tei:rdg[tei:w][contains(@wit, '{sigle}')]/@wit",
         namespaces=NSMAP)
@@ -104,7 +106,6 @@ def order_test(fichier_a_tester, temoin_tokenise, sigle, division, div_type):
         exit(0)
 
     identify_order_modification(list_of_ids, correct_ids)
-
 
     print("No tokens lost; order check passed.")
 
@@ -236,6 +237,52 @@ def notes_test():
     :return:
     '''
     pass
+
+
+def test_collation_tokens(chemin_fichiers, portee, type_division):
+    # On vérifie si les tokens ne sont pas perdus
+    tokens_per_wits_collatex = {}
+    tokens_per_wits_orig = {}
+
+    aligned = glob.glob(f"{chemin_fichiers}/alignement_collatex*.json")
+    aligned.sort(key=lambda x: x.replace("alignement_collatex", "").replace(".json", ""))
+    for file in aligned:
+        print(file)
+        with open(file, "r") as json_file:
+            as_json = json.load(json_file)
+        for witness in as_json['table']:
+            for token in witness:
+                try:
+                    try:
+                        tokens_per_wits_collatex[token[0]['_sigil']].append(token[0]['xml:id'])
+                    except KeyError:
+                        tokens_per_wits_collatex[token[0]['_sigil']] = [token[0]['xml:id']]
+                except TypeError:
+                    pass
+
+    # Maintenant on vérifie que les documents XML ont aussi les mêmes tokens
+    for xml_file in glob.glob(f"temoins_tokenises_regularises/*.xml"):
+        as_xml = etree.parse(xml_file)
+        sigla = as_xml.xpath("@xml:id")[0]
+        tokens_per_wits_orig[sigla] = as_xml.xpath(
+            f"//tei:div[@type='{type_division}'][@n='{portee}']/descendant::tei:w/@xml:id", namespaces=NSMAP)
+
+    with open(f"{chemin_fichiers}/tokens_after_collation.json", "w") as output_val_json:
+        json.dump(tokens_per_wits_collatex, output_val_json)
+
+    with open(f"{chemin_fichiers}/tokens_before_collation.json", "w") as output_target_json:
+        json.dump(tokens_per_wits_orig, output_target_json)
+
+    for sigla, source_tokens in tokens_per_wits_orig.items():
+        target_tokens = tokens_per_wits_collatex[sigla]
+        if target_tokens == source_tokens:
+            print(f"Wit {sigla} passed token test. No token lost in collation.")
+        else:
+            source_tokens_as_set = set(source_tokens)
+            target_tokens_as_set = set(target_tokens)
+            difference = list(source_tokens_as_set - target_tokens_as_set)
+            print(f"Problem with witness {sigla}. One or more token lost during collation: {difference}. Exiting.")
+            exit(0)
 
 
 def validation_xml(corpus, schematron):

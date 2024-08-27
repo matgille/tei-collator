@@ -6,10 +6,9 @@
     <xsl:output method="html"/>
     <xsl:strip-space elements="*"/>
 
-    <xsl:variable name="tokens" select="tokenize('A B G J Q R Z U', '\s')"/>
+    <xsl:variable name="tokens" select="tokenize('Planck Bevilaqua_1498 Beinecke_Marston_MS_139 BNE_MSS_958 BNF_Lat_6477', '\s')"/>
 
 
-    <xsl:variable name="tokens_sans_U" select="tokenize('A B G J Q R Z', '\s')"/>
 
 
     <xsl:template match="/">
@@ -132,7 +131,6 @@
 
 
 
-
                     </head>
                     <body id="body">
 
@@ -164,6 +162,24 @@
                             <xsl:apply-templates select="descendant-or-self::tei:app"/>
                         </table>
                     </body>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                        const lastLineCells = document.querySelectorAll('td[data-last-line]');
+                        
+                        lastLineCells.forEach(function(cell) {
+                        cell.addEventListener('click', function() {
+                        var lineUrl = this.getAttribute('data-last-line');
+                        var copyContent = "oxygen.sh " + lineUrl
+                        navigator.clipboard.writeText(copyContent).then(function() {
+                        console.log('Copied to clipboard: ' + copyContent);
+                        }).catch(function(err) {
+                        console.error('Failed to copy: ', err);
+                        });
+                        });
+                        });
+                        });
+                    </script>
                 </html>
             </xsl:result-document>
         </xsl:for-each>
@@ -267,8 +283,22 @@
                 <xsl:variable name="current_sigla">
                     <xsl:value-of select="."/>
                 </xsl:variable>
-                <!--class="{translate($self/@ana, '#', '')}"-->
-                <td>
+                <xsl:variable name="last_line">
+                    <xsl:text>/home/mgl/Bureau/Travail/Communications_et_articles/Alignement_multilingue_regimine/data/HTR/txt_1/</xsl:text>
+                    <xsl:value-of select="$current_sigla"/>
+                    <xsl:text>/sortie_HTR/</xsl:text>
+                    <xsl:value-of select="$current_sigla"/>
+                    <xsl:text>_out.replaced.xml#</xsl:text>
+                    <xsl:choose>
+                        <xsl:when test="$self/descendant::tei:lb[contains(@facs, $current_sigla)]">
+                            <xsl:value-of select="$self/descendant::tei:lb[contains(@facs, $current_sigla)][1]/@xml:id"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="$self/preceding::tei:lb[contains(@facs, $current_sigla)][1]/@xml:id"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
+                <td data-last-line="{$last_line}" sigla="{$current_sigla}">
                     <xsl:choose>
                         <xsl:when test="$self/descendant::tei:rdg[contains(@wit, $current_sigla)]/tei:w">
                             <xsl:apply-templates select="$self/descendant::tei:rdg[contains(@wit, $current_sigla)]/tei:w"/>

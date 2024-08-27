@@ -41,6 +41,7 @@ class Injector:
         self.type_division = type_division
         self.lacuna_sensibility = lacuna_sensibility
         self.liste_sigles = liste_sigles
+        print(self.liste_sigles)
         self.temoin_base = temoin_base
 
         self.dict_ids_forms = {}
@@ -365,6 +366,7 @@ class Injector:
             # Quand la liste est vide, c'est que le témoin ne contient pas la division.
             except IndexError:
                 continue
+            current_division.set("corresp", f"#{sigle}")
             words = current_division.xpath(f"descendant::tei:w",
                                            namespaces=self.ns_decl)
             IDs = current_division.xpath(f"descendant::tei:w/@xml:id", namespaces=self.ns_decl)
@@ -409,6 +411,7 @@ class Injector:
         # On va créer un dictionnaire dont les clés sont les sigles et les valeurs sont
         # des dictionnaires avec les éléments intéressants et leurs id
         dict_of_files = {}
+        print(self.liste_sigles)
         for sigle in self.liste_sigles:
             tokenised_file = utils.parse_xml_file(f"temoins_tokenises/{sigle}.xml")
             annotated_file = utils.parse_xml_file(f"temoins_tokenises_regularises/{sigle}.xml")
@@ -441,6 +444,8 @@ class Injector:
         # On va boucler sur tous chaque témoin.
         for path_fichier_collatione_orig in paths_fichiers_collationes_orig:
             fichier_collatione_orig = utils.parse_xml_file(path_fichier_collatione_orig)
+            print(f"Path {path_fichier_collatione_orig}")
+            print(self.liste_sigles)
             sigle_output = [sigle for sigle in self.liste_sigles if sigle in path_fichier_collatione_orig][0]
             output_file = path_fichier_collatione_orig.replace(".xml", ".apparated.xml")
             print(sigle_output)
@@ -775,7 +780,7 @@ class Injector:
         for temoin in liste_temoins:
             with open(temoin, "r") as input_xml:
                 f = etree.parse(input_xml)
-                sigle = "_".join(f.xpath("@xml:id")[0].split("_")[0:2])
+                sigle = f.xpath("@corresp")[0].replace("#", "")
                 print(f"Treating {sigle}")
 
             for omission in liste_omissions:
@@ -1029,12 +1034,10 @@ class Injector:
                         print("Index error. The element should be the first of the division.")
                         # On risque de tout décaler si on ajoute pas un élément vide ici, le zip ne lève pas d'exception
                         list_of_tokens_id.append(None)
-                        print(witness_id)
                         print(etree.tostring(current_element))
 
                 witness_id = \
-                    current_tree.xpath(f"//tei:div[@type='{self.type_division}']/@xml:id", namespaces=self.ns_decl)[0]
-                witness_id = "_".join(witness_id.split("_")[0:2])
+                    current_tree.xpath(f"//tei:div[@type='{self.type_division}']/@corresp", namespaces=self.ns_decl)[0].replace("#", "")
                 final_witness_list.extend(
                     [witness_id for _ in range(number_of_elements)])  # https://stackoverflow.com/a/4654446
                 before_or_after.extend([position for _ in range(number_of_elements)])
@@ -1094,11 +1097,8 @@ class Injector:
                     shifted = True
             # Si le noeud est présent mais qu'on le veut au niveau global, pas besoin de le déplacer.
 
-            sigla_output_wit = "_".join(
-                current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@xml:id",
-                                       namespaces=self.ns_decl)[
-                    0].split("_")[
-                0:2])
+            sigla_output_wit = current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@corresp",
+                                       namespaces=self.ns_decl)[0].replace("#", "")
             element_name = element_to_inject.xpath("local-name()")
             element_id = element_to_inject.xpath("@xml:id")[0]
             element_to_inject.set("ana", "#injected")  # il faudra nettoyer ça à la fin de la boucle.

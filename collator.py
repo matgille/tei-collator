@@ -15,6 +15,7 @@ dicttoxml.LOG.setLevel(logging.ERROR)
 
 import python.collation.collation as collation
 import python.tokenisation.tokenisation as tokenisation
+import python.structuration.structuration as structuration
 import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
 import python.injections.injections as injections
@@ -35,7 +36,7 @@ def main():
     parser.add_argument("-p", "--parameters", default="parametres/lemmatisation.json",
                         help="Path to the parameter file.")
     parser.add_argument("-d", "--division", help="Division to be treated.")
-    parser.add_argument("-corr", "--correction", default=True,
+    parser.add_argument("-corr", "--correction", default=False,
                         help="Correction mode (outputs more information in xml files).")
     parser.add_argument("-to", "--tokenizeonly", default=False, help="Exit after tokenization.")
     parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
@@ -91,7 +92,6 @@ def main():
     compute_similarity = parametres.compute_similarity
     chemin_corpus = parametres.corpus_path
     xpath_transcriptions = parametres.files_path
-    liste_sigles = utils.sigles()
     excluded_ancestors = parametres.exclude_descendant_of
 
     liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
@@ -111,6 +111,7 @@ def main():
         exit(0)
 
     if test_only:
+        liste_sigles = utils.sigles()
         print(f'Tests en cours...')
         for sigle in liste_sigles:
             # On teste sur les fichiers non nettoyés.
@@ -136,6 +137,7 @@ def main():
         exit(0)
 
     if inject_only:
+        liste_sigles = utils.sigles()
         chemin = f"divs/div{division}"
         Injector = injections.Injector(debug=True,
                                        div_n=division,
@@ -209,7 +211,7 @@ def main():
         # On les copie. Ily aura forcément une discordance si on ne traite pas les 23 chapitres d'un coup.
         for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
             shutil.copy(temoin, "/home/mgl/Bureau/These/Edition"
-                                               "/hyperregimiento-de-los-principes/Dedans/XML/corpus_lemmatise")
+                                "/hyperregimiento-de-los-principes/Dedans/XML/corpus_lemmatise")
         # corpus_a_lemmatiser.lemmatisation_parallele(division)
 
     if lemmatize_only:
@@ -231,19 +233,16 @@ def main():
                                                     liste_temoins=utils.chemin_temoins_tokenises_regularises(),
                                                     integrer_deplacements=deplacements)
 
+    liste_sigles = utils.sigles()
     for i in portee:
+
+        chemin_fichiers = f"divs/div{str(i)}"
 
         # We first remove all files in the corresponding dir to avoid any possible interference and bug
         utils.remove_files(f"divs/div{str(i)}/*")
 
-        chemin_fichiers = f"divs/div{str(i)}"
         print(f"Traitement de la division {str(i)}")
 
-        if not tests.test_lemmatization(div_n=i,
-                                        div_type=parametres.type_division,
-                                        temoin_leader=parametres.temoin_leader):
-            print("This division is not lemmatized; exiting.")
-            exit(0)
         corpus_preparator.prepare(i)
         pattern = re.compile(f"divs/div{i}/juxtaposition_\d+\.xml")
         fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if
@@ -258,6 +257,7 @@ def main():
                                     parametres_alignement=parametres.alignement,
                                     nombre_de_coeurs=parametres.parallel_process_number)
         aligner.run()
+        tests.test_collation_tokens(chemin_fichiers, portee[0], parametres.type_division)
 
         chemin_fichier_json = f"{chemin_fichiers}/final.json"
         # On va fusionner les fichiers individuels collationnés en un seul fichier.
@@ -308,7 +308,14 @@ def main():
             subprocess.run(cmd.split())
             # Création de l'apparat: suppression de la redondance, identification des lieux variants,
             # regroupement des lemmes
-
+            # Création du tableau d'alignement pour visualisation
+        if parametres.tableauxAlignement:
+            sorties.tableau_alignement(saxon, chemin_fichiers)
+        if not tests.test_lemmatization(div_n=i,
+                                        div_type=parametres.type_division,
+                                        temoin_leader=parametres.temoin_leader):
+            print("This division is not lemmatized; exiting.")
+            exit(0)
         collationeur = collation.Collateur(log=False,
                                            chemin_fichiers=chemin_fichiers,
                                            div_n=division,
@@ -316,10 +323,6 @@ def main():
                                            temoin_base=temoin_base)
         collationeur.run_collation()
         print("Création des apparats ✓")
-
-        # Création du tableau d'alignement pour visualisation
-        if parametres.tableauxAlignement:
-            sorties.tableau_alignement(saxon, chemin_fichiers)
 
         # On bouge tous les fichiers d'alignement dans un dossier à part
         fichiers_alignement = glob.glob(f"{chemin_fichiers}/align*")
