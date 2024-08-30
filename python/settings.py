@@ -25,6 +25,7 @@ class Parametres:
         self.element_base = self.settings['scission']['element_base']
         self.type_division = self.settings['scission']['scinder_par']
         self.corpus_path = self.settings['localisation_fichiers']
+        self.structuration_auto = self.settings['structurer_documents']
         self.files_path = self.settings['chemin_vers_TEI']
         self.output_dir = self.settings['output_dir']
         self.alignement = self.settings['alignement']

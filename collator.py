@@ -82,6 +82,7 @@ def main():
     print(f'Injection seule: {inject_only} \n ---- \n')
     alignement = parametres.alignement
     temoin_base = parametres.temoin_base
+    structuration_automatique = parametres.structuration_auto
     if alignement == "global" and not align_only:
         print("WARNING: l'alignement global ne fonctionne pas encore (xml:id identiques sur les non-apparats). "
               "On switche à un alignement mot à mot.\n\n ---- \n\n")
@@ -153,10 +154,16 @@ def main():
                                        temoin_base=temoin_base)
         Injector.run_injections()
         chemin_fichiers = f"divs/div{str(division)}"
-        sorties.fusion_documents_tei(chemin_fichiers=chemin_fichiers,
-                                     chemin_corpus=chemin_corpus,
-                                     xpath_transcriptions=xpath_transcriptions,
-                                     output_dir=parametres.output_dir)
+        # sorties.fusion_documents_tei(chemin_fichiers=chemin_fichiers,
+        #                              chemin_corpus=chemin_corpus,
+        #                              xpath_transcriptions=xpath_transcriptions,
+        #                              output_dir=parametres.output_dir)
+
+        print("Cleaning files, producing final documents")
+        for file in glob.glob(f"divs/div{division}/*transposed.xml"):
+            sigle = utils.get_sigla_from_path(file)
+            print(sigle)
+            utils.clean_xml_file(input_file=file, output_file=f"divs/div{division}/apparat_{sigle}_{division}_final.xml")
         exit(0)
 
     # We start by removing all debug files
@@ -213,6 +220,22 @@ def main():
             shutil.copy(temoin, "/home/mgl/Bureau/These/Edition"
                                 "/hyperregimiento-de-los-principes/Dedans/XML/corpus_lemmatise")
         # corpus_a_lemmatiser.lemmatisation_parallele(division)
+    if structuration_automatique:
+        structurer = structuration.Structurer(target_path=f"temoins_tokenises/*.xml",
+                                              source_file=f"temoins_tokenises/Valencia_BH_Ms_0594.xml",
+                                              output_files_prefix="",
+                                              pre_structure=True)
+        structurer.pre_structure_document(proportion=.3, element_to_create="ab", remove_pc=False)
+        context = "//tei:div[@type='chapitre'][@n='1']"
+        query = f"child::node()[self::tei:head or self::tei:{parametres.element_base}]"
+        print(query)
+        structurer.align_structure(context=context, query=query, text_proportion=.6, use_lemmas=True, remove_pc=False)
+        
+        # Et on re-régularise.
+        print(["java", "-jar", saxon, "-xi:on", f"temoins_tokenises/{parametres.temoin_leader}.xml",
+               "xsl/pre_alignement/regularisation.xsl", "False"])
+        subprocess.run(["java", "-jar", saxon, "-xi:on", f"temoins_tokenises/{parametres.temoin_leader}.xml",
+                        "xsl/pre_alignement/regularisation.xsl", "correction=False"])
 
     if lemmatize_only:
         t1 = time.time()
@@ -257,7 +280,6 @@ def main():
                                     parametres_alignement=parametres.alignement,
                                     nombre_de_coeurs=parametres.parallel_process_number)
         aligner.run()
-        tests.test_collation_tokens(chemin_fichiers, portee[0], parametres.type_division)
 
         chemin_fichier_json = f"{chemin_fichiers}/final.json"
         # On va fusionner les fichiers individuels collationnés en un seul fichier.
@@ -311,6 +333,8 @@ def main():
             # Création du tableau d'alignement pour visualisation
         if parametres.tableauxAlignement:
             sorties.tableau_alignement(saxon, chemin_fichiers)
+
+        tests.test_collation_tokens(chemin_fichiers, portee[0], parametres.type_division)
         if not tests.test_lemmatization(div_n=i,
                                         div_type=parametres.type_division,
                                         temoin_leader=parametres.temoin_leader):

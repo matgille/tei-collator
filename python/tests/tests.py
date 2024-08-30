@@ -272,7 +272,7 @@ def test_collation_tokens(chemin_fichiers, portee, type_division):
 
     with open(f"{chemin_fichiers}/tokens_before_collation.json", "w") as output_target_json:
         json.dump(tokens_per_wits_orig, output_target_json)
-
+    print(tokens_per_wits_orig.keys())
     for sigla, source_tokens in tokens_per_wits_orig.items():
         target_tokens = tokens_per_wits_collatex[sigla]
         if target_tokens == source_tokens:

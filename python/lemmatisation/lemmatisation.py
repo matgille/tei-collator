@@ -110,17 +110,17 @@ class CorpusALemmatiser:
             # pas trouvé pourquoi
             subprocess.run(cmd_sh)
             texte_lemmatise = utils.txt_to_liste(fichier_lemmatise)
-            temoin_tokenise = f"temoins_tokenises_regularises/{fichier}"
+            temoin_tokenise_regularise = f"temoins_tokenises_regularises/{fichier}"
             parser = etree.XMLParser(load_dtd=True,
                                      resolve_entities=True)
-            f = etree.parse(temoin_tokenise, parser=parser)
+            f = etree.parse(temoin_tokenise_regularise, parser=parser)
             root = f.getroot()
             if division != "*":
                 groupe_words = f"//node()[self::tei:w|self::tei:pc][ancestor::tei:div[@n='{str(division)}']]"
             else:
                 groupe_words = f"//node()[self::tei:w|self::tei:pc]"
             tokens = root.xpath(groupe_words, namespaces=self.nsmap)
-            fichier_lemmatise = temoin_tokenise
+            fichier_lemmatise = temoin_tokenise_regularise
             n = 1
             for index, mot in enumerate(tokens):
                 # Ça marche bien si la lemmatisation se fait
@@ -152,7 +152,6 @@ class CorpusALemmatiser:
 
         elif self.langue == "la":
             modele_latin = "python/lemmatisation/model.tar"
-            fichier_lemmatise = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}.lemmatized.txt'
             device = "cpu"
             cmd = f"pie tag --device {device} {fichier_entree_txt} " \
                   f"<{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
@@ -163,18 +162,21 @@ class CorpusALemmatiser:
             maliste = utils.txt_to_liste(fichier_lemmatise)
             # Nettoyage de la liste
             maliste.pop(0)  # on supprime les titres de colonnes
-            temoin_tokenise = f"temoins_tokenises_regularises/{fichier}"
+            temoin_tokenise_regularise = f"temoins_tokenises_regularises/{fichier}"
+            temoin_tokenise = f"temoins_tokenises/{fichier}"
             parser = etree.XMLParser(load_dtd=True,
                                      resolve_entities=True)
-            f = etree.parse(temoin_tokenise, parser=parser)
+            f = etree.parse(temoin_tokenise_regularise, parser=parser)
+            f_orig = etree.parse(temoin_tokenise, parser=parser)
             root = f.getroot()
+            root_orig = f_orig.getroot()
             groupe_words = "//node()[self::tei:w|self::tei:pc]"
             tokens = root.xpath(groupe_words, namespaces=self.nsmap)
-            fichier_lemmatise = temoin_tokenise
+            tokens_orig = root_orig.xpath(groupe_words, namespaces=self.nsmap)
+            fichier_lemmatise = temoin_tokenise_regularise
             for index, mot in enumerate(tokens):
                 liste_correcte = maliste[index]
                 forme, cas, mode, nombre, personne, temps, lemme, pos, *autres_arguments = liste_correcte
-
                 # on nettoie la morphologie pour supprimer les entrées vides
                 morph = f"CAS={cas}|MODE={mode}|NOMB.={nombre}|PERS.={personne}|TEMPS={temps}"
                 morph = re.sub("((?!\|).)*?_(?=\|)", "", morph)  # on supprime les pipes non renseignés du milieu
@@ -183,6 +185,9 @@ class CorpusALemmatiser:
                 morph = re.sub("\|((?!\|).)*?_$", "", morph)  # on supprime les pipes non renseignés de fin
                 morph = re.sub("(?!\|).*_(?!\|)", "", morph)  # on supprime les pipes non renseignés uniques
                 #
+                tokens_orig[index].set("lemma", lemme)
+                tokens_orig[index].set("pos", pos)
+                tokens_orig[index].set("morph", morph)
                 mot.set("lemma", lemme)
                 mot.set("pos", pos)
                 if morph:
@@ -194,6 +199,10 @@ class CorpusALemmatiser:
 
         with open(fichier_lemmatise, "w+") as sortie_xml:
             a_ecrire = etree.tostring(root, pretty_print=True, encoding='utf-8', xml_declaration=True).decode(
+                'utf8')
+            sortie_xml.write(str(a_ecrire))
+        with open(temoin_tokenise, "w+") as sortie_xml:
+            a_ecrire = etree.tostring(root_orig, pretty_print=True, encoding='utf-8', xml_declaration=True).decode(
                 'utf8')
             sortie_xml.write(str(a_ecrire))
         print("%s ✓" % fichier)

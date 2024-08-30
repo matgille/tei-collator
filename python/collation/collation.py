@@ -4,6 +4,7 @@ import re
 import subprocess
 import multiprocessing as mp
 import sys
+import time
 
 import Levenshtein
 import python.utils.utils as utils
@@ -90,7 +91,7 @@ class Aligner:
             print("Global alignment")
             resultat_json = collatex.collate(json_str, output='json', segmentation=True, near_match=True, astar=False)
         else:
-            resultat_json = collatex.collate(json_str, output='json', segmentation=False, near_match=True, astar=False,
+            resultat_json = collatex.collate(json_str, output='json', segmentation=False, near_match=False, astar=False,
                                              detect_transpositions=False)
             # segmentation=False permet une collation au mot-à-mot:
             # http://interedition.github.io/collatex/pythonport.html

@@ -13,6 +13,7 @@ tei_namespace = 'http://www.tei-c.org/ns/1.0'
 tei = '{%s}' % tei_namespace
 NSMAP0 = {None: tei_namespace}  # the default namespace (no prefix)
 
+
 def test_file_writing(object, name, format):
     with open(f"/home/mgl/Documents/{name}", "w") as output_file:
         if format == "json":
@@ -81,30 +82,52 @@ def check_if_match(json_table: str, target_id: str) -> (bool, str):
     # Ici on ne va chercher que le pivot, ce qui n'est pas suffisant parfois (cas de la ponctuation). Il
     # Faudrait trouver une méthode avec plus de contexte.
     print(f"Searching for {target_id} element")
-    for index, (base_witness, target_witness) in enumerate(aligned_table):
-        if base_witness and target_witness:
+    for index, (source_token, target_token) in enumerate(aligned_table):
+        print("---")
+        print(source_token)
+        print(target_token)
+        if source_token and target_token:
             # Ici il manque le cas où la cible est vide.
-            if base_witness['xml:id'] == target_id:
+            if source_token['xml:id'] == target_id:
                 print("Found target")
-                print(base_witness)
-                print(target_witness)
-                if base_witness['t'] == target_witness['t']:
+                print(source_token)
+                print(target_token)
+                if source_token['t'] == target_token['t']:
                     print_aligned_sents(aligned_table=aligned_table, index=index)
-                    print(f"Division should start after {target_witness['xml:id']}")
+                    print(f"Division should start after {target_token['xml:id']}")
                     # Ici il faut ajouter une condition sur le noeud suivant: si c'est un tei:pc, on l'inclut.
-                    return True, target_witness['xml:id']
+                    return True, target_token['xml:id']
                 elif aligned_table[index - 1][0]['t'] == aligned_table[index - 1][1]['t']:
                     print_aligned_sents(aligned_table=aligned_table, index=index - 1)
                     print("Previous token match !")
-                    print(f"Division should start after {target_witness['xml:id']}")
+                    print(f"Division should start after {target_token['xml:id']}")
                     return True, aligned_table[index - 1][1]['xml:id']
-        elif base_witness and not target_witness:
+                else:
+                    return True, target_token['xml:id']
+        elif source_token and not target_token:
+            print("Cas 2")
             # On va chercher plus haut
-            if base_witness['xml:id'] == target_id:
-                if aligned_table[index - 1][0]['t'] == aligned_table[index - 1][1]['t']:
-                    print_aligned_sents(aligned_table=aligned_table, index=index - 1)
-                    print("Previous token match !")
-                    return True, aligned_table[index - 1][1]['xml:id']
+            if source_token['xml:id'] == target_id:
+                print("Equality")
+                n = 1
+                iterate = True
+                while iterate:
+                    print(n)
+                    try:
+                        print(aligned_table[index - n][0]['t'])
+                        print(aligned_table[index - n][1]['t'])
+                        if aligned_table[index - n][0]['t'] == aligned_table[index - n][1]['t']:
+                            print("2 OK")
+                            print_aligned_sents(aligned_table=aligned_table, index=index - n)
+                            print("Previous token match !")
+                            return True, aligned_table[index - n][1]['xml:id']
+                        else:
+                            print("2 pas OK")
+                            n += 1
+                    except TypeError:
+                        n += 1
+            else:
+                print("Cas 3")
 
     # Si on arrive ici, c'est que quelque chose s'est mal passé.
     print("Something went wrong.")
@@ -117,7 +140,7 @@ def write_tree(path, tree):
         output_file.write(ET.tostring(tree, pretty_print=True).decode('utf8'))
 
 
-class Aligner:
+class Structurer:
     def __init__(self, target_path: str, source_file: str, output_files_prefix: str, pre_structure: bool):
         """
 
@@ -140,10 +163,11 @@ class Aligner:
         # On parse les fichiers et on inclut chaque arbre dans un dictionnaire
         for file in target_files:
             self.dict_of_parsed_files[file.split("/")[-1].replace(".xml", "")] = ET.parse(file)
-        self.output_file_prefix = output_files_prefix
+        self.output_file_suffix = output_files_prefix
 
         # On crée les arbres de sortie à partir des arbres d'entrée
-        self.output_tree = {key: copy.deepcopy(tree) for key, tree in self.dict_of_parsed_files.items() if key not in self.source_file_path}
+        self.output_tree = {key: copy.deepcopy(tree) for key, tree in self.dict_of_parsed_files.items() if
+                            key not in self.source_file_path}
 
         self.target_tokens, self.target_ids, self.tokens_and_ids = dict(), dict(), dict()
 
@@ -152,19 +176,21 @@ class Aligner:
         correct_index = all_differences.index(min(all_differences))
         return correct_index
 
-    def pre_structure_document(self, proportion: float, element_to_create: str = "ab"):
+    def pre_structure_document(self, proportion: float, element_to_create: str = "ab", remove_pc: bool = False):
         assert 0 < proportion < 1, "Proportion should be between 0 and 1"
         all_divs = self.source_file.xpath("descendant::tei:div[@type='chapitre']", namespaces=self.ns_decl)
-        
+        orig_tree = copy.deepcopy(self.source_file)
         for div in all_divs:
-            words_and_pc = div.xpath("descendant::node()[not(ancestor::tei:head)][self::tei:w or self::tei:pc]", namespaces=self.ns_decl)
+            words_and_pc = div.xpath("descendant::node()[not(ancestor::tei:head)][self::tei:w or self::tei:pc]",
+                                     namespaces=self.ns_decl)
             # La première étape est de récupérer les positions des divisions
             with_index = [index for index, item in enumerate(words_and_pc) if item.xpath("name()") == "pc"]
+            print(with_index)
+            milestones = []
             div_len = len(words_and_pc)
             ideal_div_len = int(div_len * proportion)
             closest_val = ideal_div_len
             Stop = True
-            milestones = []
             while Stop:
                 closest_index = self.get_closest_value(closest_val, with_index)
                 closest_val = with_index[closest_index]
@@ -174,42 +200,88 @@ class Aligner:
                 else:
                     milestones.append(closest_val)
                     closest_val += ideal_div_len
-            
-            # Maintenant on crée les divisions arbitraires
-            print(milestones)
-            print(div_len)
-            lower_milestone = 0
-            for index, milestone in enumerate(milestones):
-                new_element = ET.Element(tei + element_to_create, nsmap=NSMAP0)
-                new_element.set("n", generateur_id(6))
-                if index == 0:
-                    target_w = words_and_pc[0]
-                    target_w.getparent().insert(1, new_element)
-                else:
-                    target_w = words_and_pc[milestone]
-                    target_w.getparent().insert(milestone, new_element)
-                print(lower_milestone, milestone)
-                for idx, word in enumerate(range(lower_milestone, milestone + 1)):
-                    new_element.insert(idx, words_and_pc[word])
 
-                print(f"Index {index} done !")
-                lower_milestone = milestone + 1
+            # Maintenant on crée les divisions arbitraires
+
+            # On cherche l'ensemble des noeuds
+            print(milestones)
+            for index, milestone in enumerate(milestones):
+                # On s'assure qu'il n'y a pas de problème avec les tei:head
+                
+                # Première étape, on va injecter les tei:ab (ou tei:p)
+                all_nodes_ids = div.xpath(
+                    f"child::node()[not(self::tei:head) and preceding-sibling::tei:head][not(self::text() or "
+                    f"self::{element_to_create})][@xml:id]/@xml:id", namespaces=self.ns_decl)
+                all_nodes = div.xpath(
+                    f"child::node()[not(self::tei:head) and preceding-sibling::tei:head][not(self::text() or self::{element_to_create})][@xml:id]",
+                    namespaces=self.ns_decl)
+                print(len(all_nodes_ids), len(all_nodes))
+                assert len(all_nodes_ids) == len(all_nodes), "Problemo"
+                dict_of_ids_and_nodes = {identifier: node for identifier, node in zip(all_nodes_ids, all_nodes)}
+                print("---")
+                print(f"Milestone: {milestone}")
+
+                min_anchor = words_and_pc[milestones[index - 1]].xpath("@xml:id")[0]
+                print(f"Anchor: {min_anchor}")
+
+                # Et le dernier noeud
+                new_element = ET.Element(tei + element_to_create, nsmap=NSMAP0)
+                identifier = generateur_id(6)
+                new_element.set("n", identifier)
+                print(f"Identifier: {identifier}")
+                if index == 0:
+                    try:
+                        target_w = div.xpath("child::tei:head",
+                                             namespaces=self.ns_decl)[0]
+                        target_w.addnext(new_element)
+                    except IndexError:
+                        target_w = all_nodes[0]
+                        target_w.addnext(new_element)
+                else:
+                    target_w = dict_of_ids_and_nodes[min_anchor]
+                    print(dict_of_ids_and_nodes[min_anchor].text)
+                    target_w.addnext(new_element)
+            
+            # Deuxième étape, on va mettre les noeuds dans les tei:ab ou tei:p
+            hierarchy_dict = {}
+            all_nodes = div.xpath(
+                f"child::node()[not(self::tei:head) and preceding-sibling::tei:head][not(self::text())]",
+                namespaces=self.ns_decl)
+            for node in all_nodes:
+                if node.xpath("name()") == element_to_create:
+                    current_key = node
+                else:
+                    try:
+                        hierarchy_dict[current_key].append(node)
+                    except KeyError:
+                        hierarchy_dict[current_key] = [node]
+
+            for target_element_to_fill, nodes in hierarchy_dict.items():
+                for node in nodes:
+                    print(node)
+                    target_element_to_fill.append(node)
 
             all_pcs = div.xpath("descendant::tei:pc", namespaces=self.ns_decl)
-            for pc in all_pcs:
-                pc.getparent().remove(pc)
-        with open(self.source_file_path.replace(".xml", ".structured.xml"), "w") as output_xml:
+            if remove_pc:
+                for pc in all_pcs:
+                    pc.getparent().remove(pc)
+        # On teste
+        with open(self.source_file_path.replace(".xml", f"{self.output_file_suffix}.xml"), "w") as output_xml:
             output_xml.write(ET.tostring(self.source_file).decode())
+        all_orig_ids = orig_tree.xpath(f"descendant::node()[@xml:id]/@xml:id", namespaces=self.ns_decl)
+        all_structured_id = self.source_file.xpath(f"descendant::node()[@xml:id]/@xml:id", namespaces=self.ns_decl)
+        assert all_orig_ids == all_structured_id, "Some tokens lost or moved."
+        print("Tests passed, structuring other witnesses")
 
     def structure_tree(self, elements: list, ids: list, context, index_context, target_id):
         elements_and_ids = list(zip(elements, ids))
         print(f"Index context: {index_context}")
         print(f"Elements and ids: {elements_and_ids}")
         context_target_nodes = self.output_tree[target_id].xpath(context, namespaces=self.ns_decl)[index_context]
-        all_nodes = context_target_nodes.xpath(f"descendant::node()[not(self::text())]", namespaces=self.ns_decl)
+        all_nodes_ids = context_target_nodes.xpath(f"descendant::node()[not(self::text())]", namespaces=self.ns_decl)
         all_ids = context_target_nodes.xpath(
             f"descendant::node()[not(self::text())]/@*[name()='n' or name()='xml:id']", namespaces=self.ns_decl)
-        nodes_and_ids = list(zip(all_nodes, all_ids))
+        nodes_and_ids = list(zip(all_nodes_ids, all_ids))
 
         # Chaque itération correspond à une structure à insérer dans le document cible
         for index, (element, (min_id, max_id)) in enumerate(elements_and_ids):
@@ -244,8 +316,8 @@ class Aligner:
             # On convertit donc un identifiant en index.
             # On doit toujours mettre à jour notre arbre en parsant à chaque nouvelle boucle
             context_target_nodes = self.output_tree[target_id].xpath(context, namespaces=self.ns_decl)[index_context]
-            all_nodes = context_target_nodes.xpath(f"child::node()[not(self::text())]", namespaces=self.ns_decl)
-            for idx, node in enumerate(all_nodes):
+            all_nodes_ids = context_target_nodes.xpath(f"child::node()[not(self::text())]", namespaces=self.ns_decl)
+            for idx, node in enumerate(all_nodes_ids):
                 # On commence par chercher le premier mot de la structure
                 if index == 0:
                     # Tous les noeuds ne sont pas forcément identifiés par un xml:id
@@ -281,9 +353,9 @@ class Aligner:
 
             # On sélectionne les noeuds à insérer en faisant attention à l'index
             if index == 0:
-                items_to_shift = all_nodes[min_position_in_full_list: max_position_in_full_list + 1]
+                items_to_shift = all_nodes_ids[min_position_in_full_list: max_position_in_full_list + 1]
             else:
-                items_to_shift = all_nodes[min_position_in_full_list: max_position_in_full_list + 1]
+                items_to_shift = all_nodes_ids[min_position_in_full_list: max_position_in_full_list + 1]
 
             # Finalement, on insère les noeuds dans la division nouvellement créee
             for word in items_to_shift:
@@ -296,10 +368,10 @@ class Aligner:
         # La division est créée, les noeuds insérés. Travail accompli.
         print("Done !")
 
-    def align(self, query, context, text_proportion, use_lemmas:bool=True):
+    def align_structure(self, query, context, text_proportion, use_lemmas: bool = True, remove_pc: bool = False):
         # On réalise la même opération avec le texte source et un texte cible qui change à chaque fois.
         if self.pre_structure:
-            self.source_file = ET.parse(self.source_file_path.replace(".xml", ".structured.xml"))
+            self.source_file = ET.parse(self.source_file_path.replace(".xml", f"{self.output_file_suffix}.xml"))
         for target_document in self.output_tree.keys():
             print(f"Trying to align {target_document} on {query} with {context} context.")
             # On va itérer sur chaque division
@@ -314,8 +386,9 @@ class Aligner:
             context_target_nodes = self.output_tree[target_document].xpath(context, namespaces=self.ns_decl)
             for node in context_target_nodes:
                 all_pcs = node.xpath("descendant::tei:pc", namespaces=self.ns_decl)
-                for pc in all_pcs:
-                    pc.getparent().remove(pc)
+                if remove_pc:
+                    for pc in all_pcs:
+                        pc.getparent().remove(pc)
             all_target_ids = self.output_tree[target_document].xpath(
                 f"descendant::node()[self::tei:pc or self::tei:w]/@xml:id",
                 namespaces=self.ns_decl)
@@ -327,7 +400,6 @@ class Aligner:
             for index_context, (context_source_node, context_target_node) in enumerate(
                     list(zip(context_source_nodes, context_target_nodes))):
                 structure_source_elements = context_source_node.xpath(query, namespaces=self.ns_decl)
-                structure_target_elements = context_target_node.xpath(query, namespaces=self.ns_decl)
 
                 # On ajoute des identifiants aux éléments qui en sont dépourvus
                 unidentified_target_elements = [element for element in
@@ -353,38 +425,45 @@ class Aligner:
                 target_lemmas = context_target_node.xpath("descendant::node()[self::tei:w or self::tei:pc]/@lemma",
                                                           namespaces=self.ns_decl)
                 target_forms = context_target_node.xpath("descendant::node()[self::tei:w or self::tei:pc]/text()",
-                                                          namespaces=self.ns_decl)
+                                                         namespaces=self.ns_decl)
                 source_forms = context_source_node.xpath("descendant::node()[self::tei:w or self::tei:pc]/text()",
-                                                          namespaces=self.ns_decl)
+                                                         namespaces=self.ns_decl)
                 assert len(target_lemmas) == len(target_tokens), "Merci de vérifier que le corpus-cible est lemmatisé"
 
                 target_ids = context_target_node.xpath("descendant::node()[self::tei:w or self::tei:pc]/@xml:id",
                                                        namespaces=self.ns_decl)
                 target_tokens_ids = list(zip(target_tokens, target_ids))
                 current_source_position = 0
-                current_target_position = 0
                 source_lemmas = context_source_node.xpath("descendant::node()[self::tei:w or self::tei:pc]/@lemma",
                                                           namespaces=self.ns_decl)
                 source_ids = context_source_node.xpath("descendant::node()[self::tei:w or self::tei:pc]/@xml:id",
                                                        namespaces=self.ns_decl)
                 assert len(source_ids) == len(source_lemmas), "Merci de vérifier que le corpus-source est lemmatisé"
-                
+
                 if use_lemmas:
                     source_tokens_ids = list(zip(source_lemmas, source_ids))
                 else:
                     source_tokens_ids = list(zip(source_forms, source_ids))
                 target_id_list = [target_ids[0], ]
+
                 # On itère sur chaque division
                 matching_target_ids, matching_source_ids = dict(), dict()
                 correction_mode = False
                 for index, division in enumerate(structure_source_elements):
+                    # Dans le cas où on est sur la dernière division, pas besoin de faire de recherche. 
+                    # Il suffit de choisir le dernier token de notre contexte.
+                    if index + 1 == len(structure_source_elements):
+                        matching_id = target_tokens_ids[-1][-1]
+                        target_id_list.append(matching_id)
+                        print(f"Last division in context. Matching token is the last token of {context}: {matching_id}")
+                        continue
                     # Ici on va gérer la façon de reprendre la structuration à partir d'une correction manuelle du 
                     # texte. 
                     if len(division.xpath("@n")) > 0:
                         identifier = division.xpath("@n")[0]
                     else:
                         identifier = division.xpath("@xml:id")[0]
-                    
+
                     # On a besoin de l'identifiant de fin de la division courante du
                     # document source. On va
                     # ensuite regarder si ce token est dans la table alignée, pour identifier
@@ -446,12 +525,11 @@ class Aligner:
                     # On crée les données tel que le veut collatex
                     source_list = [{"t": lemma, "xml:id": id} for lemma, id in source_tokens_to_compare]
                     collatex_dict = {"witnesses": [{"id": f"{self.source_file_id}", "tokens": source_list}]}
-                    
+
                     if use_lemmas:
                         zip_target_token_id = list(zip(target_lemmas, target_ids))
                     else:
                         zip_target_token_id = list(zip(target_forms, target_ids))
-                        
 
                     # Si on est dans la première division du contexte, on prend les infos de la source comme fenêtre
                     if index == 0:
@@ -464,7 +542,8 @@ class Aligner:
                     collatex_dict["witnesses"].append({"id": target_document, "tokens": target_list})
                     print("Collating")
                     try:
-                        collation_table = collatex.collate(collation=collatex_dict, output="json", segmentation=False, near_match=True)
+                        collation_table = collatex.collate(collation=collatex_dict, output="json", segmentation=False,
+                                                           near_match=True, astar=False)
                     except TypeError:
                         print(collatex_dict)
                         exit(0)
@@ -481,8 +560,8 @@ class Aligner:
                     try:
                         # Ici on va regarder si le résultat de la collation correspond à un alignement effectif.
                         # Le cas échéant, on récupère l'identifiant du token qui fait borne.
-                        match, matching_id = check_if_match(json_table=collation_table,
-                                                            target_id=last_token_current_div)
+                        _, matching_id = check_if_match(json_table=collation_table,
+                                                        target_id=last_token_current_div)
                         print(f"Div {index + 1} aligned.")
                         # On nourrit ici une liste de couples d'identifiants qui va correspondre à la position
                         # des divisions à créer.
@@ -496,6 +575,7 @@ class Aligner:
                         print(f"Unable to align div {index + 1}. Please check structure in source document.")
                         write_log(
                             f"Alignment error for target file {target_document}.")
+                        exit(0)
                         try:
                             unparsed_divs = structure_source_elements[index:len(structure_source_elements)]
                             unparsed_ids = [
@@ -506,6 +586,7 @@ class Aligner:
                         except Exception:
                             print(traceback.format_exc())
                         break
+
                 # On rassemble les bornes deux à deux (2grames)
                 target_id_list = [(target_id_list[index], target_id_list[index + 1]) for index, _
                                   in enumerate(target_id_list[:len(target_id_list) - 1])]
@@ -525,8 +606,8 @@ class Aligner:
 
             # On écrit l'arbre dans le fichier xml correspondant.
             write_tree(
-                # f"/home/mgl/Documents/test/{target_document}{self.output_file_prefix}.xml",
-                f"/home/mgl/Bureau/These/Edition/collator/temoins_tokenises_regularises/{target_document}.structured.xml",
+                # f"/home/mgl/Documents/test/{target_document}{self.output_file_suffix}.xml",
+                f"/home/mgl/Bureau/These/Edition/collator/temoins_tokenises/{target_document}{self.output_file_suffix}.xml",
                 self.output_tree[target_document])
 
 
@@ -547,18 +628,18 @@ class Aligner:
 
 
 if __name__ == '__main__':
-    aligner = Aligner(
-        target_path="/home/mgl/Bureau/These/Edition/collator/temoins_tokenises_regularises/Beinecke*.xml",
-        source_file="/home/mgl/Bureau/These/Edition/collator/temoins_tokenises_regularises/Bevilaqua_1498.xml",
-        output_files_prefix="_structured", 
+    remove_pc = False
+    aligner = Structurer(
+        target_path="/home/mgl/Bureau/These/Edition/collator/temoins_tokenises_regularises/*.xml",
+        source_file="/home/mgl/Bureau/These/Edition/collator/temoins_tokenises_regularises/Valencia_BH_Ms_0594.xml",
+        output_files_prefix="",
         pre_structure=True)
-    aligner.pre_structure_document(proportion=.30, element_to_create="ab")
+    aligner.pre_structure_document(proportion=.25, element_to_create="ab", remove_pc=remove_pc)
 
     context = "//tei:div[@type='chapitre']"
     query = "tei:head"
     # aligner.align(context=context, query=query, text_proportion=.5, use_lemmas=True)
-    
+
     context = "//tei:div[@type='chapitre'][@n='1']"
     query = "child::node()[self::tei:head or self::tei:ab]"
-    aligner.align(context=context, query=query, text_proportion=1, use_lemmas=True)
-    
+    aligner.align_structure(context=context, query=query, text_proportion=.6, use_lemmas=True, remove_pc=remove_pc)

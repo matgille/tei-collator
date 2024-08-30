@@ -66,12 +66,12 @@ class Injector:
             self.dict_ids_forms = {**self.dict_ids_forms, **witness_dict}
 
     def run_injections(self):
-        self.injection_apparats()
-        self.injection_omissions()
-        self.injection_intelligente()
-        self.injection_noeuds_non_textuels()
-        self.regroupement_omissions()
-        self.transposition_recognition()
+        # self.injection_apparats()
+        # self.injection_omissions()
+        # self.injection_intelligente()
+        # self.injection_noeuds_non_textuels()
+        # self.regroupement_omissions()
+        # self.transposition_recognition()
         self.same_word_identification(distance=20)
 
     def detection_homeoteleuton(self, lacune: list) -> bool:
@@ -746,11 +746,11 @@ class Injector:
                     "#",
                     "").split()
                 corresponding_div = \
-                    apparat.xpath("ancestor::node()[self::tei:p or self::tei:head]/@n", namespaces=self.ns_decl)[0]
+                    apparat.xpath(f"ancestor::node()[self::tei:{self.element_base} or self::tei:head]/@n", namespaces=self.ns_decl)[0]
                 try:
                     # On va chercher l'élément app précédent.
                     preceding_sibling = \
-                        apparat.xpath(f"preceding::node()[self::tei:app][ancestor::node()[self::tei:p or "
+                        apparat.xpath(f"preceding::node()[self::tei:app][ancestor::node()[self::tei:{self.element_base} or "
                                       f"self::tei:head][@n = '{corresponding_div}']]", namespaces=self.ns_decl)[
                             -1]
                     anchor = \
@@ -767,13 +767,12 @@ class Injector:
                 except IndexError as e:
                     try:
                         ancestor_anchor_node = \
-                            apparat.xpath(f"ancestor::node()[self::tei:p | self::tei:head]", namespaces=self.ns_decl)[0]
+                            apparat.xpath(f"ancestor::node()[self::tei:{self.element_base} | self::tei:head]", namespaces=self.ns_decl)[0]
                         anchor = ancestor_anchor_node.xpath("@n", namespaces=self.ns_decl)[0]
                         element_name = ancestor_anchor_node.xpath("local-name()", namespaces=self.ns_decl)
                     except IndexError as e:
                         utils.error_checklist()
                         print(e)
-
                 liste_omissions.append((temoins_affectes, apparat, anchor, element_name))
 
         # Deuxième étape, on réinjecte chaque élément tour à tour en se servant du dernier élément injecté.
@@ -783,7 +782,7 @@ class Injector:
                 sigle = f.xpath("@corresp")[0].replace("#", "")
                 print(f"Treating {sigle}")
 
-            for omission in liste_omissions:
+            for index, omission in enumerate(liste_omissions):
                 target_witness, app, anchor_id, anchor_name = omission
                 if sigle not in target_witness:
                     continue
@@ -799,6 +798,7 @@ class Injector:
                                             namespaces=self.ns_decl)[0]
                             except IndexError as e:
                                 print(f"File {temoin}")
+                                print(f"Index: {index}")
                                 print(f"Error for anchor {anchor_id}. \nOmission: {omission}.\n"
                                       f"Exiting. Error can come from a wrong alignment of the source files.")
                                 print(e)
@@ -823,10 +823,11 @@ class Injector:
                                 print(etree.tostring(app, pretty_print=True))
                                 print(f"Please check file {temoin}")
                                 exit(0)
-                        elif anchor_name in ["p", "head"]:
+                        elif anchor_name in [self.element_base, "head"]:
                             # TODO: pas universel.
                             # TODO: il y a un problème d'ordre dans ce cas, voir comment régler cela.
                             try:
+                                print(f"After {anchor_name}")
                                 anchor_element = \
                                     f.xpath(f"descendant::tei:{anchor_name}[@n = '{anchor_id}']",
                                             namespaces=self.ns_decl)[0]
