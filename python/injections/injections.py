@@ -66,12 +66,12 @@ class Injector:
             self.dict_ids_forms = {**self.dict_ids_forms, **witness_dict}
 
     def run_injections(self):
-        # self.injection_apparats()
-        # self.injection_omissions()
-        # self.injection_intelligente()
-        # self.injection_noeuds_non_textuels()
-        # self.regroupement_omissions()
-        # self.transposition_recognition()
+        self.injection_apparats()
+        self.injection_omissions()
+        self.injection_intelligente()
+        self.injection_noeuds_non_textuels()
+        self.regroupement_omissions()
+        self.transposition_recognition()
         self.same_word_identification(distance=20)
 
     def detection_homeoteleuton(self, lacune: list) -> bool:
