@@ -222,11 +222,11 @@ def main():
         # corpus_a_lemmatiser.lemmatisation_parallele(division)
     if structuration_automatique:
         structurer = structuration.Structurer(target_path=f"temoins_tokenises/*.xml",
-                                              source_file=f"temoins_tokenises/Valencia_BH_Ms_0594.xml",
+                                              source_file=f"temoins_tokenises/Rome_1607.xml",
                                               output_files_prefix="",
                                               pre_structure=True)
-        structurer.pre_structure_document(proportion=.3, element_to_create="ab", remove_pc=False)
-        context = "//tei:div[@type='chapitre'][@n='1']"
+        structurer.pre_structure_document(proportion=.30, element_to_create=parametres.element_base, remove_pc=False)
+        context = f"//tei:div[@type='chapitre'][@n='{division}']"
         query = f"child::node()[self::tei:head or self::tei:{parametres.element_base}]"
         print(query)
         structurer.align_structure(context=context, query=query, text_proportion=.6, use_lemmas=True, remove_pc=False)

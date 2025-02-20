@@ -36,7 +36,6 @@ matplotlib==3.4.2
 murmurhash==1.0.5
 network==0.1
 networkx==2.5
-nlp-pie==0.3.7
 nltk==3.5
 numpy==1.17.5
 ordered-set==4.0.2
@@ -44,7 +43,6 @@ parso==0.8.1
 pexpect==4.8.0
 pickleshare==0.7.5
 Pillow==8.3.1
-pkg-resources==0.0.0
 plac==1.1.3
 plotly==5.1.0
 preshed==3.0.5

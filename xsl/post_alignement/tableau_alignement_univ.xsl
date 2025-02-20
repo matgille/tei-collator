@@ -6,7 +6,8 @@
     <xsl:output method="html"/>
     <xsl:strip-space elements="*"/>
 
-    <xsl:variable name="tokens" select="tokenize('Planck Bevilaqua_1498 Beinecke_Marston_MS_139 BNE_MSS_958 BNF_Lat_6477', '\s')"/>
+    <xsl:variable name="tokens"
+        select="tokenize('Rome_1607 Rome_1556 Planck Bevilaqua_1498 Vat_Lat_590 CCC_MSS_283 Borgh_360 Geneve_Ms_Lat_92 Beinecke_Marston_MS_139 BNE_MSS_958 BNF_Lat_6477 BNE_9236  BNF_Lat_1234 Valencia_BH_Ms_0594', '\s+')"/>
 
 
 
@@ -47,6 +48,14 @@
                                 padding-left: 10px;
                                 padding-right: 10px;
                                 white-space: nowrap;
+                            
+                            }
+                            
+                            tr:nth-child(even) {
+                                background-color: #f2f2f2;
+                            }
+                            tr:hover {
+                                background-color: #ddd;
                             }
                             /*  Define the background color for all the ODD table columns  */
                             table tr td:nth-child(odd):not(.white) {
@@ -61,16 +70,16 @@
                             .sigla:nth-child(odd):not(.white) {
                                 /*background: #dae5f4;*/
                                 background-color: white !important;
-                                padding-right: 50px !important;
-                                padding-left: 30px !important;
+                                padding-right: 425px !important;
+                                padding-left: 20px !important;
                                 outline: black 1px solid;
                             }
                             /*  Define the background color for all the EVEN table columns  */
                             .sigla:nth-child(even):not(.white) {
                                 /*background: #b8d1f3;*/
                                 background-color: white !important;
-                                padding-right: 50px !important;
-                                padding-left: 30px !important;
+                                padding-right: 425px !important;
+                                padding-left: 20px !important;
                                 outline: black 1px solid;
                             }
                             a:link {
@@ -133,7 +142,13 @@
 
                     </head>
                     <body id="body">
-
+                        <div>
+                            <form>
+                                <input id="path"
+                                    value="/home/mgl/Bureau/Travail/Communications_et_articles/Alignement_multilingue_regimine"/>
+                                <button id="button_path" type="button">Apply</button>
+                            </form>
+                        </div>
                         <table>
                             <tr class="legende">
                                 <!--<td>&#160;</td>-->
@@ -164,13 +179,31 @@
                     </body>
 
                     <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                        const lastLineCells = document.querySelectorAll('td[data-last-line]');
                         
+                        let savedValue = '/home/mgl/Bureau/Travail/Communications_et_articles/Alignement_multilingue_regimine';
+                        const inputElement = document.getElementById('path');
+                        const buttonElement = document.getElementById('button_path');
+                        // Ajoute un écouteur d'événements sur le bouton
+                        buttonElement.addEventListener('click', function() {
+                        
+                        // Récupère la valeur de l'input
+                        const inputValue = inputElement.value;
+                        
+                        // Enregistre la valeur dans une variable
+                        savedValue = inputValue;
+                        
+                        // Affiche la valeur enregistrée dans la console (ou toute autre utilisation)
+                        console.log('Valeur enregistrée :', savedValue);
+                        });
+                        
+                        function pastLineURL() {
+                        const lastLineCells = document.querySelectorAll('td[data-last-line]');
                         lastLineCells.forEach(function(cell) {
                         cell.addEventListener('click', function() {
+                        console.log("Here " +  savedValue);
                         var lineUrl = this.getAttribute('data-last-line');
-                        var copyContent = "oxygen.sh " + lineUrl
+                        console.log(copyContent)
+                        var copyContent = "oxygen.sh " + savedValue + lineUrl
                         navigator.clipboard.writeText(copyContent).then(function() {
                         console.log('Copied to clipboard: ' + copyContent);
                         }).catch(function(err) {
@@ -178,7 +211,48 @@
                         });
                         });
                         });
+                        }
+                        
+                        // Function to generate a random color
+                        function getRandomColor() {
+                        return '#' + Math.floor(Math.random() * 16777215).toString(16);
+                        }
+                        
+                        // Function to cluster and color the table cells
+                        function clusterAndColorCells() {
+                        console.log('Run');
+                        // Reset all cells in the table to default
+                        document.querySelectorAll('#myTable td').forEach(td => td.style.backgroundColor = '');
+                        
+                        // Find all unique texts in the table excluding rows with class 'not_apparat'
+                        const uniqueTexts = [...new Set(
+                        Array.from(document.querySelectorAll('#myTable tr'))
+                        .filter(tr => !tr.querySelector('.not_apparat')) // Exclude rows with 'not_apparat' class
+                        .flatMap(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent))
+                        )];
+                        
+                        // Create a color map for each unique text
+                        const colors = {};
+                        uniqueTexts.forEach(text => {
+                        colors[text] = getRandomColor();
                         });
+                        
+                        // Highlight all cells in applicable rows based on their cluster colors
+                        document.querySelectorAll('#myTable tr')
+                        .forEach(tr => {
+                        // Skip rows containing cells with class 'not_apparat'
+                        if (!tr.querySelector('.not_apparat')) {
+                        tr.querySelectorAll('td').forEach(td => {
+                        const text = td.textContent;
+                        td.style.backgroundColor = colors[text];
+                        });
+                        }
+                        });
+                        }
+                        
+                        // Run the function when the page loads
+                        window.addEventListener('load', clusterAndColorCells);
+                        document.addEventListener('DOMContentLoaded', pastLineURL, clusterAndColorCells);
                     </script>
                 </html>
             </xsl:result-document>
@@ -225,11 +299,11 @@
         <xsl:variable name="self" select="self::node()"/>
         <xsl:variable name="ancestor">
             <xsl:choose>
-                <xsl:when test="ancestor-or-self::tei:div[@type = 'glose']">
-                    <xsl:text>glose</xsl:text>
+                <xsl:when test="ancestor-or-self::tei:ab">
+                    <xsl:text>ab</xsl:text>
                 </xsl:when>
-                <xsl:when test="ancestor-or-self::tei:div[@type = 'traduction']">
-                    <xsl:text>trad.</xsl:text>
+                <xsl:when test="ancestor-or-self::tei:p">
+                    <xsl:text>p</xsl:text>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:text>head</xsl:text>
@@ -284,17 +358,21 @@
                     <xsl:value-of select="."/>
                 </xsl:variable>
                 <xsl:variable name="last_line">
-                    <xsl:text>/home/mgl/Bureau/Travail/Communications_et_articles/Alignement_multilingue_regimine/data/HTR/txt_1/</xsl:text>
+                    <xsl:text>/data/HTR/txt_1/</xsl:text>
                     <xsl:value-of select="$current_sigla"/>
                     <xsl:text>/sortie_HTR/</xsl:text>
                     <xsl:value-of select="$current_sigla"/>
                     <xsl:text>_out.replaced.xml#</xsl:text>
                     <xsl:choose>
-                        <xsl:when test="$self/descendant::tei:lb[contains(@facs, $current_sigla)]">
-                            <xsl:value-of select="$self/descendant::tei:lb[contains(@facs, $current_sigla)][1]/@xml:id"/>
+                        <xsl:when test="$self/descendant::tei:lb[@break = 'yes'][contains(@facs, $current_sigla)]">
+                            <xsl:value-of
+                                select="$self/descendant::tei:lb[@break = 'yes'][contains(@facs, $current_sigla)][1]/replace(@xml:id, 'elem', 'facs')"
+                            />
                         </xsl:when>
                         <xsl:otherwise>
-                            <xsl:value-of select="$self/preceding::tei:lb[contains(@facs, $current_sigla)][1]/@xml:id"/>
+                            <xsl:value-of
+                                select="$self/preceding::tei:lb[contains(@facs, $current_sigla)][1]/replace(@xml:id, 'elem', 'facs')"
+                            />
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>

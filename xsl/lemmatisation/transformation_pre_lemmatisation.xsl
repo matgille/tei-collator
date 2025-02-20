@@ -41,8 +41,16 @@
         match="tei:teiHeader | tei:fw | tei:note | tei:del | tei:hi[@rend = 'initiale']"/>
 
     <xsl:template match="tei:w">
+        <xsl:variable name="replaced"
+            select="translate(lower-case(.), 'áéíóúý', 'aeiouy')"/>
+        <xsl:variable name="replaced_2"
+            select="replace($replaced, 'ça', 'za')"/>
+        <xsl:variable name="replaced_3"
+            select="replace($replaced_2, 'çe', 'ce')"/>
+        <xsl:variable name="replaced_4"
+            select="replace($replaced_3, 'ço', 'zo')"/>
         <xsl:value-of
-            select="translate(., 'áéíóúý', 'aeiouy')"/>
+            select="replace($replaced_4, 'çi', 'ci')"/>
         <!--On supprime les accents pour avoir une meilleur lemmatisation. Ils ne seront pas supprimés dans le document de sortie,
         on ne réinjectera que les analyses dans le xml.-->
         <xsl:text>&#xA;</xsl:text>

@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import traceback
 
 from ordered_set import OrderedSet
 
@@ -186,11 +187,12 @@ class Injector:
         files = glob.glob(f"{self.chemin}/*.apparated.xml")
         assert len(files) > 0
 
-        for fichier in files:
-            self.lacuna_identification(chemin=fichier)
+        data = [(file, etree.parse(file)) for file in glob.glob(f"{self.chemin}/*.apparated.xml")]
+        for file, tree in data:
+            self.lacuna_identification(file, tree)
         print("Regroupement des omissions ✓")
 
-    def lacuna_identification(self, chemin):
+    def lacuna_identification(self, chemin, xml_tree):
         """
         Définition de lacune: une suite d'éléments d'apparats qui contiennent un élément vide
         Cette fonction regroupe les apparats marqués commes des ommissions dans un tei:seg pointant vers l'analyse d'omission.
@@ -200,14 +202,15 @@ class Injector:
         :param output_file: le fichier à produire en sortie.
         """
 
-        xml_tree = etree.parse(chemin)
+        
         print(f"Treating {chemin}")
         output_file = chemin.replace('.xml', '.lacuned.xml')
         liste_sigles = [f"#{sigle}" for sigle in self.liste_sigles]
         all_apps = xml_tree.xpath("//tei:app", namespaces=self.ns_decl)
 
         for sigle in liste_sigles:
-            # On essaie de faire le moins de requête avec lxml car c'est très lent. On va chercher le plus possible des listes pythons en amont
+            # On essaie de faire le moins de requête avec lxml car c'est très lent. On va chercher le plus possible 
+            # des listes pythons en amont 
 
             xpath_expression = f"//tei:app[contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]][preceding::tei:app[1][contains(@ana,'#omission')][descendant::tei:rdg[not(node())][contains(@wit, '{sigle}')]]]"
             apps = xml_tree.xpath(
@@ -510,7 +513,7 @@ class Injector:
                                 corresponding_rdg.xpath(f"descendant::node()[@corresp = '#{sigle_input}']")[0]
                             corresponding_rdg.insert(corresponding_rdg.index(corresponding_node), corresponding_node)
                     corresponding_app = corresponding_rdg.xpath("ancestor::tei:app", namespaces=self.ns_decl)[0]
-                    corresponding_app_typology = corresponding_app.xpath("@ana")[0]
+                    # corresponding_app_typology = corresponding_app.xpath("@ana")[0]
                     # if not "#codico" in corresponding_app_typology:
                     # corresponding_app.set("ana", corresponding_app_typology + " #codico")
 
@@ -548,8 +551,8 @@ class Injector:
         for i in self.liste_sigles:
             with open(f"temoins_tokenises_regularises/{i}.xml", "r") as input_xml:
                 parsed = etree.parse(input_xml)
-            voided_transpositions.extend(parsed.xpath("//tei:w[contains(@ana, 'not_transposition')]/@xml:id", namespaces=self.ns_decl))
-
+            voided_transpositions.extend(
+                parsed.xpath("//tei:w[contains(@ana, 'not_transposition')]/@xml:id", namespaces=self.ns_decl))
 
         print("Reconnaissance des transpositions")
         files = glob.glob(f"{self.chemin}/*lacuned.xml")
@@ -644,7 +647,8 @@ class Injector:
                         if not ordered_set_equality and unordered_set_equality:
 
                             # Gestion des faux négatifs indiqués en amont.
-                            ids = [apparat.xpath("descendant::tei:w/@xml:id", namespaces=self.ns_decl) for apparat in groupe_apparat]
+                            ids = [apparat.xpath("descendant::tei:w/@xml:id", namespaces=self.ns_decl) for apparat in
+                                   groupe_apparat]
                             cleaned_ids = []
                             for id in ids:
                                 cleaned_ids.extend("_".join(id).split("_"))
@@ -746,12 +750,14 @@ class Injector:
                     "#",
                     "").split()
                 corresponding_div = \
-                    apparat.xpath(f"ancestor::node()[self::tei:{self.element_base} or self::tei:head]/@n", namespaces=self.ns_decl)[0]
+                    apparat.xpath(f"ancestor::node()[self::tei:{self.element_base} or self::tei:head]/@n",
+                                  namespaces=self.ns_decl)[0]
                 try:
                     # On va chercher l'élément app précédent.
                     preceding_sibling = \
-                        apparat.xpath(f"preceding::node()[self::tei:app][ancestor::node()[self::tei:{self.element_base} or "
-                                      f"self::tei:head][@n = '{corresponding_div}']]", namespaces=self.ns_decl)[
+                        apparat.xpath(
+                            f"preceding::node()[self::tei:app][ancestor::node()[self::tei:{self.element_base} or "
+                            f"self::tei:head][@n = '{corresponding_div}']]", namespaces=self.ns_decl)[
                             -1]
                     anchor = \
                         preceding_sibling.xpath(
@@ -767,7 +773,8 @@ class Injector:
                 except IndexError as e:
                     try:
                         ancestor_anchor_node = \
-                            apparat.xpath(f"ancestor::node()[self::tei:{self.element_base} | self::tei:head]", namespaces=self.ns_decl)[0]
+                            apparat.xpath(f"ancestor::node()[self::tei:{self.element_base} | self::tei:head]",
+                                          namespaces=self.ns_decl)[0]
                         anchor = ancestor_anchor_node.xpath("@n", namespaces=self.ns_decl)[0]
                         element_name = ancestor_anchor_node.xpath("local-name()", namespaces=self.ns_decl)
                     except IndexError as e:
@@ -878,7 +885,6 @@ class Injector:
 
         self.recuperation_elements()
         print("Reinjecting non apparatus elements in the other witnesses:")
-
         for witness in liste_temoins:
             print(witness)
             self.reinjection_elements(target_file=witness)
@@ -948,12 +954,18 @@ class Injector:
         ranges = [(a - 1, b) for a, b in utils.group_adjacent_positions(positions)]
         for adjacent_positions in ranges:
             pos_inf, pos_sup = adjacent_positions
-            first_element = \
-                tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {pos_inf}]", namespaces=self.ns_decl)[0]
-            corresp_attributes = [tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {cur_pos}]/@corresp",
-                                             namespaces=self.ns_decl)[0] for cur_pos in range(pos_inf, pos_sup + 1)]
-            corresp_ids = [tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {cur_pos}]/@xml:id",
-                                      namespaces=self.ns_decl)[0] for cur_pos in range(pos_inf, pos_sup + 1)]
+            all_nodes = tree.xpath(f"//tei:{node}", namespaces=self.ns_decl)
+            first_element = all_nodes[pos_inf]
+            corresp_attributes = [all_nodes[cur_pos].xpath("@corresp")[0] for cur_pos in range(pos_inf, pos_sup + 1)]
+            corresp_ids = [all_nodes[cur_pos].xpath("@xml:id")[0] for cur_pos in range(pos_inf, pos_sup + 1)]
+            # first_element = \
+            #     tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {pos_inf}]", namespaces=self.ns_decl)[0]
+            # corresp_attributes = [tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {cur_pos}]/@corresp",
+            #                                  namespaces=self.ns_decl)[0] for cur_pos in range(pos_inf, pos_sup + 1)]
+            # corresp_ids = [tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {cur_pos}]/@xml:id",
+            #                           namespaces=self.ns_decl)[0] for cur_pos in range(pos_inf, pos_sup + 1)]
+            # assert first_element == first_element_test, "Échec"
+            # assert corresp_attributes_test == corresp_attributes, "Échec"
 
             # linked_elements = [tree.xpath(f"//tei:{node}[count(preceding::tei:{node}) = {cur_pos}]/@{attribute}",
             # namespaces=self.ns_decl)[0] for cur_pos in range(pos_inf, pos_sup + 1)]
@@ -1038,7 +1050,8 @@ class Injector:
                         print(etree.tostring(current_element))
 
                 witness_id = \
-                    current_tree.xpath(f"//tei:div[@type='{self.type_division}']/@corresp", namespaces=self.ns_decl)[0].replace("#", "")
+                    current_tree.xpath(f"//tei:div[@type='{self.type_division}']/@corresp", namespaces=self.ns_decl)[
+                        0].replace("#", "")
                 final_witness_list.extend(
                     [witness_id for _ in range(number_of_elements)])  # https://stackoverflow.com/a/4654446
                 before_or_after.extend([position for _ in range(number_of_elements)])
@@ -1069,6 +1082,14 @@ class Injector:
         current_xml_tree = etree.parse(target_file)
         # Chaque élément de la liste est de la forme: id de l'ancre, objet lxml, témoin d'origine, position de l'ancre
         # par rapport à l'élément à injecter
+        all_nodes_ids = {ident: node for ident, node in
+                         zip(current_xml_tree.xpath(f"//node()[@xml:id]/@xml:id"), current_xml_tree.xpath(f"//node()["
+                                                                                                          f"@xml:id]"))} 
+        all_words_ids = {ident: {"index": idx, "word": word} for idx, (ident, word) in enumerate(
+            zip(current_xml_tree.xpath(f"//tei:w[@xml:id]/@xml:id", namespaces=self.ns_decl),
+                current_xml_tree.xpath(f"//tei:w[@xml:id]", namespaces=self.ns_decl)))}
+        sigla_output_wit = current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@corresp",
+                                                  namespaces=self.ns_decl)[0].replace("#", "")
         for item in self.processed_list:
             anchor_id, element_to_inject, element_ids, orig_witness, position, level = item
             if not anchor_id:
@@ -1090,16 +1111,14 @@ class Injector:
             # Pour ce faire, il suffit que la variable element_to_inject pointe vers le noeud existant dans
             # le témoin cible. Si le niveau n'est pas "witness", on passe à l'étape de boucle suivante
             shifted = False
-            if current_xml_tree.xpath(f"boolean(//node()[@xml:id='{element_id}'])"):
+            if element_id in all_nodes_ids:
                 if level == "work":
                     continue
                 else:
-                    element_to_inject = current_xml_tree.xpath(f"//node()[@xml:id='{element_id}']")[0]
+                    element_to_inject = all_nodes_ids[element_id]
                     shifted = True
             # Si le noeud est présent mais qu'on le veut au niveau global, pas besoin de le déplacer.
 
-            sigla_output_wit = current_xml_tree.xpath(f"//tei:div[@type='{self.type_division}']/@corresp",
-                                       namespaces=self.ns_decl)[0].replace("#", "")
             element_name = element_to_inject.xpath("local-name()")
             element_id = element_to_inject.xpath("@xml:id")[0]
             element_to_inject.set("ana", "#injected")  # il faudra nettoyer ça à la fin de la boucle.
@@ -1108,9 +1127,7 @@ class Injector:
 
             try:
                 # Réécrire la fonction pour être plus spécifique sur l'exception.
-                anchor_word = \
-                    current_xml_tree.xpath(f"//tei:w[@xml:id='{anchor_id}']", namespaces=self.ns_decl)[0]
-
+                anchor_word = all_words_ids[anchor_id]["word"]
                 # We want to inject the element in the tei:rdg containing our base witness.
                 if anchor_word.xpath("boolean(ancestor::tei:app)", namespaces=self.ns_decl):
                     # If  level eq work, we can reinject outside the apparatus.
@@ -1141,18 +1158,21 @@ class Injector:
                     index = 0
                 # On s'occupe ici de déplacer les noeuds dans un apparat (ponctuation à la fin par exemple)
                 if level == 'witness':
-                    following = anchor_word.xpath(f"following-sibling::tei:{element_name}[@corresp = '#{orig_witness}']", namespaces=self.ns_decl)
-                    # following_note = anchor_word.xpath(f"following-sibling::tei:note[@type='codico' or @type='sources']", namespaces=self.ns_decl)
-                    # number_of_nodes = int(anchor_word.xpath(f"count(parent::tei:rdg/node()[not(self::tei:w)])", namespaces=self.ns_decl))
-                    # if element_name == "pc" and not(len(following) > 0):
-                    #     if len(following_note) > 0:
-                    #         print(f"Shifting pc after note")
-                    #         # on la met en dernier.
-                    #         index = number_of_nodes - 1
+                    # following = anchor_word.xpath(
+                    #     f"following-sibling::tei:{element_name}[@corresp = '#{orig_witness}']", namespaces=self.ns_decl)
+
+                    siblings = parent_element.getchildren()
+                    if len(siblings) > 1:
+                        following = [sibling.tag for sibling in siblings if
+                                     sibling.tag == "{http://www.tei-c.org/ns/1.0}" + element_name and len(sibling.xpath(
+                                         "@corresp")) > 1 and sibling.xpath(
+                                         "@corresp")[0] == f"#{orig_witness}"]
+                    else:
+                        following = []
+
                     if len(following) > 0:
                         print(f"Shifting {element_name}")
                         index += 1
-
 
                 parent_element.insert(index, element_to_inject)
 
@@ -1163,7 +1183,9 @@ class Injector:
                 print(f"Anchor id: {anchor_id}")
                 print("Make sure the order of the injection is correct (wrapping element should be injected "
                       "first)")
+                print(traceback.format_exc())
                 print(anchor_word.xpath("@xml:id")[0])
+                exit(0)
 
         with open(target_file.replace("omitted", "omitted.injected"), "w") as output_file:
             output_file.write(etree.tostring(current_xml_tree).decode())
@@ -1221,11 +1243,12 @@ class Injector:
         target_length = len(elements_a_verifier)
         correct_injections = 0
         debug_file.write(f"\n\n\nVerifying {temoin_a_verifier}\n")
+        all_nodes = arbre_a_verifier.xpath(f"//node()/@xml:id", namespaces=self.ns_decl)
         for element, temoin_origine, original_anchor in elements_a_verifier:
             element_name: str = element.xpath("local-name()")
             id_element: str = element.xpath("@xml:id")[0]
-            parsed: list = arbre_a_verifier.xpath(f"//node()[@xml:id='{id_element}']", namespaces=self.ns_decl)
-            if len(parsed) == 1:
+            # parsed: list = arbre_a_verifier.xpath(f"//node()[@xml:id='{id_element}']", namespaces=self.ns_decl)
+            if id_element in all_nodes:
                 correct_injections += 1
                 debug_file.write(
                     f"Correct injection: element {element_name}, id {id_element} (from {temoin_origine})\n")

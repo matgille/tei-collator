@@ -211,7 +211,7 @@ class Structurer:
                 # Première étape, on va injecter les tei:ab (ou tei:p)
                 all_nodes_ids = div.xpath(
                     f"child::node()[not(self::tei:head) and preceding-sibling::tei:head][not(self::text() or "
-                    f"self::{element_to_create})][@xml:id]/@xml:id", namespaces=self.ns_decl)
+                    f"self::tei:{element_to_create})][@xml:id]/@xml:id", namespaces=self.ns_decl)
                 all_nodes = div.xpath(
                     f"child::node()[not(self::tei:head) and preceding-sibling::tei:head][not(self::text() or self::{element_to_create})][@xml:id]",
                     namespaces=self.ns_decl)

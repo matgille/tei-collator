@@ -1,0 +1,38 @@
+{
+    "structure": "tei:TEI/tei:TEI/tei:text/tei:body/tei:div",
+    "chemin_vers_TEI": "//tei:TEI/tei:TEI",
+    "localisation_fichiers": "/home/mgl/Bureau/Travail/projets/alignement/alignement_multilingue/CILPR/corpus_htr/corpus.xml",
+    "tei:teiCorpus": true,
+    "punctuation": true,
+    "prévalidation": true,
+    "mandatory_annotation": false,
+    "alignement": "mam",
+    "align_on": 2, // 1 for lemma + pos + morph; 2 for lemma + pos; 3 for lemma only
+    "create_synonym_dataset": false,
+    "compute_similarity": false,
+    "structurer_documents": true,
+    "fichier_leader": "Bevilaqua_1498.xml",
+    "output_dir": "/home/mgl/Bureau/Travail/projets/alignement/alignement_multilingue/CILPR/collation/",
+    "temoin_base": "Bevilaqua_1498",
+    "scission": {
+        "scinder": true,
+        "scinder_par": "chapitre",
+        "element_base": "div"
+    },
+    "reinjection": {"tei:lb": {"position": "after", "level": "witness"}},
+    "exclude_descendant_of": [],
+    "sensibilite_lacunes": 1,
+    "corpus": {
+        "tokenized": false,
+        "xmlIdentifiers": false,
+        "lemmatized": false
+    },
+    "lemmatize": true,
+    "parallel_process_number": 8,
+    "lang": "la",
+    "sortie": {
+        "fusion_divs": false,
+        "tableaux_alignement": true,
+        "LaTeX": false
+    }
+}

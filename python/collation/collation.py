@@ -343,16 +343,16 @@ class Collateur:
                         # Re-créer les noeuds tei:w
                     liste_w = lecon.split()
                     liste_id = xml_id.split('_')
-                    n = 0
+                    position_in_id = 0
                     for mot in liste_w:
                         nombre_mots = len(liste_w)
-                        xml_id_courant = '_'.join(liste_id[n::nombre_mots])  # on va distribuer les xml:id:
+                        xml_id_courant = '_'.join(liste_id[position_in_id::nombre_mots])  # on va distribuer les xml:id:
                         # abcd > ac, db pour 2 témoins qui lisent la même chose (ab et cd sont les identifiants des deux
                         # tokens identiques, donc il faut distribuer pour identifier le premier token, puis le second)
                         word = etree.SubElement(rdg, tei + 'w')
                         word.set('{http://www.w3.org/XML/1998/namespace}id', xml_id_courant)
                         word.text = mot
-                        n += 1
+                        position_in_id += 1
 
             # L'apparat est produit. Écriture du fichier xml
             sortie = '%s/apparat_collatex.xml' % self.chemin_fichiers

@@ -152,9 +152,9 @@ class CorpusALemmatiser:
 
         elif self.langue == "la":
             modele_latin = "python/lemmatisation/model.tar"
-            device = "cpu"
+            device = "cuda:0"
             cmd = f"pie tag --device {device} {fichier_entree_txt} " \
-                  f"<{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood>"
+                  f"<{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood> --batch_size 2048"
             print(cmd)
             subprocess.run(cmd.split())
             fichier_seul = os.path.splitext(fichier_entree_txt)[0]
@@ -170,12 +170,17 @@ class CorpusALemmatiser:
             f_orig = etree.parse(temoin_tokenise, parser=parser)
             root = f.getroot()
             root_orig = f_orig.getroot()
+            nodes = "//node()[not(self::text())][text()]"
+            all_nodes = root.xpath(nodes, namespaces = self.nsmap)
             groupe_words = "//node()[self::tei:w|self::tei:pc]"
             tokens = root.xpath(groupe_words, namespaces=self.nsmap)
             tokens_orig = root_orig.xpath(groupe_words, namespaces=self.nsmap)
             fichier_lemmatise = temoin_tokenise_regularise
             for index, mot in enumerate(tokens):
+                print("---")
+                print(etree.tostring(mot))
                 liste_correcte = maliste[index]
+                print(liste_correcte)
                 forme, cas, mode, nombre, personne, temps, lemme, pos, *autres_arguments = liste_correcte
                 # on nettoie la morphologie pour supprimer les entrées vides
                 morph = f"CAS={cas}|MODE={mode}|NOMB.={nombre}|PERS.={personne}|TEMPS={temps}"
