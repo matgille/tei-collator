@@ -10,6 +10,7 @@ import re
 import sys
 
 import python.utils.utils as utils
+import python.structuration.structuration as structuration
 
 
 class Tokenizer:
@@ -54,6 +55,7 @@ class Tokenizer:
         :correction_mode: le mode correction
         :regularisation: produire un fichier régularisé ? Défaut: oui
         """
+        self.structuration = True
         with Halo(text='Tokénisation du corpus parallélisé.', spinner='dots'):
             subprocess.run(["java", "-jar", self.saxon, "-xi:on", path,
                             "xsl/pre_alignement/tokenisation.xsl"])
@@ -62,6 +64,8 @@ class Tokenizer:
                 self.ajout_xml_id(fichier_xml)
             if self.regularisation:
                 param_correction = f"correction={correction_mode}"
+                print(["java", "-jar", self.saxon, "-xi:on", f"temoins_tokenises/{self.temoin_leader}.xml",
+                                "xsl/pre_alignement/regularisation.xsl", param_correction])
                 subprocess.run(["java", "-jar", self.saxon, "-xi:on", f"temoins_tokenises/{self.temoin_leader}.xml",
                                 "xsl/pre_alignement/regularisation.xsl", param_correction])
         print("Tokénisation et régularisation du corpus pour alignement ✓")

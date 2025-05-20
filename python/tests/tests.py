@@ -1,6 +1,7 @@
 import glob
 import unittest
 from functools import reduce
+import json
 
 from lxml import etree
 from lxml import isoschematron
@@ -59,7 +60,8 @@ def order_test(fichier_a_tester, temoin_tokenise, sigle, division, div_type):
     except OSError:
         print("Témoin absent sur la division concernée.")
         return
-    correct_ids = xml_temoins_tokenise.xpath(f"//tei:div[@type='{div_type}'][@n='{division}']/descendant::tei:w/@xml:id", namespaces=NSMAP)
+    correct_ids = xml_temoins_tokenise.xpath(
+        f"//tei:div[@type='{div_type}'][@n='{division}']/descendant::tei:w/@xml:id", namespaces=NSMAP)
     all_rdg_wit_a_tester = root_a_tester.xpath(
         f"//tei:div[@n='{division}']/descendant::tei:app[descendant::tei:rdg[contains(@wit, '{sigle}')]]/descendant::tei:rdg[tei:w][contains(@wit, '{sigle}')]/@wit",
         namespaces=NSMAP)
@@ -105,7 +107,6 @@ def order_test(fichier_a_tester, temoin_tokenise, sigle, division, div_type):
 
     identify_order_modification(list_of_ids, correct_ids)
 
-
     print("No tokens lost; order check passed.")
 
     # trouver un moyen de tester l'égalité des listes
@@ -120,15 +121,18 @@ def identify_order_modification(list_1, list_2):
     return
 
 
-def test_lemmatization(div_n, div_type, temoin_leader):
+def test_lemmatization(localisation, div_type, temoin_leader):
     """
     This function checks whether the division has been lemmatized
     """
 
+    ((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n)) = localisation
+    target_xpath = f"//tei:div[@type='{div1_type}'][@n={div1_n}]/descendant::tei:div[@type='{div2_type}'][@n={div2_n}]/descendant::tei:div[@type='{div3_type}'][@n={div3_n}]"
+
     with open(f"temoins_tokenises_regularises/{temoin_leader}.xml", "r") as input_xml_file:
         f = etree.parse(input_xml_file)
 
-    target_div = f.xpath(f"//tei:div[@type='{div_type}'][@n = '{div_n}']", namespaces=NSMAP)[0]
+    target_div = f.xpath(target_xpath, namespaces=NSMAP)[0]
     first_token = target_div.xpath("descendant::tei:w[not(@ana='#annotation_manuelle')][1]", namespaces=NSMAP)[0]
     try:
         first_token.xpath("@lemma")[0]
@@ -236,6 +240,55 @@ def notes_test():
     :return:
     '''
     pass
+
+
+def test_collation_tokens(chemin_fichiers, portee, type_division):
+    # On vérifie si les tokens ne sont pas perdus
+    tokens_per_wits_collatex = {}
+    tokens_per_wits_orig = {}
+
+    aligned = glob.glob(f"{chemin_fichiers}/alignement_collatex*.json")
+    aligned.sort(key=lambda x: x.replace("alignement_collatex", "").replace(".json", ""))
+    for file in aligned:
+        print(file)
+        with open(file, "r") as json_file:
+            as_json = json.load(json_file)
+        for witness in as_json['table']:
+            for token in witness:
+                try:
+                    try:
+                        tokens_per_wits_collatex[token[0]['_sigil']].append(token[0]['xml:id'])
+                    except KeyError:
+                        tokens_per_wits_collatex[token[0]['_sigil']] = [token[0]['xml:id']]
+                except TypeError:
+                    pass
+
+    # Maintenant on vérifie que les documents XML ont aussi les mêmes tokens
+
+    ((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n)) = portee
+    for xml_file in glob.glob(f"temoins_tokenises_regularises/*.xml"):
+        as_xml = etree.parse(xml_file)
+        sigla = as_xml.xpath("@xml:id")[0]
+        xpath_expression = f"descendant::tei:div[@type='{div1_type}'][@n='{div1_n}']/tei:div[@type='{div2_type}'][@n='{div2_n}']/tei:div[@type='{div3_type}'][@n='{div3_n}']"
+        tokens_per_wits_orig[sigla] = as_xml.xpath(
+            f"{xpath_expression}/descendant::tei:w/@xml:id", namespaces=NSMAP)
+
+    with open(f"{chemin_fichiers}/tokens_after_collation.json", "w") as output_val_json:
+        json.dump(tokens_per_wits_collatex, output_val_json)
+
+    with open(f"{chemin_fichiers}/tokens_before_collation.json", "w") as output_target_json:
+        json.dump(tokens_per_wits_orig, output_target_json)
+    print(tokens_per_wits_orig.keys())
+    for sigla, source_tokens in tokens_per_wits_orig.items():
+        target_tokens = tokens_per_wits_collatex[sigla]
+        if target_tokens == source_tokens:
+            print(f"Wit {sigla} passed token test. No token lost in collation.")
+        else:
+            source_tokens_as_set = set(source_tokens)
+            target_tokens_as_set = set(target_tokens)
+            difference = list(source_tokens_as_set - target_tokens_as_set)
+            print(f"Problem with witness {sigla}. One or more token lost during collation: {difference}. Exiting.")
+            exit(0)
 
 
 def validation_xml(corpus, schematron):

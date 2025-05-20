@@ -1,0 +1,56 @@
+{
+    "structure": "tei:teiCorpus/tei:TEI/tei:text/tei:div/tei:div/tei:div/tei:div/tei:p",
+    "chemin_vers_TEI": "//tei:TEI[@type = 'transcription']",
+    "localisation_fichiers": "/home/mgl/Bureau/Travail/projets/alignement/exemples_XML/biblissima/corpus/corpus.xml",
+    "tei:teiCorpus": true,
+    "punctuation": true,
+    "prévalidation": true,
+    "mandatory_annotation": false,
+    "alignement": "mam",
+    "align_on": 1, // 1 for lemma + pos; 2 for lemma only
+    "create_synonym_dataset": false,
+    "compute_similarity": false,
+    "fichier_leader": "Sal_J.xml",
+    "output_dir": "/home/mgl/Bureau/Travail/projets/alignement/exemples_XML/biblissima/output/example_2",
+    "temoin_base": "Sal_J",
+    "scission": {
+        "scinder": true,
+        "scinder_par": "chapitre",
+        "element_base": "p"
+    },
+    "reinjection": {
+        "tei:pb[@break='yes'][not(ancestor::tei:note)]": {"position": "after", "level": "witness"},
+        "tei:cb[@break='yes'][not(ancestor::tei:note)]": {"position": "after", "level": "witness"},
+      "tei:pc": {"position": "after", "level": "witness"},
+        "tei:anchor[@type='marque_lecture'][@next]": {"position": "before", "level": "work"},
+        "tei:anchor[@type='marque_lecture'][@prev]": {"position": "after", "level": "work"},
+        "tei:handShift[not(ancestor::tei:add)]": {"position": "after", "level": "witness"},
+        "tei:add[@type='commentaire']": {"position": "after", "level": "witness"},
+        "tei:note[not(ancestor::tei:handShift)][@type='general']": {"position": "after", "level": "work"},
+        "tei:note[not(ancestor::tei:handShift or ancestor::tei:del)][@type='codico']": {"position": "after", "level": "witness"},
+        "tei:note[@type='variante']": {"position": "after", "level": "witness"},
+        "tei:note[@type='sources']": {"position": "after", "level": "work"},
+        "tei:anchor[@type='citation']": {"position": "before", "level": "work"},
+        "tei:anchor[@type='reference']": {"position": "before", "level": "work"},
+        "tei:milestone[@unit]": {"position": "before", "level": "work"},
+        "tei:anchor[@type='ligne']": {"position": "before", "level": "work"},
+        "tei:figure": {"position": "after", "level": "witness"},
+        "tei:del": {"position": "after", "level": "witness"},
+        "tei:space[not(@ana='#tokenisation')]": {"position": "after", "level": "witness"}
+    },
+    "exclude_descendant_of": [],
+    "sensibilite_lacunes": 1,
+    "corpus": {
+        "tokenized": false,
+        "xmlIdentifiers": false,
+        "lemmatized": false
+    },
+    "lemmatize": true,
+    "parallel_process_number": 8,
+    "lang": "spa_o",
+    "sortie": {
+        "fusion_divs": false,
+        "tableaux_alignement": true,
+        "LaTeX": false
+    }
+}

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 import os
 import re
 import shutil
@@ -15,6 +16,7 @@ dicttoxml.LOG.setLevel(logging.ERROR)
 
 import python.collation.collation as collation
 import python.tokenisation.tokenisation as tokenisation
+import python.structuration.structuration as structuration
 import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
 import python.injections.injections as injections
@@ -30,16 +32,19 @@ import python.utils.utils as utils
 
 def main():
     t0 = time.time()
-    saxon = "saxon9he.jar"
+    saxon = "saxon/saxon-he-12.7.jar"
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--parameters", default="parametres/lemmatisation.json",
                         help="Path to the parameter file.")
-    parser.add_argument("-d", "--division", help="Division to be treated.")
-    parser.add_argument("-corr", "--correction", default=True,
+    parser.add_argument("-d", "--division", help="Division to be treated.", default={'livre': '1',
+                                                                                     'partie': '2',
+                                                                                     'chapitre': '2'})
+    parser.add_argument("-corr", "--correction", default=False,
                         help="Correction mode (outputs more information in xml files).")
     parser.add_argument("-to", "--tokenizeonly", default=False, help="Exit after tokenization.")
     parser.add_argument("-lo", "--lemmatizeonly", default=False, help="Exit after lemmatization.")
     parser.add_argument("-ao", "--align_only", default=False, help="Exit after alignment.")
+    parser.add_argument("-eat", "--exit_after_table_creation", default=False, help="Exit after alignment table production.")
     parser.add_argument("-cp", "--createpdf", default=False, help="Produce pdf and exit.")
     parser.add_argument("-io", "--injectiononly", default=False, help="Debug option: performs injection and exits")
     parser.add_argument("-To", "--testonly", default=False, help="Performs tests and exit.")
@@ -62,12 +67,18 @@ def main():
     test_only = args.testonly
     pdf_only = args.createpdf
     align_only = args.align_only
+    table_only = args.exit_after_table_creation
     fichier_de_parametres = args.parameters
-    division = args.division
     witness = args.witness
     fusion_only = args.fusiononly
     #####
-
+    division = json.JSONDecoder(object_pairs_hook=collections.OrderedDict).decode(args.division)
+    div1_n = str(list(division.items())[0][1])
+    div1_type = list(division.items())[0][0]
+    div2_n = str(list(division.items())[1][1])
+    div2_type = list(division.items())[1][0]
+    div3_n = str(list(division.items())[2][1])
+    div3_type = list(division.items())[2][0]
     if division is None:
         division = "*"
 
@@ -81,6 +92,7 @@ def main():
     print(f'Injection seule: {inject_only} \n ---- \n')
     alignement = parametres.alignement
     temoin_base = parametres.temoin_base
+    structuration_automatique = parametres.structuration_auto
     if alignement == "global" and not align_only:
         print("WARNING: l'alignement global ne fonctionne pas encore (xml:id identiques sur les non-apparats). "
               "On switche à un alignement mot à mot.\n\n ---- \n\n")
@@ -91,7 +103,6 @@ def main():
     compute_similarity = parametres.compute_similarity
     chemin_corpus = parametres.corpus_path
     xpath_transcriptions = parametres.files_path
-    liste_sigles = utils.sigles()
     excluded_ancestors = parametres.exclude_descendant_of
 
     liste_fichiers_tokenises = utils.chemin_temoins_tokenises()
@@ -100,17 +111,18 @@ def main():
             sigle = utils.get_sigla_from_path(file)
             print(sigle)
             pattern = re.compile(r"div\d+")
-            division = re.search(pattern, file)[0].replace("div", "")
+            division_n = re.search(pattern, file)[0].replace("div", "")
             utils.clean_xml_file(input_file=file,
-                                 output_file=f"divs/div{division}/apparat_{sigle}_{division}_final.xml")
+                                 output_file=f"divs/div{division_n}/apparat_{sigle}_{division_n}_final.xml")
         print("Création des fichiers xml maîtres")
-        sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division)}",
+        sorties.fusion_documents_tei(chemin_fichiers=f"divs/div{str(division_n)}",
                                      chemin_corpus=chemin_corpus,
                                      xpath_transcriptions=xpath_transcriptions,
                                      output_dir=parametres.output_dir)
         exit(0)
 
     if test_only:
+        liste_sigles = utils.sigles()
         print(f'Tests en cours...')
         for sigle in liste_sigles:
             # On teste sur les fichiers non nettoyés.
@@ -136,6 +148,7 @@ def main():
         exit(0)
 
     if inject_only:
+        liste_sigles = utils.sigles()
         chemin = f"divs/div{division}"
         Injector = injections.Injector(debug=True,
                                        div_n=division,
@@ -151,10 +164,16 @@ def main():
                                        temoin_base=temoin_base)
         Injector.run_injections()
         chemin_fichiers = f"divs/div{str(division)}"
-        sorties.fusion_documents_tei(chemin_fichiers=chemin_fichiers,
-                                     chemin_corpus=chemin_corpus,
-                                     xpath_transcriptions=xpath_transcriptions,
-                                     output_dir=parametres.output_dir)
+        # sorties.fusion_documents_tei(chemin_fichiers=chemin_fichiers,
+        #                              chemin_corpus=chemin_corpus,
+        #                              xpath_transcriptions=xpath_transcriptions,
+        #                              output_dir=parametres.output_dir)
+
+        print("Cleaning files, producing final documents")
+        for file in glob.glob(f"divs/div{division}/*transposed.xml"):
+            sigle = utils.get_sigla_from_path(file)
+            print(sigle)
+            utils.clean_xml_file(input_file=file, output_file=f"divs/div{division}/apparat_{sigle}_{division}_final.xml")
         exit(0)
 
     # We start by removing all debug files
@@ -195,6 +214,7 @@ def main():
             temoin = f"temoins_tokenises_regularises/{temoin}"
             tokeniser.ajout_xml_id(temoin)
 
+    portee = [((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n))]
     if parametres.lemmatiser:
         print("Lemmatisation du corpus...")
         corpus_a_lemmatiser = lemmatisation.CorpusALemmatiser(
@@ -203,7 +223,35 @@ def main():
             moteur_transformation=saxon,
             nombre_coeurs=parametres.parallel_process_number
         )
-        corpus_a_lemmatiser.lemmatisation_parallele(division)
+        # On lemmatise toujours l'intégralité du corpus, pour pouvoir copier les fichiers lemmatisés
+        # dans le git principal.
+        corpus_a_lemmatiser.lemmatisation_parallele(portee[0])
+        # On les copie. Ily aura forcément une discordance si on ne traite pas les 23 chapitres d'un coup.
+        # for temoin in glob.glob('temoins_tokenises_regularises/*.xml'):
+            # shutil.copy(temoin, "/home/mgl/Bureau/These/Edition"
+                                # "/hyperregimiento-de-los-principes/Dedans/XML/corpus_lemmatise")
+        # corpus_a_lemmatiser.lemmatisation_parallele(division)
+    context = f"//tei:div[@type='{div1_type}'][@n={div1_n}]/descendant::tei:div[@type='{div2_type}'][@n={div2_n}]/descendant::tei:div[@type='{div3_type}'][@n={div3_n}]"
+    if structuration_automatique:
+        print("La structuration automatique demande que le témoin base soit "
+              "structuré au niveau du titre uniquement (un tei:head avec un @n). Les autres témoins"
+              "ne doivent avoir aucune structure à l'intérieur de la division.")
+        structurer = structuration.Structurer(target_path=f"temoins_tokenises/*.xml",
+                                              source_file=f"temoins_tokenises/Rome_W.xml",
+                                              output_files_prefix="",
+                                              pre_structure=True)
+        structurer.pre_structure_document(proportion=.30,
+                                          element_to_create=parametres.element_base, remove_pc=False,
+                                          context=context)
+        query = f"child::node()[self::tei:head or self::tei:{parametres.element_base}]"
+        print(query)
+        structurer.align_structure(context=context, query=query, text_proportion=.6, use_lemmas=True, remove_pc=False)
+        
+        # Et on re-régularise.
+        print(["java", "-jar", saxon, "-xi:on", f"temoins_tokenises/{parametres.temoin_leader}.xml",
+               "xsl/pre_alignement/regularisation.xsl", "False"])
+        subprocess.run(["java", "-jar", saxon, "-xi:on", f"temoins_tokenises/{parametres.temoin_leader}.xml",
+                        "xsl/pre_alignement/regularisation.xsl", "correction=False"])
 
     if lemmatize_only:
         t1 = time.time()
@@ -211,12 +259,13 @@ def main():
         print(f"Fait en {round(temps_total)} secondes. \n")
         exit(0)
 
-    if "-" in division:
-        portee = range(int(division.split("-")[0]), int(division.split("-")[1]) + 1)
-    else:
-        argument = int(division)
-        arg_plus_1 = argument + 1
-        portee = range(argument, arg_plus_1)
+    # if "-" in division:
+        # portee = range(int(division.split("-")[0]), int(division.split("-")[1]) + 1)
+
+    # else:
+        # argument = int(division)
+        # arg_plus_1 = argument + 1
+        # portee = range(argument, arg_plus_1)
     corpus_preparator = collation.CorpusPreparation(saxon=saxon,
                                                     temoin_leader=parametres.temoin_leader,
                                                     type_division=parametres.type_division,
@@ -224,23 +273,22 @@ def main():
                                                     liste_temoins=utils.chemin_temoins_tokenises_regularises(),
                                                     integrer_deplacements=deplacements)
 
-    for i in portee:
+    liste_sigles = utils.sigles()
+    for localisation in portee:
+        ((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n)) = localisation
+        # chemin_fichiers = f"divs/div{str(i)}"
+        chemin_fichiers = f"divs/{div1_type}_{div1_n}/{div2_type}_{div2_n}/{div3_type}_{div3_n}"
 
         # We first remove all files in the corresponding dir to avoid any possible interference and bug
-        utils.remove_files(f"divs/div{str(i)}/*")
+        utils.remove_files(f"{chemin_fichiers}/*")
 
-        chemin_fichiers = f"divs/div{str(i)}"
-        print(f"Traitement de la division {str(i)}")
-
-        if not tests.test_lemmatization(div_n=i,
-                                        div_type=parametres.type_division,
-                                        temoin_leader=parametres.temoin_leader):
-            print("This division is not lemmatized; exiting.")
-            exit(0)
-        corpus_preparator.prepare(i)
-        pattern = re.compile(f"divs/div{i}/juxtaposition_\d+\.xml")
+        print(f"Traitement de la division {div1_type}_{div1_n}/{div2_type}_{div2_n}/{div3_type}_{div3_n}")
+        corpus_preparator.prepare(localisation)
+        pattern = re.compile(f"{chemin_fichiers}/juxtaposition_\d+\.xml")
         fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if
                         re.match(pattern, fichier)]
+        assert fichiers_xml != [], ("Liste de fichiers vides, un problème est apparu "
+                                    "lors de la production de chacun des fichiers à collationer.")
         print("Alignement avec CollateX.")
 
         aligner = collation.Aligner(liste_fichiers_xml=fichiers_xml,
@@ -301,7 +349,23 @@ def main():
             subprocess.run(cmd.split())
             # Création de l'apparat: suppression de la redondance, identification des lieux variants,
             # regroupement des lemmes
+            # Création du tableau d'alignement pour visualisation
+        if parametres.tableauxAlignement:
+            sorties.tableau_alignement(saxon, chemin_fichiers)
 
+        tests.test_collation_tokens(chemin_fichiers, portee[0], parametres.type_division)
+
+
+        if table_only:
+            t1 = time.time()
+            temps_total = t1 - t0
+            print(f"Fait en {round(temps_total)} secondes. \n")
+            exit(0)
+        if not tests.test_lemmatization(localisation=localisation,
+                                        div_type=parametres.type_division,
+                                        temoin_leader=parametres.temoin_leader):
+            print("This division is not lemmatized; exiting.")
+            exit(0)
         collationeur = collation.Collateur(log=False,
                                            chemin_fichiers=chemin_fichiers,
                                            div_n=division,
@@ -309,10 +373,6 @@ def main():
                                            temoin_base=temoin_base)
         collationeur.run_collation()
         print("Création des apparats ✓")
-
-        # Création du tableau d'alignement pour visualisation
-        if parametres.tableauxAlignement:
-            sorties.tableau_alignement(saxon, chemin_fichiers)
 
         # On bouge tous les fichiers d'alignement dans un dossier à part
         fichiers_alignement = glob.glob(f"{chemin_fichiers}/align*")
@@ -329,7 +389,7 @@ def main():
             exit(0)
 
         injecteur = injections.Injector(debug=True,
-                                        div_n=i,
+                                        div_n=localisation,
                                         elements_to_inject=parametres.reinjection,
                                         saxon=saxon,
                                         chemin=chemin_fichiers,
@@ -348,15 +408,15 @@ def main():
             shutil.copy(file, f'divs/results')
 
         if synonyms_datasets:
-            similarity.similarity_eval_set_creator(i)
+            similarity.similarity_eval_set_creator(localisation)
 
-        liste_fichiers_finaux = utils.chemin_fichiers_finaux(i)
+        liste_fichiers_finaux = utils.chemin_fichiers_finaux(localisation)
 
         print("Cleaning files, producing final documents")
-        for file in glob.glob(f"divs/div{i}/*transposed.xml"):
+        for file in glob.glob(f"divs/div{localisation}/*transposed.xml"):
             sigle = utils.get_sigla_from_path(file)
             print(sigle)
-            utils.clean_xml_file(input_file=file, output_file=f"divs/div{i}/apparat_{sigle}_{i}_final.xml")
+            utils.clean_xml_file(input_file=file, output_file=f"divs/div{localisation}/apparat_{sigle}_{localisation}_final.xml")
 
         for file in glob.glob(f"div{chemin_fichiers}/*final.xml"):
             shutil.copy(file, f'divs/results')

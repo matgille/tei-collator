@@ -8,7 +8,7 @@
     <!--Problèmes à régler: tei:cb suivi de tei:lb ne tokénise pas comme il faut.-->
     <!--Première Passe-->
     <!--Il serait probablement plus simple de passer par du python pour faire ça-->
-    <!--Une possibilité à envisager: on extrait paragraphe par paragraphe, 
+    <!--Une possibilité à envisager: on extrait paragraphe par paragraphe,
         on convertir en chaîne de caractère et on fait ça avec des expressions régulières-->
     <xsl:template match="@* | node()">
         <xsl:copy copy-namespaces="yes">
@@ -36,7 +36,7 @@
     </xsl:template>
 
     <xsl:template
-        match="tei:TEI[@type = 'transcription'][not(@subtype = 'version_a')][not(descendant::tei:text[@xml:lang = 'la'])]">
+        match="tei:TEI[@type = 'transcription']">
         <xsl:element name="TEI" namespace="http://www.tei-c.org/ns/1.0">
             <xsl:namespace name="tei">http://www.tei-c.org/ns/1.0</xsl:namespace>
             <xsl:attribute name="xml:id" select="@xml:id"/>
@@ -275,7 +275,7 @@
 
     <xsl:template match="/">
         <xsl:for-each
-            select="//tei:TEI[@type = 'transcription'][not(descendant::tei:text[@xml:lang = 'lat'])][not(@subtype = 'version_a')]">
+            select="//tei:TEI/tei:TEI/tei:TEI">
             <xsl:variable name="nom_fichier" select="@xml:id"/>
             <xsl:result-document href="temoins_tokenises/{$nom_fichier}.xml">
                 <xsl:apply-templates select="$ResultatTroisiemePasse//tei:TEI[@xml:id = $nom_fichier]" mode="quatriemePasse"
@@ -287,10 +287,10 @@
 
 
 
-    <xsl:template match="tei:seg">
+    <!--<xsl:template match="tei:seg[not(@ana='#exclamation') or not(@ana='#interrogation')]">
         <xsl:apply-templates/>
     </xsl:template>
-
+-->
 
     <!--Quatrième passe-->
 

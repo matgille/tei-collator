@@ -15,7 +15,7 @@
     <xsl:template match="/">
         <xsl:for-each select="descendant::tei:div[@type = 'chapitre']">
             <xsl:variable name="chapitre" select="@n"/>
-            <xsl:result-document href="/home/mgl/Bureau/These/Edition/edition_juxtalineaire/chapitre_{$chapitre}.html">
+            <xsl:result-document href="/home/mgl/Téléchargements/{$chapitre}.html">
                 <xsl:text disable-output-escaping="yes">&lt;!DOCTYPE html&gt;</xsl:text>
                 <html>
                     <meta name="viewport" charset="UTF-8" content="height=100%, 

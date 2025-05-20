@@ -3,6 +3,9 @@ import os
 import re
 import subprocess
 import multiprocessing as mp
+import sys
+import time
+
 import Levenshtein
 import python.utils.utils as utils
 
@@ -29,16 +32,25 @@ class CorpusPreparation:
         Cette fonction sépare chaque division en autant d'éléments base (exemple, en 10 paragraphes)
         qui seront donnés à CollateX pour alignement; elle produit aussi un fichier global qui rassemble l
         """
-        print(f'Scission du corpus, création de dossiers et de fichiers par chapitre sur {div_number}.')
-        cmd = f'java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement' \
-              f'/preparation_corpus.xsl ' \
-              f'temoin_leader={self.temoin_leader} compare_with_shifting={self.integrer_deplacements} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
+        ((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n)) = div_number
+        print(f"Scission du corpus, création de dossiers et de fichiers par chapitre.")
+        cmd = f"java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement" \
+              f"/preparation_corpus.xsl " \
+              f"temoin_leader={self.temoin_leader} compare_with_shifting={self.integrer_deplacements} type_division={self.type_division} element_base={self.element_base} "\
+               f"div1_type={div1_type} div2_type={div2_type} div3_type={div3_type} "\
+               f'div1_n={div1_n} div2_n={div2_n} div3_n={div3_n}'
         subprocess.run(cmd.split())
         print("\nPréparation du corpus pour alignment ✓")
 
 
 class Aligner:
-    def __init__(self, liste_fichiers_xml: list, chemin: str, moteur_transformation_xsl: str, correction_mode: bool,
+    """
+    La classe principale d'alignement.
+    """
+    def __init__(self, liste_fichiers_xml: list,
+                 chemin: str,
+                 moteur_transformation_xsl: str,
+                 correction_mode: bool,
                  parametres_alignement: str,
                  nombre_de_coeurs,
                  align_on: int):
@@ -85,9 +97,10 @@ class Aligner:
             print(f'error in json [{fichier_a_collationer}]: \n {e}')
         # JSON: https://stackoverflow.com/a/29827074
         if alignement == 'global':
-            resultat_json = collatex.collate(json_str, output='json', segmentation=True, near_match=True)
+            print("Global alignment")
+            resultat_json = collatex.collate(json_str, output='json', segmentation=True, near_match=True, astar=False)
         else:
-            resultat_json = collatex.collate(json_str, output='json', segmentation=False, near_match=True, astar=False,
+            resultat_json = collatex.collate(json_str, output='json', segmentation=False, near_match=False, astar=False,
                                              detect_transpositions=False)
             # segmentation=False permet une collation au mot-à-mot:
             # http://interedition.github.io/collatex/pythonport.html
@@ -107,11 +120,11 @@ class Aligner:
         input_fichier_xml = f"{self.chemin}/{fichier_xml}"
         # Étape avant la collation: transformation en json selon la structure voulue par CollateX
         self.transformation_json(input_fichier_xml, output_fichier_json)
-
         # Alignement avec CollateX. Il en ressort du JSON, encore
         self.alignement(fichier_json_complet, numero)
+        print(f"{fichier_xml}: done !")
 
-    def run(self):
+    def  run(self):
         with mp.Pool(processes=self.nombre_de_coeurs) as pool:
             # https://www.kite.com/python/answers/how-to-map-a-function-with-
             # multiple-arguments-to-a-multiprocessing-pool-in-python
@@ -339,16 +352,16 @@ class Collateur:
                         # Re-créer les noeuds tei:w
                     liste_w = lecon.split()
                     liste_id = xml_id.split('_')
-                    n = 0
+                    position_in_id = 0
                     for mot in liste_w:
                         nombre_mots = len(liste_w)
-                        xml_id_courant = '_'.join(liste_id[n::nombre_mots])  # on va distribuer les xml:id:
+                        xml_id_courant = '_'.join(liste_id[position_in_id::nombre_mots])  # on va distribuer les xml:id:
                         # abcd > ac, db pour 2 témoins qui lisent la même chose (ab et cd sont les identifiants des deux
                         # tokens identiques, donc il faut distribuer pour identifier le premier token, puis le second)
                         word = etree.SubElement(rdg, tei + 'w')
                         word.set('{http://www.w3.org/XML/1998/namespace}id', xml_id_courant)
                         word.text = mot
-                        n += 1
+                        position_in_id += 1
 
             # L'apparat est produit. Écriture du fichier xml
             sortie = '%s/apparat_collatex.xml' % self.chemin_fichiers
