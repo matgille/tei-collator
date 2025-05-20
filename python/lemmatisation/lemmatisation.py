@@ -14,7 +14,11 @@ import python.utils.utils as utils
 
 
 class CorpusALemmatiser:
-    def __init__(self, liste_temoins: list, langue: str, moteur_transformation: str, nombre_coeurs: int):
+    def __init__(self, liste_temoins: list,
+                 langue: str,
+                 moteur_transformation: str,
+                 nombre_coeurs: int
+                 ):
         self.chemin_vers_temoin = [f"temoins_tokenises_regularises/{temoin}" for temoin in liste_temoins]
         self.langue = langue
         self.moteur_transformation = moteur_transformation
@@ -28,8 +32,13 @@ class CorpusALemmatiser:
     def lemmatisation_parallele(self, division="*"):
         data = [(temoin, division) for temoin in self.chemin_vers_temoin]
         if self.langue == "la":
-            for temoin, division in data:
-                self.lemmatisation(temoin=temoin, division=division)
+            for idx, (temoin, division) in enumerate(data):
+                print(f"{idx}: {temoin}")
+                print(temoin)
+                self.lemmatisation(temoin=temoin,
+                                   division=division)
+                print("done")
+                print("---")
         else:
             with mp.Pool(processes=self.nombre_coeurs) as pool:
                 # https://www.kite.com/python/answers/how-to-map-a-function-with-
@@ -79,12 +88,15 @@ class CorpusALemmatiser:
             with open(text_file.replace('.txt', '.normalized.txt'), "w") as output_text_file:
                 output_text_file.write(text)
 
-    def lemmatisation(self, temoin, division):
+    def lemmatisation(self,
+                      temoin,
+                      division):
         """
             Lemmatisation du fichier XML et réinjection dans le document xml originel.
             :param temoin: le temoin à lemmatiser
             :param division: la division à traiter
             """
+        ((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n)) = division
         fichier = os.path.basename(temoin)
         fichier_sans_extension = os.path.splitext(fichier)[0]
         fichier_xsl = "xsl/lemmatisation/transformation_pre_lemmatisation.xsl"
@@ -93,12 +105,26 @@ class CorpusALemmatiser:
         fichier_normalized = f'temoins_tokenises_regularises/txt/{fichier_sans_extension}_tokenized.normalized.txt'
         param_division = f"division={division}"
         param_sortie = f"sortie={fichier_entree_txt}"
+        param_div1_type = f"div1_type={div1_type}"
+        param_div2_type = f"div2_type={div2_type}"
+        param_div3_type = f"div3_type={div3_type}"
+        param_div1_n = f"div1_n={div1_n}"
+        param_div2_n = f"div2_n={div2_n}"
+        param_div3_n = f"div3_n={div3_n}"
         subprocess.run(["java", "-jar",
                         self.moteur_transformation,
                         chemin_vers_fichier,
                         fichier_xsl,
                         param_sortie,
-                        param_division])
+                        param_division,
+                        param_div1_type,
+                        param_div2_type,
+                        param_div3_type,
+                        param_div1_n,
+                        param_div2_n,
+                        param_div3_n])
+
+        book, part, chapter = "1", "2", "2"
 
         if self.langue == "spa_o":
             self.normalize_spelling()
@@ -170,36 +196,47 @@ class CorpusALemmatiser:
             f_orig = etree.parse(temoin_tokenise, parser=parser)
             root = f.getroot()
             root_orig = f_orig.getroot()
-            nodes = "//node()[not(self::text())][text()]"
-            all_nodes = root.xpath(nodes, namespaces = self.nsmap)
-            groupe_words = "//node()[self::tei:w|self::tei:pc]"
-            tokens = root.xpath(groupe_words, namespaces=self.nsmap)
-            tokens_orig = root_orig.xpath(groupe_words, namespaces=self.nsmap)
+            context = f"descendant::tei:div[@type='{div1_type}'][@n='{div1_n}']/tei:div[@type='{div2_type}'][@n='{div2_n}']/tei:div[@type='{div3_type}'][@n='{div3_n}']"
+            print(context)
+            try:
+                context_nodes = root.xpath(context, namespaces=self.nsmap)[0]
+            except IndexError as ecxp:
+                print(f"No nodes found: {ecxp}")
+                exit(0)
+            context_nodes_orig = root_orig.xpath(context, namespaces=self.nsmap)[0]
+            nodes = "descendant::node()[not(self::text())][text()]"
+            all_nodes = context_nodes.xpath(nodes, namespaces = self.nsmap)
+            groupe_words = "descendant::node()[self::tei:w|self::tei:pc]"
+            tokens = context_nodes.xpath(groupe_words, namespaces=self.nsmap)
+            tokens_orig = context_nodes_orig.xpath(groupe_words, namespaces=self.nsmap)
             fichier_lemmatise = temoin_tokenise_regularise
-            for index, mot in enumerate(tokens):
-                print("---")
-                print(etree.tostring(mot))
-                liste_correcte = maliste[index]
-                print(liste_correcte)
-                forme, cas, mode, nombre, personne, temps, lemme, pos, *autres_arguments = liste_correcte
-                # on nettoie la morphologie pour supprimer les entrées vides
-                morph = f"CAS={cas}|MODE={mode}|NOMB.={nombre}|PERS.={personne}|TEMPS={temps}"
-                morph = re.sub("((?!\|).)*?_(?=\|)", "", morph)  # on supprime les pipes non renseignés du milieu
-                morph = re.sub("^\|*", "", morph)  # on supprime les pipes qui commencent la valeur
-                morph = re.sub("(\|)+", "|", morph)  # on supprime les pipes suivis
-                morph = re.sub("\|((?!\|).)*?_$", "", morph)  # on supprime les pipes non renseignés de fin
-                morph = re.sub("(?!\|).*_(?!\|)", "", morph)  # on supprime les pipes non renseignés uniques
-                #
-                tokens_orig[index].set("lemma", lemme)
-                tokens_orig[index].set("pos", pos)
-                tokens_orig[index].set("morph", morph)
-                mot.set("lemma", lemme)
-                mot.set("pos", pos)
-                if morph:
-                    mot.set("morph", morph)
-                if mot.xpath("name()") == "pc":
-                    mot.set("lemma", forme)
-                    mot.set("pos", forme)
+            utils.remove_files("/home/mgl/Documents/debug.txt")
+            with open("/home/mgl/Documents/debug.txt", "a") as debug_file:
+                for index, mot in enumerate(tokens):
+                    liste_correcte = maliste[index]
+                    debug_line = (f"---\n"
+                          f"{etree.tostring(mot)}\n"
+                          f"{liste_correcte}")
+                    debug_file.write(debug_line)
+                    forme, cas, mode, nombre, personne, temps, lemme, pos, *autres_arguments = liste_correcte
+                    # on nettoie la morphologie pour supprimer les entrées vides
+                    morph = f"CAS={cas}|MODE={mode}|NOMB.={nombre}|PERS.={personne}|TEMPS={temps}"
+                    morph = re.sub("((?!\|).)*?_(?=\|)", "", morph)  # on supprime les pipes non renseignés du milieu
+                    morph = re.sub("^\|*", "", morph)  # on supprime les pipes qui commencent la valeur
+                    morph = re.sub("(\|)+", "|", morph)  # on supprime les pipes suivis
+                    morph = re.sub("\|((?!\|).)*?_$", "", morph)  # on supprime les pipes non renseignés de fin
+                    morph = re.sub("(?!\|).*_(?!\|)", "", morph)  # on supprime les pipes non renseignés uniques
+                    #
+                    tokens_orig[index].set("lemma", lemme)
+                    tokens_orig[index].set("pos", pos)
+                    tokens_orig[index].set("morph", morph)
+                    mot.set("lemma", lemme)
+                    mot.set("pos", pos)
+                    if morph:
+                        mot.set("morph", morph)
+                    if mot.xpath("name()") == "pc":
+                        mot.set("lemma", forme)
+                        mot.set("pos", forme)
                     
 
         with open(fichier_lemmatise, "w+") as sortie_xml:

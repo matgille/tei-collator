@@ -121,15 +121,18 @@ def identify_order_modification(list_1, list_2):
     return
 
 
-def test_lemmatization(div_n, div_type, temoin_leader):
+def test_lemmatization(localisation, div_type, temoin_leader):
     """
     This function checks whether the division has been lemmatized
     """
 
+    ((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n)) = localisation
+    target_xpath = f"//tei:div[@type='{div1_type}'][@n={div1_n}]/descendant::tei:div[@type='{div2_type}'][@n={div2_n}]/descendant::tei:div[@type='{div3_type}'][@n={div3_n}]"
+
     with open(f"temoins_tokenises_regularises/{temoin_leader}.xml", "r") as input_xml_file:
         f = etree.parse(input_xml_file)
 
-    target_div = f.xpath(f"//tei:div[@type='{div_type}'][@n = '{div_n}']", namespaces=NSMAP)[0]
+    target_div = f.xpath(target_xpath, namespaces=NSMAP)[0]
     first_token = target_div.xpath("descendant::tei:w[not(@ana='#annotation_manuelle')][1]", namespaces=NSMAP)[0]
     try:
         first_token.xpath("@lemma")[0]
@@ -261,11 +264,14 @@ def test_collation_tokens(chemin_fichiers, portee, type_division):
                     pass
 
     # Maintenant on vérifie que les documents XML ont aussi les mêmes tokens
+
+    ((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n)) = portee
     for xml_file in glob.glob(f"temoins_tokenises_regularises/*.xml"):
         as_xml = etree.parse(xml_file)
         sigla = as_xml.xpath("@xml:id")[0]
+        xpath_expression = f"descendant::tei:div[@type='{div1_type}'][@n='{div1_n}']/tei:div[@type='{div2_type}'][@n='{div2_n}']/tei:div[@type='{div3_type}'][@n='{div3_n}']"
         tokens_per_wits_orig[sigla] = as_xml.xpath(
-            f"//tei:div[@type='{type_division}'][@n='{portee}']/descendant::tei:w/@xml:id", namespaces=NSMAP)
+            f"{xpath_expression}/descendant::tei:w/@xml:id", namespaces=NSMAP)
 
     with open(f"{chemin_fichiers}/tokens_after_collation.json", "w") as output_val_json:
         json.dump(tokens_per_wits_collatex, output_val_json)

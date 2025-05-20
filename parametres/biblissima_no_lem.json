@@ -1,0 +1,38 @@
+{
+    "structure": "tei:TEI/tei:TEI/tei:text/tei:div/tei:div/tei:div/tei:ab",
+    "chemin_vers_TEI": "//tei:TEI[@type='transcription']",
+    "localisation_fichiers": "/home/mgl/Bureau/Travail/scripts_et_programmes/alto_to_tei/output/print_regimine/corpus.xml",
+    "tei:teiCorpus": true,
+    "punctuation": true,
+    "prévalidation": true,
+    "mandatory_annotation": false,
+    "alignement": "mam",
+    "align_on": 2, // 1 for lemma + pos + morph; 2 for lemma + pos; 3 for lemma only
+    "create_synonym_dataset": false,
+    "compute_similarity": false,
+    "structurer_documents": false,
+    "fichier_leader": "bevilaqua_1498.xml",
+    "output_dir": "/home/mgl/Bureau/Travail/Communications_et_articles/Alignement_multilingue_regimine/data/HTR/txt_2/collation",
+    "temoin_base": "bevilaqua_1498",
+    "scission": {
+        "scinder": true,
+        "scinder_par": "chapitre",
+        "element_base": "ab"
+    },
+    "reinjection": {"tei:lb": {"position": "after", "level": "witness"}},
+    "exclude_descendant_of": [],
+    "sensibilite_lacunes": 1,
+    "corpus": {
+        "tokenized": true,
+        "xmlIdentifiers": true,
+        "lemmatized": true
+    },
+    "lemmatize": false,
+    "parallel_process_number": 8,
+    "lang": "la",
+    "sortie": {
+        "fusion_divs": false,
+        "tableaux_alignement": true,
+        "LaTeX": false
+    }
+}

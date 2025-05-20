@@ -176,13 +176,23 @@ class Structurer:
         correct_index = all_differences.index(min(all_differences))
         return correct_index
 
-    def pre_structure_document(self, proportion: float, element_to_create: str = "ab", remove_pc: bool = False):
+    def pre_structure_document(self, proportion: float, element_to_create: str = "ab", remove_pc: bool = False, context:str=""):
         assert 0 < proportion < 1, "Proportion should be between 0 and 1"
-        all_divs = self.source_file.xpath("descendant::tei:div[@type='chapitre']", namespaces=self.ns_decl)
+        print(context)
+        all_divs = [self.source_file.xpath(context, namespaces=self.ns_decl)[0]]
+        print(all_divs)
+        assert len(all_divs) > 0, "No divs found"
         orig_tree = copy.deepcopy(self.source_file)
+        if len(all_divs[0].xpath(f"descendant::tei:{element_to_create}", namespaces=self.ns_decl)) > 0:
+            print("Already structured, passing.")
+            return
         for div in all_divs:
+            print(f"Division {div}")
+            with open("/home/mgl/Documents/debug.xml", "w") as output_xml:
+                output_xml.write(ET.tostring(div, pretty_print=True).decode('utf8'))
             words_and_pc = div.xpath("descendant::node()[not(ancestor::tei:head)][self::tei:w or self::tei:pc]",
                                      namespaces=self.ns_decl)
+            assert len(words_and_pc) > 0, "No tokens found"
             # La première étape est de récupérer les positions des divisions
             with_index = [index for index, item in enumerate(words_and_pc) if item.xpath("name()") == "pc"]
             print(with_index)
@@ -217,7 +227,12 @@ class Structurer:
                     namespaces=self.ns_decl)
                 print(len(all_nodes_ids), len(all_nodes))
                 assert len(all_nodes_ids) == len(all_nodes), "Problemo"
+                print(len(all_nodes))
+                if len(all_nodes) == 0:
+                    print("Issue")
+                assert len(all_nodes) != 0, "Problemo grande"
                 dict_of_ids_and_nodes = {identifier: node for identifier, node in zip(all_nodes_ids, all_nodes)}
+                assert dict_of_ids_and_nodes != {}, "Muy problemo"
                 print("---")
                 print(f"Milestone: {milestone}")
 
@@ -238,9 +253,14 @@ class Structurer:
                         target_w = all_nodes[0]
                         target_w.addnext(new_element)
                 else:
-                    target_w = dict_of_ids_and_nodes[min_anchor]
-                    print(dict_of_ids_and_nodes[min_anchor].text)
-                    target_w.addnext(new_element)
+                    try:
+                        target_w = dict_of_ids_and_nodes[min_anchor]
+                        print(dict_of_ids_and_nodes[min_anchor].text)
+                        target_w.addnext(new_element)
+                    except KeyError:
+                        print(dict_of_ids_and_nodes)
+                        print(min_anchor)
+                        exit(0)
             
             # Deuxième étape, on va mettre les noeuds dans les tei:ab ou tei:p
             hierarchy_dict = {}
@@ -607,7 +627,7 @@ class Structurer:
             # On écrit l'arbre dans le fichier xml correspondant.
             write_tree(
                 # f"/home/mgl/Documents/test/{target_document}{self.output_file_suffix}.xml",
-                f"/home/mgl/Bureau/These/Edition/collator/temoins_tokenises/{target_document}{self.output_file_suffix}.xml",
+                f"/home/mgl/Bureau/Travail/scripts_et_programmes/tei-collator/temoins_tokenises/{target_document}{self.output_file_suffix}.xml",
                 self.output_tree[target_document])
 
 

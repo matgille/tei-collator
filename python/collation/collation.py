@@ -32,16 +32,25 @@ class CorpusPreparation:
         Cette fonction sépare chaque division en autant d'éléments base (exemple, en 10 paragraphes)
         qui seront donnés à CollateX pour alignement; elle produit aussi un fichier global qui rassemble l
         """
-        print(f'Scission du corpus, création de dossiers et de fichiers par chapitre sur {div_number}.')
-        cmd = f'java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement' \
-              f'/preparation_corpus.xsl ' \
-              f'temoin_leader={self.temoin_leader} compare_with_shifting={self.integrer_deplacements} type_division={self.type_division} element_base={self.element_base} numero_div={div_number}'
+        ((div1_type, div1_n), (div2_type, div2_n), (div3_type, div3_n)) = div_number
+        print(f"Scission du corpus, création de dossiers et de fichiers par chapitre.")
+        cmd = f"java -jar {self.saxon} temoins_tokenises_regularises/{self.temoin_leader}.xml xsl/pre_alignement" \
+              f"/preparation_corpus.xsl " \
+              f"temoin_leader={self.temoin_leader} compare_with_shifting={self.integrer_deplacements} type_division={self.type_division} element_base={self.element_base} "\
+               f"div1_type={div1_type} div2_type={div2_type} div3_type={div3_type} "\
+               f'div1_n={div1_n} div2_n={div2_n} div3_n={div3_n}'
         subprocess.run(cmd.split())
         print("\nPréparation du corpus pour alignment ✓")
 
 
 class Aligner:
-    def __init__(self, liste_fichiers_xml: list, chemin: str, moteur_transformation_xsl: str, correction_mode: bool,
+    """
+    La classe principale d'alignement.
+    """
+    def __init__(self, liste_fichiers_xml: list,
+                 chemin: str,
+                 moteur_transformation_xsl: str,
+                 correction_mode: bool,
                  parametres_alignement: str,
                  nombre_de_coeurs,
                  align_on: int):
