@@ -219,13 +219,13 @@
                             <xsl:value-of select="tei:w"/>
                         </span>
                         <span id="ann_{translate(string-join(tei:w/@xml:id), '_', '')}">
-                            <span class="ann_lemma annotation">
+                            <!--<span class="ann_lemma annotation">
                                 <xsl:value-of select="tei:w/@lemma"/>
 
                             </span>
                             <span class="ann_pos annotation">
                                 <xsl:value-of select="tei:w/@pos"/>
-                            </span>
+                            </span>-->
                         </span>
                     </xsl:if>
                     <xsl:if test="om">
