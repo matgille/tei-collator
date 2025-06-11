@@ -226,11 +226,9 @@ class Structurer:
                     f"child::node()[not(self::tei:head) and preceding-sibling::tei:head][not(self::text() or self::{element_to_create})][@xml:id]",
                     namespaces=self.ns_decl)
                 print(len(all_nodes_ids), len(all_nodes))
-                assert len(all_nodes_ids) == len(all_nodes), "Problemo"
-                print(len(all_nodes))
-                if len(all_nodes) == 0:
-                    print("Issue")
-                assert len(all_nodes) != 0, "Problemo grande"
+                assert len(all_nodes_ids) == len(all_nodes), "Some node without id, weird issue."
+                assert len(all_nodes) != 0, f"Issue, please check structure of files. The tokens should be inside the divs, "\
+                                            f"without tei:ab or tei:p. Please review doc {self.source_file_id}"
                 dict_of_ids_and_nodes = {identifier: node for identifier, node in zip(all_nodes_ids, all_nodes)}
                 assert dict_of_ids_and_nodes != {}, "Muy problemo"
                 print("---")
@@ -295,6 +293,7 @@ class Structurer:
 
     def structure_tree(self, elements: list, ids: list, context, index_context, target_id):
         elements_and_ids = list(zip(elements, ids))
+        print(elements_and_ids)
         print(f"Index context: {index_context}")
         print(f"Elements and ids: {elements_and_ids}")
         context_target_nodes = self.output_tree[target_id].xpath(context, namespaces=self.ns_decl)[index_context]
@@ -309,6 +308,14 @@ class Structurer:
             # On récupère les attributs sous la forme d'un dictionnaire
             attributes = element.attrib
             print(element_name)
+            element_id = element.xpath(f"@xml:id | @n")[0]
+            print(f"descendant::tei:{element_name}[@xml:id = '{element_id}' or @n = '{element_id}']")
+
+            # On vérifie si la division n'existe pas déjà, dans ce cas pas besoin de la créer.
+            if len(context_target_nodes.xpath(f"descendant::tei:{element_name}[@xml:id = '{element_id}' or @n = '{element_id}']",
+                                          namespaces=self.ns_decl)) != 0:
+                print("Element already exists. Passing")
+                continue
 
             # Va savoir pourquoi mais l'argument nsmap ne fonctionne pas ici il faut passer par ce truc moche.
             element_to_insert = ET.Element("{" + self.tei_ns + "}" + element_name)
@@ -420,7 +427,7 @@ class Structurer:
             for index_context, (context_source_node, context_target_node) in enumerate(
                     list(zip(context_source_nodes, context_target_nodes))):
                 structure_source_elements = context_source_node.xpath(query, namespaces=self.ns_decl)
-
+                print(structure_source_elements)
                 # On ajoute des identifiants aux éléments qui en sont dépourvus
                 unidentified_target_elements = [element for element in
                                                 context_target_node.xpath(
@@ -470,6 +477,20 @@ class Structurer:
                 matching_target_ids, matching_source_ids = dict(), dict()
                 correction_mode = False
                 for index, division in enumerate(structure_source_elements):
+                    print(division)
+                    division_id = division.xpath("@xml:id | @n")[0]
+
+                    # On vérifie que la division n'existe pas déjà. Dans ce cas, on passe directemet la position du noeud visé.
+                    if context_target_node.xpath(f"descendant::node()[@xml:id = '{division_id}' or @n = '{division_id}']"):
+                        print("Found you")
+                        print(division_id)
+                        target_div_node = context_target_node.xpath(f"descendant::node()[@xml:id = '{division_id}' or @n = '{division_id}']")[0]
+                        print((f"descendant::node()[@xml:id = '{division_id} | @n = {division_id}]"))
+                        print(target_div_node)
+                        matching_id = target_div_node.xpath("descendant::tei:w[last()]/@xml:id", namespaces=self.ns_decl)[0]
+                        print(matching_id)
+                        target_id_list.append(matching_id)
+                        continue
                     # Dans le cas où on est sur la dernière division, pas besoin de faire de recherche. 
                     # Il suffit de choisir le dernier token de notre contexte.
                     if index + 1 == len(structure_source_elements):
@@ -592,7 +613,8 @@ class Structurer:
                         # TODO: il faut pouvoir travailler à partir d'un arbre déjà en partie structuré
                         print(traceback.format_exc())
                         print(last_token_current_div)
-                        print(f"Unable to align div {index + 1}. Please check structure in source document.")
+                        print(f"Unable to align div {index + 1}. Please check structure in source document. "
+                              f"You can also change the cutting proportion a little bit.")
                         write_log(
                             f"Alignment error for target file {target_document}.")
                         exit(0)

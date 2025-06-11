@@ -7,6 +7,8 @@ import subprocess
 from lxml import etree
 import itertools
 
+from torch.fx.experimental.unification.dispatch import namespace
+
 import python.utils.utils as utils
 
 
@@ -95,6 +97,48 @@ def fusion_documents_tei(chemin_fichiers, chemin_corpus, xpath_transcriptions, o
 
 def tableau_alignement(saxon, chemin):
     xsl_apparat = 'xsl/post_alignement/tableau_alignement.xsl'
+    with open(f"{chemin}/aligne_regroupe.xml", "r") as xml_file:
+        as_xml = etree.parse(xml_file)
+    tei = {'tei': 'http://www.tei-c.org/ns/1.0'}
+
+    for app in as_xml.xpath("//tei:app", namespaces=tei):
+        # On crée une typologie rapide
+        all_rdg = app.xpath("descendant::tei:rdg", namespaces=tei)
+        all_rdg_lemmas = []
+        for rdg in all_rdg:
+            if rdg.xpath("tei:w", namespaces=tei) != []:
+                all_rdg_lemmas.extend(rdg.xpath("tei:w/@lemma", namespaces=tei))
+            else:
+                all_rdg_lemmas.append("")
+        all_rdg_lemmas_no_omm = app.xpath("descendant::tei:rdg/tei:w/@lemma", namespaces=tei)
+        variant = not all(lemma == all_rdg_lemmas_no_omm[0] for lemma in all_rdg_lemmas_no_omm[1:])
+        if "platio" in all_rdg_lemmas_no_omm:
+            print(all_rdg_lemmas_no_omm)
+            print(variant)
+        if variant:
+            app.set("type", "lexicale")
+            # En second lieu, on regroupe les leçons par lemme, ça sera rendu colorié.
+            all_lemmas = [(idx, lemma) for idx, lemma in enumerate(all_rdg_lemmas)]
+            lemmas_dict = {}
+            for idx, lemma in all_lemmas:
+                try:
+                    lemmas_dict[lemma].append(idx)
+                except KeyError:
+                    lemmas_dict[lemma] = [idx]
+            lemmas_dict = {idx + 1:lemmas_dict[keys] for idx, keys in enumerate(lemmas_dict.keys())}
+            all_rdg = app.xpath("descendant::tei:rdg", namespaces=tei)
+            if "ie" in all_rdg_lemmas and "intllceus" in all_rdg_lemmas:
+                print(all_rdg_lemmas)
+                print(lemmas_dict)
+            for cluster, positions in lemmas_dict.items():
+                if "ie" in all_rdg_lemmas and "intllceus" in all_rdg_lemmas:
+                    print([(pos, str(cluster)) for pos in positions])
+                [all_rdg[pos].set("color", str(cluster)) for pos in positions]
+
+
+
+    with open(f"{chemin}/aligne_regroupe.xml", "w") as xml_file:
+        xml_file.write(etree.tostring(as_xml, pretty_print=True, xml_declaration=True).decode())
     with Halo(text='Création du tableau d\'alignement', spinner='dots'):
         cmd = f'java -jar {saxon} -o:{chemin}/tableau_alignement.html {chemin}/aligne_regroupe.xml {xsl_apparat}'
         subprocess.run(cmd.split())

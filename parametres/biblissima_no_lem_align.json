@@ -11,9 +11,9 @@
     "create_synonym_dataset": false,
     "compute_similarity": false,
     "structurer_documents": true,
-    "fichier_leader": "bevilaqua_1498.xml",
+    "fichier_leader": "Rome_W.xml",
     "output_dir": "/home/mgl/Bureau/Travail/Communications_et_articles/Alignement_multilingue_regimine/data/HTR/txt_2/collation",
-    "temoin_base": "bevilaqua_1498",
+    "temoin_base": "Rome_W",
     "scission": {
         "scinder": true,
         "scinder_par": "chapitre",

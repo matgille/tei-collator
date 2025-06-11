@@ -1,13 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:mgl="https://matthiasgillelevenson.fr" xmlns="http://www.w3.org/1999/xhtml" xmlns:tei="http://www.tei-c.org/ns/1.0"
-    exclude-result-prefixes="xs" version="2.0">
+                xmlns:mgl="https://matthiasgillelevenson.fr" xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:tei="http://www.tei-c.org/ns/1.0"
+                exclude-result-prefixes="xs" version="2.0">
     <!--Feuille de transformation pour créer une table d'alignement en HTML pour faciliter le commentaire-->
     <!--Je suis parti pour gagner du temps d'une base de David Birnbaum 
         ici: http://collatex.obdurodon.org/xml-json-conversion.xhtml-->
 
     <xsl:output method="html" indent="yes" doctype-system="about:legacy-compat"/>
     <xsl:strip-space elements="*"/>
+    <xsl:template name="get-color">
+        <xsl:param name="key"/>
+        <color>
+            <value>
+                <xsl:choose>
+                    <xsl:when test="$key = 1">#FFB6C1</xsl:when> <!-- Light Pink -->
+                    <xsl:when test="$key = 2">#98FB98</xsl:when> <!-- Pale Green -->
+                    <xsl:when test="$key = 3">#ADD8E6</xsl:when> <!-- Light Blue -->
+                    <xsl:when test="$key = 4">#FFFACD</xsl:when> <!-- Lemon Chiffon -->
+                    <xsl:when test="$key = 5">#F0E6FF</xsl:when> <!-- Lavender (Light Purple) -->
+                    <xsl:when test="$key = 6">#E0FFFF</xsl:when> <!-- Light Cyan -->
+                    <xsl:when test="$key = 7">#FFDAB9</xsl:when> <!-- Peach Puff -->
+                    <xsl:when test="$key = 8">#E6E6FA</xsl:when> <!-- Lavender -->
+                    <xsl:when test="$key = 9">#FFD1DC</xsl:when> <!-- Pastel Pink -->
+                    <xsl:when test="$key = 10">#D2B48C</xsl:when> <!-- Tan -->
+                    <xsl:when test="$key = 11">#696969</xsl:when> <!-- Dim Gray -->
+                    <xsl:when test="$key = 12">#F5F5F5</xsl:when> <!-- White Smoke -->
+                    <xsl:otherwise>#ccabca</xsl:otherwise> <!-- Default color -->
+                </xsl:choose>
+            </value>
+        </color>
+    </xsl:template>
+
+
+
     <xsl:template match="/">
         <html>
             <head>
@@ -93,7 +119,7 @@
                 <button id="pause" style="position:fixed;" true="false">Défile</button>
 
 
-                <div class="legende">
+                <!--<div class="legende">
                     <table>
                         <tr>
                             <td class="variante1">
@@ -105,13 +131,13 @@
                             <td class="grammatical">
                                 <span>Variante morphosyntaxique (pos différent)</span>
                             </td>
-                            <!--
+
                             <td>
                                 <span id="log">0%</span>
-                            </td>-->
+                            </td>
                         </tr>
                     </table>
-                </div>
+                </div>-->
             </body>
         </html>
     </xsl:template>
@@ -172,10 +198,8 @@
                             concat('(', string-join($i/tei:w/@lemma, '-'), ')'), '|')"/>
                 <xsl:variable name="lemma">
                     <xsl:choose>
-                        <!--https://stackoverflow.com/a/36872484-->
-                        <!--en xpath, (1, 2) = (2, 3) est vrai, donc not((1, 2) != (1, 2)) est vrai pour vérifier une égalité terme à terme. -->
-                        <xsl:when test="not($first_word_lemma != tokenize($all_lemmas, '\|'))">True</xsl:when>
-                        <xsl:otherwise>False</xsl:otherwise>
+                        <xsl:when test="ancestor::tei:app/@type='lexicale'">False</xsl:when>
+                        <xsl:otherwise>True</xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
                 <!--Lemma comparison-->
@@ -200,11 +224,13 @@
 
                 <xsl:variable name="comparison_value">
                     <xsl:choose>
-                        <xsl:when test="$pos = 'True' and $lemma = 'True'">fitwidth texte</xsl:when>
+                        <!--<xsl:when test="$pos = 'True' and $lemma = 'True'">fitwidth texte</xsl:when>-->
+                        <xsl:when test="$lemma = 'True'">fitwidth texte</xsl:when>
                         <xsl:otherwise>
-                            <xsl:if test="$pos = 'False' and $lemma = 'False'">fitwidth texte variante1</xsl:if>
+                            <xsl:text>fitwidth texte variante1</xsl:text>
+                            <!--<xsl:if test="$pos = 'False' and $lemma = 'False'">fitwidth texte variante1</xsl:if>
                             <xsl:if test="$pos = 'False' and $lemma = 'True'">fitwidth texte grammatical</xsl:if>
-                            <xsl:if test="$pos = 'True' and $lemma = 'False'">fitwidth texte variante2</xsl:if>
+                            <xsl:if test="$pos = 'True' and $lemma = 'False'">fitwidth texte variante2</xsl:if>-->
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>
@@ -215,6 +241,16 @@
                         <xsl:attribute name="id">
                             <xsl:value-of select="translate(string-join(tei:w/@xml:id), '_', '')"/>
                         </xsl:attribute>
+                        <xsl:variable name="color">
+                <xsl:call-template name="get-color">
+                    <xsl:with-param name="key" select="@color"/> <!-- Change this value to test different keys -->
+                    </xsl:call-template>
+                </xsl:variable>
+                <xsl:attribute name="style">
+                    <xsl:text>background: </xsl:text>
+                    <xsl:value-of select="$color"/>
+                    <xsl:text>;</xsl:text>
+                </xsl:attribute>
                         <span class="forme">
                             <xsl:value-of select="tei:w"/>
                         </span>
@@ -232,7 +268,7 @@
                         <xsl:attribute name="id">
                             <xsl:value-of select="concat('om_', count(preceding::om) + 1)"/>
                         </xsl:attribute>
-                        <i>omisit</i>
+                        <span style="background: #B1CCC7"><i>omisit</i></span>
                     </xsl:if>
                 </xsl:element>
             </xsl:for-each>

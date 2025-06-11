@@ -74,6 +74,9 @@
                                 <xsl:choose>
                                     <!--On va comparer sur les lemmes et les pos en concaténant les deux valeurs-->
                                     <!--1: sur lemmes, pos, morph si dispo-->
+                                    <xsl:when test="$align_on = '0'">
+                                            <xsl:value-of select="."/>
+                                    </xsl:when>
                                     <xsl:when test="$align_on = '1'">
                                         <xsl:if test="@morph">
                                             <xsl:value-of select="concat(@lemma, '|', @pos, '|', @morph)"/>

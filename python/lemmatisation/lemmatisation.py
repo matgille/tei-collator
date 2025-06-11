@@ -10,6 +10,8 @@ from lxml import etree
 import os
 import multiprocessing as mp
 
+from torch.fx.experimental.unification.dispatch import namespace
+
 import python.utils.utils as utils
 
 
@@ -111,6 +113,16 @@ class CorpusALemmatiser:
         param_div1_n = f"div1_n={div1_n}"
         param_div2_n = f"div2_n={div2_n}"
         param_div3_n = f"div3_n={div3_n}"
+
+        # On va vérifier si la division existe.
+        path_to_div = f"descendant::tei:div[@type = '{div1_type}'][@n = '{div1_n}']/descendant::tei:div[@type = '{div2_type}'][@n = '{div2_n}']/descendant::tei:div[@type = '{div3_type}'][@n = '{div3_n}']"
+        print(path_to_div)
+        temoin_tokenise_regularise = f"temoins_tokenises_regularises/{fichier}"
+        parser = etree.XMLParser(load_dtd=True,
+                                 resolve_entities=True)
+        f = etree.parse(temoin_tokenise_regularise, parser=parser)
+        if len(f.xpath(path_to_div, namespaces=self.nsmap)) != 1:
+            return
         subprocess.run(["java", "-jar",
                         self.moteur_transformation,
                         chemin_vers_fichier,
@@ -178,7 +190,10 @@ class CorpusALemmatiser:
 
         elif self.langue == "la":
             modele_latin = "python/lemmatisation/model.tar"
-            device = "cuda:0"
+            if torch.cuda.is_available():
+                device = "cuda:0"
+            else:
+                device = "cpu"
             cmd = f"pie tag --device {device} {fichier_entree_txt} " \
                   f"<{modele_latin},lemma,pos,Person,Numb,Tense,Case,Mood> --batch_size 2048"
             print(cmd)
@@ -188,11 +203,9 @@ class CorpusALemmatiser:
             maliste = utils.txt_to_liste(fichier_lemmatise)
             # Nettoyage de la liste
             maliste.pop(0)  # on supprime les titres de colonnes
-            temoin_tokenise_regularise = f"temoins_tokenises_regularises/{fichier}"
             temoin_tokenise = f"temoins_tokenises/{fichier}"
             parser = etree.XMLParser(load_dtd=True,
                                      resolve_entities=True)
-            f = etree.parse(temoin_tokenise_regularise, parser=parser)
             f_orig = etree.parse(temoin_tokenise, parser=parser)
             root = f.getroot()
             root_orig = f_orig.getroot()
@@ -230,7 +243,8 @@ class CorpusALemmatiser:
                     tokens_orig[index].set("lemma", lemme)
                     tokens_orig[index].set("pos", pos)
                     tokens_orig[index].set("morph", morph)
-                    mot.set("lemma", lemme)
+                    if len(mot.xpath("@lemma")) == 0:
+                        mot.set("lemma", lemme)
                     mot.set("pos", pos)
                     if morph:
                         mot.set("morph", morph)

@@ -61,10 +61,9 @@ class Aligner:
         self.correction_mode = correction_mode
         self.parametres_alignement = parametres_alignement
 
-        if align_on != 1 and align_on != 2:
-            raise ValueError("Le paramètre align_on doit valoir 1 "
-                             "(on aligne sur les lemmes et les parties du discours) ou 2 "
-                             "(on aligne sur les lemmes uniquement)")
+        assert  align_on in [0, 1, 2], ("Le paramètre align_on doit valoir 0 (alignement sur les formes) 1 "
+                                        "(on aligne sur les lemmes et les parties du discours) ou 2 "
+                                        "(on aligne sur les lemmes uniquement)")
         self.align_on = align_on
 
     def transformation_json(self, input_fichier_xml, output_fichier_json):
@@ -148,7 +147,7 @@ class Collateur:
 
     def run_collation(self):
         self.produce_typed_apps(f'apparat_final.json')
-        self.raffinage_apparats(f'divs/div{self.div_n}/apparat_collatex.xml')
+        self.raffinage_apparats(f'{self.chemin_fichiers}/apparat_collatex.xml')
 
     def produce_typed_apps(self, fichier_entree):
         """

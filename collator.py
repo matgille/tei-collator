@@ -237,11 +237,12 @@ def main():
               "structuré au niveau du titre uniquement (un tei:head avec un @n). Les autres témoins"
               "ne doivent avoir aucune structure à l'intérieur de la division.")
         structurer = structuration.Structurer(target_path=f"temoins_tokenises/*.xml",
-                                              source_file=f"temoins_tokenises/Rome_W.xml",
+                                              source_file=f"temoins_tokenises/{parametres.temoin_leader}.xml",
                                               output_files_prefix="",
                                               pre_structure=True)
-        structurer.pre_structure_document(proportion=.30,
-                                          element_to_create=parametres.element_base, remove_pc=False,
+        structurer.pre_structure_document(proportion=.25,
+                                          element_to_create=parametres.element_base,
+                                          remove_pc=False,
                                           context=context)
         query = f"child::node()[self::tei:head or self::tei:{parametres.element_base}]"
         print(query)
@@ -279,6 +280,8 @@ def main():
         # chemin_fichiers = f"divs/div{str(i)}"
         chemin_fichiers = f"divs/{div1_type}_{div1_n}/{div2_type}_{div2_n}/{div3_type}_{div3_n}"
 
+        # sorties.tableau_alignement(saxon, chemin_fichiers)
+        # exit(0)
         # We first remove all files in the corresponding dir to avoid any possible interference and bug
         utils.remove_files(f"{chemin_fichiers}/*")
 
@@ -287,6 +290,7 @@ def main():
         pattern = re.compile(f"{chemin_fichiers}/juxtaposition_\d+\.xml")
         fichiers_xml = [fichier.split('/')[-1] for fichier in glob.glob(f"{chemin_fichiers}/*.xml") if
                         re.match(pattern, fichier)]
+        print(fichiers_xml)
         assert fichiers_xml != [], ("Liste de fichiers vides, un problème est apparu "
                                     "lors de la production de chacun des fichiers à collationer.")
         print("Alignement avec CollateX.")
