@@ -223,34 +223,31 @@ class CorpusALemmatiser:
             tokens = context_nodes.xpath(groupe_words, namespaces=self.nsmap)
             tokens_orig = context_nodes_orig.xpath(groupe_words, namespaces=self.nsmap)
             fichier_lemmatise = temoin_tokenise_regularise
-            utils.remove_files("/home/mgl/Documents/debug.txt")
-            with open("/home/mgl/Documents/debug.txt", "a") as debug_file:
-                for index, mot in enumerate(tokens):
-                    liste_correcte = maliste[index]
-                    debug_line = (f"---\n"
-                          f"{etree.tostring(mot)}\n"
-                          f"{liste_correcte}")
-                    debug_file.write(debug_line)
-                    forme, cas, mode, nombre, personne, temps, lemme, pos, *autres_arguments = liste_correcte
-                    # on nettoie la morphologie pour supprimer les entrées vides
-                    morph = f"CAS={cas}|MODE={mode}|NOMB.={nombre}|PERS.={personne}|TEMPS={temps}"
-                    morph = re.sub("((?!\|).)*?_(?=\|)", "", morph)  # on supprime les pipes non renseignés du milieu
-                    morph = re.sub("^\|*", "", morph)  # on supprime les pipes qui commencent la valeur
-                    morph = re.sub("(\|)+", "|", morph)  # on supprime les pipes suivis
-                    morph = re.sub("\|((?!\|).)*?_$", "", morph)  # on supprime les pipes non renseignés de fin
-                    morph = re.sub("(?!\|).*_(?!\|)", "", morph)  # on supprime les pipes non renseignés uniques
-                    #
-                    tokens_orig[index].set("lemma", lemme)
-                    tokens_orig[index].set("pos", pos)
-                    tokens_orig[index].set("morph", morph)
-                    if len(mot.xpath("@lemma")) == 0:
-                        mot.set("lemma", lemme)
-                    mot.set("pos", pos)
-                    if morph:
-                        mot.set("morph", morph)
-                    if mot.xpath("name()") == "pc":
-                        mot.set("lemma", forme)
-                        mot.set("pos", forme)
+            for index, mot in enumerate(tokens):
+                liste_correcte = maliste[index]
+                debug_line = (f"---\n"
+                      f"{etree.tostring(mot)}\n"
+                      f"{liste_correcte}")
+                forme, cas, mode, nombre, personne, temps, lemme, pos, *autres_arguments = liste_correcte
+                # on nettoie la morphologie pour supprimer les entrées vides
+                morph = f"CAS={cas}|MODE={mode}|NOMB.={nombre}|PERS.={personne}|TEMPS={temps}"
+                morph = re.sub("((?!\|).)*?_(?=\|)", "", morph)  # on supprime les pipes non renseignés du milieu
+                morph = re.sub("^\|*", "", morph)  # on supprime les pipes qui commencent la valeur
+                morph = re.sub("(\|)+", "|", morph)  # on supprime les pipes suivis
+                morph = re.sub("\|((?!\|).)*?_$", "", morph)  # on supprime les pipes non renseignés de fin
+                morph = re.sub("(?!\|).*_(?!\|)", "", morph)  # on supprime les pipes non renseignés uniques
+                #
+                tokens_orig[index].set("lemma", lemme)
+                tokens_orig[index].set("pos", pos)
+                tokens_orig[index].set("morph", morph)
+                if len(mot.xpath("@lemma")) == 0:
+                    mot.set("lemma", lemme)
+                mot.set("pos", pos)
+                if morph:
+                    mot.set("morph", morph)
+                if mot.xpath("name()") == "pc":
+                    mot.set("lemma", forme)
+                    mot.set("pos", forme)
                     
 
         with open(fichier_lemmatise, "w+") as sortie_xml:
