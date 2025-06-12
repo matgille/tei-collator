@@ -647,7 +647,7 @@ class Structurer:
             # On écrit l'arbre dans le fichier xml correspondant.
             write_tree(
                 # f"/home/mgl/Documents/test/{target_document}{self.output_file_suffix}.xml",
-                f"/home/mgl/Bureau/Travail/scripts_et_programmes/tei-collator/temoins_tokenises/{target_document}{self.output_file_suffix}.xml",
+                f"temoins_tokenises/{target_document}{self.output_file_suffix}.xml",
                 self.output_tree[target_document])
 
 
