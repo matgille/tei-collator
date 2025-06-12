@@ -20,7 +20,7 @@ import python.structuration.structuration as structuration
 import python.lemmatisation.lemmatisation as lemmatisation
 import python.sorties.sorties as sorties
 import python.injections.injections as injections
-import python.semantic_analysis.similarity as similarity
+# import python.semantic_analysis.similarity as similarity
 import python.settings
 import python.tests.tests as tests
 import python.utils.utils as utils
