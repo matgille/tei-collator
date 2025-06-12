@@ -188,8 +188,6 @@ class Structurer:
             return
         for div in all_divs:
             print(f"Division {div}")
-            with open("/home/mgl/Documents/debug.xml", "w") as output_xml:
-                output_xml.write(ET.tostring(div, pretty_print=True).decode('utf8'))
             words_and_pc = div.xpath("descendant::node()[not(ancestor::tei:head)][self::tei:w or self::tei:pc]",
                                      namespaces=self.ns_decl)
             assert len(words_and_pc) > 0, "No tokens found"
