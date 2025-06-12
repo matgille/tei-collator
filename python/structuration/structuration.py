@@ -75,7 +75,7 @@ def check_if_match(json_table: str, target_id: str) -> (bool, str):
     # On produit l'alignement un à un
     aligned_table = list(zip([token[0] if token else None for token in json_table['table'][0]],
                              [token[0] if token else None for token in json_table['table'][1]]))
-    test_file_writing(object=aligned_table, name="aligned.json", format="json")
+    # test_file_writing(object=aligned_table, name="aligned.json", format="json")
     # with open("/home/mgl/Documents/test/json_aligned_table.json", "w") as output_table:
         # json.dump(aligned_table, output_table)
 
