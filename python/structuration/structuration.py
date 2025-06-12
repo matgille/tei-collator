@@ -70,8 +70,8 @@ def print_aligned_sents(aligned_table: list, index):
 
 def check_if_match(json_table: str, target_id: str) -> (bool, str):
     json_table = json.loads(json_table)
-    with open("/home/mgl/Documents/test/json_table.json", "w") as output_table:
-        json.dump(json_table, output_table)
+    # with open("/home/mgl/Documents/test/json_table.json", "w") as output_table:
+        # json.dump(json_table, output_table)
     # On produit l'alignement un à un
     aligned_table = list(zip([token[0] if token else None for token in json_table['table'][0]],
                              [token[0] if token else None for token in json_table['table'][1]]))
