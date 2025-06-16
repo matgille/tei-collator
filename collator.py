@@ -51,6 +51,7 @@ def main():
     parser.add_argument("-so", "--similarityonly", default=False, help="Performs similarity computation and exit.")
     parser.add_argument("-w", "--witness", default="*", help="Witness to process")
     parser.add_argument("-fo", "--fusiononly", default=False, help="Create final xml document with xi:includes")
+    parser.add_argument("-sp", "--structuring_proportion", default=0.3, help="Ratio to cut the text for automatic pre-alignment (default: .3)")
     parser.add_argument("-id", "--integrer_deplacements", default=False, type=bool,
                         help="On visualise la collation avec les déplacements (ne permet pas de les integrer a l edition)")
 
@@ -60,6 +61,7 @@ def main():
     print(similarity_only)
     correction = args.correction
     deplacements = args.integrer_deplacements
+    structuring_proportion = args.structuring_proportion
     log = correction
     inject_only = args.injectiononly
     lemmatize_only = args.lemmatizeonly
@@ -240,7 +242,7 @@ def main():
                                               source_file=f"temoins_tokenises/{parametres.temoin_leader}.xml",
                                               output_files_prefix="",
                                               pre_structure=True)
-        structurer.pre_structure_document(proportion=.20,
+        structurer.pre_structure_document(proportion=structuring_proportion,
                                           element_to_create=parametres.element_base,
                                           remove_pc=False,
                                           context=context)
