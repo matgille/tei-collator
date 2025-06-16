@@ -240,7 +240,7 @@ def main():
                                               source_file=f"temoins_tokenises/{parametres.temoin_leader}.xml",
                                               output_files_prefix="",
                                               pre_structure=True)
-        structurer.pre_structure_document(proportion=.25,
+        structurer.pre_structure_document(proportion=.20,
                                           element_to_create=parametres.element_base,
                                           remove_pc=False,
                                           context=context)
