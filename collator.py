@@ -61,7 +61,7 @@ def main():
     print(similarity_only)
     correction = args.correction
     deplacements = args.integrer_deplacements
-    structuring_proportion = args.structuring_proportion
+    structuring_proportion = float(args.structuring_proportion)
     log = correction
     inject_only = args.injectiononly
     lemmatize_only = args.lemmatizeonly
