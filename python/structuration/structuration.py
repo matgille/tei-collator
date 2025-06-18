@@ -93,8 +93,7 @@ def check_if_match(json_table: str, target_id: str) -> (bool, str):
                 print(source_token)
                 print(target_token)
                 print("Previous table:")
-                print(aligned_table[index - 1][0])
-                print(aligned_table[index - 1][1])
+                print(aligned_table[index - 1])
                 if source_token['t'] == target_token['t']:
                     print_aligned_sents(aligned_table=aligned_table, index=index)
                     print(f"Division should start after {target_token['xml:id']}")
