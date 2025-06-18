@@ -218,7 +218,6 @@ class CorpusALemmatiser:
                 exit(0)
             context_nodes_orig = root_orig.xpath(context, namespaces=self.nsmap)[0]
             nodes = "descendant::node()[not(self::text())][text()]"
-            all_nodes = context_nodes.xpath(nodes, namespaces = self.nsmap)
             groupe_words = "descendant::node()[self::tei:w|self::tei:pc]"
             tokens = context_nodes.xpath(groupe_words, namespaces=self.nsmap)
             tokens_orig = context_nodes_orig.xpath(groupe_words, namespaces=self.nsmap)
@@ -237,11 +236,12 @@ class CorpusALemmatiser:
                 morph = re.sub("\|((?!\|).)*?_$", "", morph)  # on supprime les pipes non renseignés de fin
                 morph = re.sub("(?!\|).*_(?!\|)", "", morph)  # on supprime les pipes non renseignés uniques
                 #
-                tokens_orig[index].set("lemma", lemme)
-                tokens_orig[index].set("pos", pos)
-                tokens_orig[index].set("morph", morph)
+
                 if len(mot.xpath("@lemma")) == 0:
                     mot.set("lemma", lemme)
+                    tokens_orig[index].set("lemma", lemme)
+                tokens_orig[index].set("pos", pos)
+                tokens_orig[index].set("morph", morph)
                 mot.set("pos", pos)
                 if morph:
                     mot.set("morph", morph)
