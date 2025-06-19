@@ -171,7 +171,7 @@
         <xsl:for-each select="tei:rdg">
             <xsl:variable name="witness" select="replace(@wit, '#', '')"/>
             <div>
-                <input type="checkbox" id="{$witness}" name="{$witness}" checked />
+                <input type="checkbox" id="{$witness}" name="{$witness}" checked="checked" />
                 <label for="scales">
                 <xsl:value-of select="$witness"/>
                 </label>
