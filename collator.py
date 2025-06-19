@@ -243,7 +243,7 @@ def main():
         print("La structuration automatique demande que le témoin base soit "
               "structuré au niveau du titre uniquement (un tei:head avec un @n). Les autres témoins"
               "ne doivent avoir aucune structure à l'intérieur de la division.")
-        all_wits = glob.glob('temoins_tokenises_regularises*/*.xml') +
+        all_wits = glob.glob('temoins_tokenises_regularises*/*.xml')
         all_reg_wits += glob.glob('temoins_tokenises/*.xml')
         for file in all_reg_wits:
             shutil.copy(file, file.replace(".xml", ".xml.bak"))
