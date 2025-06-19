@@ -125,14 +125,14 @@
             </head>
             <body id="body">
                 <div>
-                    <xsl:apply-templates mode="boutons_temoins"/>
-                </div>
-                <div>
                     <table id="container">
                         <xsl:apply-templates select="mgl:texte"/>
                     </table>
                 </div>
-                <button id="pause" style="position:fixed;" true="false">Défile</button>
+                <div style="position:fixed;">
+                    <xsl:apply-templates mode="boutons_temoins"/>
+                </div>
+                <!--                <button id="pause" style="position:fixed;" true="false">Défile</button>-->
 
 
                 <!--<div class="legende">
@@ -154,6 +154,37 @@
                         </tr>
                     </table>
                 </div>-->
+                <script>
+                    // Attendre que le DOM soit complètement chargé
+                    document.addEventListener('DOMContentLoaded', function() {
+                    console.log("Hello world");
+                    // Sélectionner toutes les cases à cocher avec la classe 'toggle-row'
+                    var checkboxes = document.querySelectorAll('.toggle-row');
+                    
+                    // Ajouter un écouteur d'événement à chaque case à cocher
+                    checkboxes.forEach(function(checkbox) {
+                    checkbox.addEventListener('change', function() {
+                    console.log("Something happened");
+                    // Récupérer la valeur de l'attribut 'data-target'
+                    var targetClass = this.getAttribute('id');
+                    console.log(targetClass);
+                    // Sélectionner toutes les lignes avec la classe cible
+                    var rows = document.querySelectorAll('.' + targetClass);
+                    
+                    // Parcourir chaque ligne et modifier son style d'affichage
+                    rows.forEach(function(row) {
+                    if (checkbox.checked) {
+                    console.log("Hide");
+                    row.style.display = '';
+                    } else {
+                    console.log("Show");
+                    row.style.display = 'none';
+                    }
+                    });
+                    });
+                    });
+                    });
+                </script>
             </body>
         </html>
     </xsl:template>
@@ -171,13 +202,16 @@
         <xsl:for-each select="tei:rdg">
             <xsl:variable name="witness" select="replace(@wit, '#', '')"/>
             <div>
-                <input type="checkbox" id="{$witness}" name="{$witness}" checked="checked" />
+                <input type="checkbox" class="toggle-row" id="{$witness}" name="{$witness}"
+                    checked="checked"/>
                 <label for="scales">
-                <xsl:value-of select="$witness"/>
+                    <xsl:value-of select="$witness"/>
                 </label>
             </div>
         </xsl:for-each>
     </xsl:template>
+
+    <xsl:template match="tei:rdg" mode="boutons_temoins"/>
 
     <xsl:template match="mgl:texte/tei:app[1]/tei:rdg">
 
