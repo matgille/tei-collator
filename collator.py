@@ -36,6 +36,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--parameters", default="parametres/lemmatisation.json",
                         help="Path to the parameter file.")
+    parser.add_argument("-o", "--out_dir", default="results",
+                        help="Name of output dir")
     parser.add_argument("-d", "--division", help="Division to be treated.", default={'livre': '1',
                                                                                      'partie': '2',
                                                                                      'chapitre': '2'})
@@ -54,6 +56,7 @@ def main():
     parser.add_argument("-sp", "--structuring_proportion", default=0.3, help="Ratio to cut the text for automatic pre-alignment (default: .3)")
     parser.add_argument("-id", "--integrer_deplacements", default=False, type=bool,
                         help="On visualise la collation avec les déplacements (ne permet pas de les integrer a l edition)")
+    parser.add_argument("-y", "--ignore_warnings", default=False, type=bool)
 
     ##### Settings
     args = parser.parse_args()
@@ -67,6 +70,8 @@ def main():
     lemmatize_only = args.lemmatizeonly
     tokenize_only = args.tokenizeonly
     test_only = args.testonly
+    ignore_warnings = args.ignore_warnings
+    output_dir = args.out_dir
     pdf_only = args.createpdf
     align_only = args.align_only
     table_only = args.exit_after_table_creation
@@ -197,7 +202,7 @@ def main():
         tokeniser.tokenisation(parametres.corpus_path, correction)
         exit(0)
 
-    if parametres.tokeniser:
+    if parametres.tokeniser and not ignore_warnings:
         reponse = input(
             "Vous êtes en train de réécrire les fichiers et de relancer la lemmatisation. Continuer ? [o/n]\n")
         if reponse == "o":
@@ -238,6 +243,10 @@ def main():
         print("La structuration automatique demande que le témoin base soit "
               "structuré au niveau du titre uniquement (un tei:head avec un @n). Les autres témoins"
               "ne doivent avoir aucune structure à l'intérieur de la division.")
+        all_wits = glob.glob('temoins_tokenises_regularises*/*.xml') +
+        all_reg_wits += glob.glob('temoins_tokenises/*.xml')
+        for file in all_reg_wits:
+            shutil.copy(file, file.replace(".xml", ".xml.bak"))
         structurer = structuration.Structurer(target_path=f"temoins_tokenises/*.xml",
                                               source_file=f"temoins_tokenises/{parametres.temoin_leader}.xml",
                                               output_files_prefix="",
