@@ -152,12 +152,14 @@
     <xsl:template match="tei:w"/>
 
     <xsl:template match="mgl:texte/tei:app[1]/tei:rdg">
+
+        <xsl:variable name="witness" select="replace(@wit, '#', '')"/>
         <xsl:variable name="position" select="count(preceding-sibling::tei:rdg) + 1"/>
-        <tr>
-            <th style="position:fixed;">
+        <tr class="{$witness}">
+            <th style="position:fixed;" >
                 <xsl:value-of select="@wit"/>
             </th>
-            <td class="fitwidth texte">
+            <td class="'fitwidth texte">
                 <xsl:attribute name="id">
                     <xsl:value-of select="translate(tei:rdg/tei:w/@xml:id, '_', '')"/>
                 </xsl:attribute>
