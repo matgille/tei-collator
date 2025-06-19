@@ -167,7 +167,7 @@
 
     <xsl:template match="tei:w"/>
 
-    <xsl:template match="mgl:texte/tei:app[1]">
+    <xsl:template match="mgl:texte/tei:app[1]" mode="boutons_temoins">
         <xsl:for-each select="tei:rdg">
             <xsl:variable name="witness" select="replace(@wit, '#', '')"/>
             <div>
