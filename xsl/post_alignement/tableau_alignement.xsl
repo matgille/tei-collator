@@ -124,13 +124,13 @@
 
             </head>
             <body id="body">
+                <div style="position:fixed; background-color:white; z-index:99999;">
+                    <xsl:apply-templates mode="boutons_temoins"/>
+                </div>
                 <div>
                     <table id="container">
                         <xsl:apply-templates select="mgl:texte"/>
                     </table>
-                </div>
-                <div style="position:fixed;">
-                    <xsl:apply-templates mode="boutons_temoins"/>
                 </div>
                 <!--                <button id="pause" style="position:fixed;" true="false">Défile</button>-->
 
@@ -155,16 +155,16 @@
                     </table>
                 </div>-->
                 <script>
-                    // Attendre que le DOM soit complètement chargé
-                    document.addEventListener('DOMContentLoaded', function() {
-                    console.log("Hello world");
+                    document.addEventListener('DOMContentLoaded', function () {
+                    console.log('Hello world');
                     // Sélectionner toutes les cases à cocher avec la classe 'toggle-row'
                     var checkboxes = document.querySelectorAll('.toggle-row');
+                    var showbox = document.querySelectorAll('.toggle-toggles');
                     
                     // Ajouter un écouteur d'événement à chaque case à cocher
-                    checkboxes.forEach(function(checkbox) {
-                    checkbox.addEventListener('change', function() {
-                    console.log("Something happened");
+                    checkboxes.forEach(function (checkbox) {
+                    checkbox.addEventListener('change', function () {
+                    console.log('Something happened');
                     // Récupérer la valeur de l'attribut 'data-target'
                     var targetClass = this.getAttribute('id');
                     console.log(targetClass);
@@ -172,18 +172,41 @@
                     var rows = document.querySelectorAll('.' + targetClass);
                     
                     // Parcourir chaque ligne et modifier son style d'affichage
-                    rows.forEach(function(row) {
+                    rows.forEach(function (row) {
                     if (checkbox.checked) {
-                    console.log("Hide");
+                    console.log('Hide');
                     row.style.display = '';
                     } else {
-                    console.log("Show");
+                    console.log('Show');
+                    row.style.display = 'none';
+                    }
+                    });
+                    });
+                    });
+                    
+                    // Ajouter un écouteur d'événement à chaque case à cocher
+                    showbox.forEach(function (showbox) {
+                    showbox.addEventListener('change', function () {
+                    console.log('Something incredible happened');
+                    
+                    // Sélectionner toutes les lignes avec la classe cible
+                    var rows = document.querySelectorAll('.options_wits');
+                    
+                    // Parcourir chaque ligne et modifier son style d'affichage
+                    rows.forEach(function (row) {
+                    if (showbox.checked) {
+                    console.log('Hide');
+                    row.style.display = '';
+                    } else {
+                    console.log('Show');
                     row.style.display = 'none';
                     }
                     });
                     });
                     });
                     });
+                    
+                    
                 </script>
             </body>
         </html>
@@ -199,9 +222,15 @@
     <xsl:template match="tei:w"/>
 
     <xsl:template match="mgl:texte/tei:app[1]" mode="boutons_temoins">
+        <div>
+            <input type="checkbox" class="toggle-toggles" id="toggle-toggles" checked="checked"/>
+            <label for="scales">
+                <xsl:text>Show</xsl:text>
+            </label>
+        </div>
         <xsl:for-each select="tei:rdg">
             <xsl:variable name="witness" select="replace(@wit, '#', '')"/>
-            <div>
+            <div class="options_wits">
                 <input type="checkbox" class="toggle-row" id="{$witness}" name="{$witness}"
                     checked="checked"/>
                 <label for="scales">
@@ -218,7 +247,7 @@
         <xsl:variable name="witness" select="replace(@wit, '#', '')"/>
         <xsl:variable name="position" select="count(preceding-sibling::tei:rdg) + 1"/>
         <tr class="{$witness}">
-            <th style="position:fixed;">
+            <th style="position:fixed; margin-left:2cm;">
                 <xsl:value-of select="@wit"/>
             </th>
             <td class="'fitwidth texte">
