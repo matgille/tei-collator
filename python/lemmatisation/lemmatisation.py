@@ -272,7 +272,7 @@ if __name__ == "__main__":
     corpus_a_lemmatiser = CorpusALemmatiser(
         liste_temoins=temoins,
         langue=langue,
-        moteur_transformation="saxon9he.jar",
+        moteur_transformation="saxon/saxon-he-12.7.jar",
         nombre_coeurs=mp.cpu_count()
     )
     corpus_a_lemmatiser.lemmatisation_parallele(division)
